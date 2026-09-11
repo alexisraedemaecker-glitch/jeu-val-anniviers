@@ -128,6 +128,10 @@ $$;
 
 -- Soumission d'un defi. Idempotente sur client_id : si le telephone renvoie la
 -- meme soumission apres une coupure reseau, elle n'est jamais comptee deux fois.
+-- La signature a change avec l'ajout de p_quiz_restarts, on retire donc
+-- l'ancienne version pour eviter deux fonctions de meme nom.
+drop function if exists public.submit_challenge(text, text, uuid, uuid[], text, text, int);
+
 create or replace function public.submit_challenge(
   p_client_id     text,
   p_challenge_id  text,
@@ -135,7 +139,8 @@ create or replace function public.submit_challenge(
   p_member_ids    uuid[] default null,
   p_photo_path    text default null,
   p_note          text default null,
-  p_quiz_attempts int default 0
+  p_quiz_attempts int default 0,
+  p_quiz_restarts int default 0
 )
 returns jsonb
 language plpgsql
@@ -197,10 +202,12 @@ begin
     into v_before
     from public.synergy_unlocks where participant_id = any (v_members);
 
-  insert into public.submissions (client_id, challenge_id, submitter_id, photo_path, note, quiz_attempts)
+  insert into public.submissions (client_id, challenge_id, submitter_id, photo_path,
+                                  note, quiz_attempts, quiz_restarts)
   values (p_client_id, p_challenge_id, p_submitter, v_path,
           left(nullif(btrim(coalesce(p_note, '')), ''), 2000),
-          greatest(0, least(99, coalesce(p_quiz_attempts, 0))))
+          greatest(0, least(99, coalesce(p_quiz_attempts, 0))),
+          greatest(0, least(99, coalesce(p_quiz_restarts, 0))))
   returning * into v_sub;
 
   insert into public.submission_members (submission_id, participant_id)

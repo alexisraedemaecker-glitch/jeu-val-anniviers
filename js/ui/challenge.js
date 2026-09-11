@@ -1,5 +1,7 @@
 // Un defi en detail, et son ecran de soumission.
-// Photo, groupe du moment, quiz avec reessai immediat sans penalite.
+// Photo, groupe du moment, et quiz sans droit a l'erreur : une mauvaise reponse
+// fait rater le defi, il faut alors reprendre le quiz depuis la premiere
+// question. La photo et les reponses ecrites sont conservees.
 const { html, useState, useMemo, useRef, useEffect } = window.htmPreact;
 
 import { CHALLENGE_BY_ID } from "../data/challenges.js";
@@ -32,6 +34,8 @@ function Form({ c, go }) {
   const [note, setNote] = useState("");
   const [answers, setAnswers] = useState(() => quiz.map(() => ({ solved: false, wrong: [] })));
   const [attempts, setAttempts] = useState(0);
+  const [failed, setFailed] = useState(false);
+  const [restarts, setRestarts] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
@@ -69,18 +73,32 @@ function Form({ c, go }) {
 
   function answer(qi, oi) {
     const q = quiz[qi];
-    if (answers[qi].solved) return;
+    if (failed || answers[qi].solved) return;
     setAttempts((n) => n + 1);
+    if (oi === q.answer) {
+      setAnswers((prev) => {
+        const next = prev.slice();
+        next[qi] = { solved: true, wrong: prev[qi].wrong };
+        return next;
+      });
+      return;
+    }
+    // Une seule mauvaise réponse et le défi est raté. Il faut reprendre le quiz
+    // depuis la première question.
     setAnswers((prev) => {
       const next = prev.slice();
-      if (oi === q.answer) {
-        next[qi] = { solved: true, wrong: prev[qi].wrong };
-      } else {
-        const wrong = prev[qi].wrong.includes(oi) ? prev[qi].wrong : [...prev[qi].wrong, oi];
-        next[qi] = { solved: false, wrong };
-      }
+      next[qi] = { solved: false, wrong: [...prev[qi].wrong, oi] };
       return next;
     });
+    setFailed(true);
+  }
+
+  function restartQuiz() {
+    setAnswers(quiz.map(() => ({ solved: false, wrong: [] })));
+    setFailed(false);
+    setRestarts((n) => n + 1);
+    const bloc = document.getElementById("bloc-quiz");
+    if (bloc) bloc.scrollIntoView({ block: "start", behavior: "smooth" });
   }
 
   function toggleMember(pid) {
@@ -89,7 +107,8 @@ function Form({ c, go }) {
 
   const blocking = [];
   if (needsPhoto && !file) blocking.push("ajoutez la photo");
-  if (needsQuiz && !quizDone) blocking.push("terminez le quiz");
+  if (needsQuiz && failed) blocking.push("reprenez le quiz depuis le début");
+  else if (needsQuiz && !quizDone) blocking.push("terminez le quiz");
 
   async function send(e) {
     e.preventDefault();
@@ -105,7 +124,8 @@ function Form({ c, go }) {
         memberIds: members,
         file,
         note,
-        quizAttempts: attempts
+        quizAttempts: attempts,
+        quizRestarts: restarts
       });
       setResult(out);
     } catch (err) {
@@ -116,7 +136,8 @@ function Form({ c, go }) {
   }
 
   if (result) {
-    return html`<${Done} c=${c} result=${result} go=${go} memberCount=${members.length + 1} />`;
+    return html`<${Done} c=${c} result=${result} go=${go}
+             memberCount=${members.length + 1} restarts=${restarts} />`;
   }
 
   const related = SYNERGIES.filter(
@@ -158,29 +179,48 @@ function Form({ c, go }) {
       <h2>Ce qu'il faut envoyer</h2>
       <ul class="small muted" style="margin:0;padding-left:1.2rem">
         ${needsPhoto ? html`<li>${c.photo_hint}</li>` : null}
-        ${needsQuiz ? html`<li>Les ${quiz.length} réponses du quiz ci dessous. Mauvaise réponse, vous réessayez tout de suite, sans aucune pénalité.</li>` : null}
+        ${needsQuiz ? html`<li>Les ${quiz.length} réponses du quiz ci dessous, sans aucune erreur. Une mauvaise réponse et le défi est raté, il faut alors reprendre le quiz depuis la première question.</li>` : null}
         <li>Qui était présent dans le groupe du moment, pour que chacun reçoive ses points.</li>
         ${c.note_label ? html`<li>${c.note_label}.</li>` : null}
       </ul>
     </div>
 
     ${needsQuiz
-      ? html`<div class="card">
+      ? html`<div class="card" id="bloc-quiz">
           <div class="card-head">
             <h2>Quiz</h2>
-            <span class="chip ${quizDone ? "ok" : ""}">
-              ${answers.filter((a) => a.solved).length} sur ${quiz.length}
+            <span class=${"chip " + (failed ? "bad" : quizDone ? "ok" : "")}>
+              ${failed ? "Défi raté" : `${answers.filter((a) => a.solved).length} sur ${quiz.length}`}
             </span>
           </div>
+          ${!failed && !quizDone
+            ? html`<p class="tiny faint" style="margin-top:-.3rem">
+                Aucune erreur permise. Prenez le temps de réfléchir avant de répondre.
+              </p>`
+            : null}
           ${quiz.map((q, i) =>
             i <= (quizIndex === -1 ? quiz.length - 1 : quizIndex)
               ? html`<${Question} key=${i} q=${q} i=${i} total=${quiz.length}
-                       st=${answers[i]} onPick=${(oi) => answer(i, oi)} />`
+                       st=${answers[i]} failed=${failed} onPick=${(oi) => answer(i, oi)} />`
               : null
           )}
+          ${failed
+            ? html`<div class="q" style="border-color:#e5abab;background:var(--bad-soft)">
+                <div class="q-num" style="color:var(--bad)">Défi raté</div>
+                <p style="margin:.3rem 0 .7rem;color:#7d1f1f">
+                  Mauvaise réponse. Ce défi est raté en l'état. Vous pouvez reprendre le quiz
+                  depuis la première question, votre photo et vos réponses écrites sont conservées.
+                </p>
+                <button type="button" class="btn block" onClick=${restartQuiz}>
+                  Reprendre le quiz depuis le début
+                </button>
+              </div>`
+            : null}
           ${quizDone
             ? html`<div class="q good">
-                <div class="q-num">Quiz terminé</div>
+                <div class="q-num">
+                  Quiz réussi${restarts > 0 ? ` après ${restarts} ${restarts === 1 ? "reprise" : "reprises"}` : " du premier coup"}
+                </div>
                 <p style="margin:.3rem 0 0">${c.savoir}</p>
               </div>`
             : null}
@@ -290,7 +330,7 @@ function Form({ c, go }) {
   </form>`;
 }
 
-function Question({ q, i, total, st, onPick }) {
+function Question({ q, i, total, st, failed, onPick }) {
   const letters = ["A", "B", "C", "D", "E"];
   return html`<div class=${"q" + (st.solved ? " good" : "")}>
     <div class="q-num">Question ${i + 1} sur ${total}</div>
@@ -301,7 +341,7 @@ function Question({ q, i, total, st, onPick }) {
         const isBad = st.wrong.includes(oi);
         const cls = "opt" + (isGood ? " picked-good" : isBad ? " picked-bad" : "");
         return html`<button type="button" key=${oi} class=${cls}
-          disabled=${st.solved || isBad} onClick=${() => onPick(oi)}>
+          disabled=${failed || st.solved || isBad} onClick=${() => onPick(oi)}>
           <span class="mk">${isGood ? "✓" : isBad ? "✕" : letters[oi]}</span>
           <span class="grow">${opt}</span>
         </button>`;
@@ -309,14 +349,12 @@ function Question({ q, i, total, st, onPick }) {
     </div>
     ${st.solved ? html`<div class="q-why">${q.why}</div>` : null}
     ${!st.solved && st.wrong.length
-      ? html`<div class="q-retry">
-          Pas tout à fait. Réessayez, cela ne vous coûte aucun point.
-        </div>`
+      ? html`<div class="q-retry">Ce n'était pas la bonne réponse.</div>`
       : null}
   </div>`;
 }
 
-function Done({ c, result, go, memberCount }) {
+function Done({ c, result, go, memberCount, restarts }) {
   const sent = result.sent;
   const data = result.result || {};
   const gauge = Number(data.gauge_points || 0);
@@ -330,6 +368,7 @@ function Done({ c, result, go, memberCount }) {
       ${sent
         ? html`<p class="muted">
             ${c.points} points pour ${memberCount === 1 ? "vous" : `chacune des ${memberCount} personnes du groupe`}.
+            ${restarts === 0 ? " Quiz réussi sans la moindre erreur." : ""}
           </p>`
         : html`<p class="muted">
             Pas de réseau pour le moment. Votre soumission est en file d'attente et partira toute

@@ -107,6 +107,30 @@ for s in synergies:
     if not s.get("story"):
         err(f"{tag} : récit de déblocage manquant")
 
+# --- position de la bonne reponse ------------------------------------------
+# Sans ce controle, la bonne reponse peut se retrouver toujours au meme endroit
+# et tous les quiz deviennent gagnables en cliquant la meme lettre.
+positions = Counter()
+for c in challenges:
+    quiz = c.get("quiz") or []
+    if not quiz:
+        continue
+    places = [q["answer"] for q in quiz]
+    for p in places:
+        positions[p] += 1
+    if len(quiz) >= 2 and len(set(places)) == 1:
+        err(f"{c['id']} : toutes les bonnes réponses sont en position {'ABCD'[places[0]]}")
+
+if positions:
+    total_q = sum(positions.values())
+    for p in range(4):
+        part = 100 * positions[p] / total_q
+        if not 15 <= part <= 35:
+            err(
+                f"Position {'ABCD'[p]} : {round(part)} pourcent des bonnes réponses, "
+                f"déséquilibre trop marqué. Relancer tools/shuffle_quiz.py"
+            )
+
 # --- densite par pilier et par style ---------------------------------------
 grid = defaultdict(Counter)
 for c in challenges:
@@ -132,6 +156,10 @@ for c in challenges:
     by_pillar[c["pillar"]] += c["points"]
 print("Points par pilier en un passage : " + ", ".join(f"{p['short']} {by_pillar[p['id']]}" for p in pillars))
 print(f"Total catalogue : {total} points")
+if positions:
+    tq = sum(positions.values())
+    print("Position de la bonne réponse : " + ", ".join(
+        f"{'ABCD'[p]} {round(100 * positions[p] / tq)} pourcent" for p in range(4)))
 
 for w in warnings:
     print(f"  avertissement : {w}")

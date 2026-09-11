@@ -129,6 +129,32 @@ def score(st, pid):
     return None
 
 
+# Les profils de test portent tous ce prenom, ce qui rend le nettoyage sur.
+PREFIXE_TEST = "zztest"
+
+
+def joueurs_reels():
+    _, d = rpc("game_state", {})
+    return [
+        s["first_name"] + " " + s["last_name"]
+        for s in (d.get("scores") or [])
+        if s["first_name"].strip().lower() != PREFIXE_TEST
+    ]
+
+
+reels = joueurs_reels()
+if reels and "--force" not in sys.argv:
+    print("\nDes joueurs réels sont enregistrés :")
+    for r in reels:
+        print(f"  {r}")
+    print(
+        "\nCe test crée de vraies soumissions le temps de son exécution, ce qui\n"
+        "décalerait momentanément le rendement dégressif pour eux. Il nettoie\n"
+        "uniquement ses propres données et ne touche jamais les leurs.\n"
+        "Relancez avec --force si vous voulez quand même le faire tourner."
+    )
+    sys.exit(2)
+
 print("\n=== 1. Profils ===")
 people = {}
 for first, last in (("Zztest", "Alpha"), ("Zztest", "Beta"), ("Zztest", "Gamma")):
@@ -238,6 +264,7 @@ check("un chemin de photo malveillant est refusé", st >= 400, str(d))
 
 print("\n=== 6. Synergie cachée ===")
 # Alpha a déjà fait ou-va-leau (déclencheur A de la mémoire de la glace).
+eau_avant_syn = gauge(state(), "eau")["points"]
 cid = str(uuid.uuid4())
 st, d = rpc(
     "submit_challenge",
@@ -268,8 +295,21 @@ check("Alpha reçoit le bonus personnel de 10 points", sA["score_synergies"] == 
 st_now = state()
 check(
     "les deux jauges concernées reçoivent chacune 5 points bonus",
-    gauge(st_now, "eau")["points_synergies"] >= 5 and gauge(st_now, "montagne")["points_synergies"] >= 5,
+    gauge(st_now, "eau")["points_synergies"] == 5 and gauge(st_now, "montagne")["points_synergies"] == 5,
     f"eau={gauge(st_now, 'eau')['points_synergies']} montagne={gauge(st_now, 'montagne')['points_synergies']}",
+)
+# Le defi glacier appartient au pilier Montagne, la jauge Eau ne peut donc
+# bouger que du bonus de synergie. Deux personnes l'ont debloquee ensemble,
+# et pourtant la jauge ne doit recevoir que 5 points, une seule fois.
+check(
+    "deux personnes débloquent la même synergie mais la jauge ne reçoit 5 points qu'une fois",
+    gauge(state(), "eau")["points"] - eau_avant_syn == 5,
+    f"la jauge Eau est passée de {eau_avant_syn} à {gauge(state(), 'eau')['points']}, écart attendu 5",
+)
+check(
+    "chacune des deux personnes garde bien ses 10 points personnels",
+    score(state(), A)["score_synergies"] == 10 and score(state(), G)["score_synergies"] == 10,
+    f"Alpha={score(state(), A)['score_synergies']} Gamma={score(state(), G)['score_synergies']}",
 )
 check(
     "la synergie n'est pas attribuée à Beta, qui n'a pas fait le second défi",
@@ -296,8 +336,8 @@ check(
     str(score(st_now, A)),
 )
 check(
-    "le bonus de jauge disparaît pour les deux personnes concernées, soit 10 points",
-    gauge(st_now, "eau")["points"] == eau_before - 10,
+    "le bonus de jauge de la synergie disparaît, soit 5 points",
+    gauge(st_now, "eau")["points"] == eau_before - 5,
     f"avant {eau_before}, après {gauge(st_now, 'eau')['points']}",
 )
 
@@ -347,7 +387,27 @@ check("la photo a bien disparu du stockage", st >= 400, f"code {st}")
 ok, rows = _a.run("select count(*) as n from storage.objects where name = " + repr(name).replace('"', "'") + ";")
 check("plus aucune ligne pour cette photo dans le stockage", ok and rows[0]["n"] == 0, str(rows))
 
-print("\n=== 9. Cohérence des vues ===")
+print("\n=== 9. Reprises de quiz ===")
+cid = str(uuid.uuid4())
+st, d = rpc(
+    "submit_challenge",
+    {
+        "p_client_id": cid,
+        "p_challenge_id": "les-mots-de-la-vallee",
+        "p_submitter": B,
+        "p_quiz_attempts": 7,
+        "p_quiz_restarts": 2,
+    },
+)
+check("soumission avec reprises de quiz acceptée", st == 200, str(d))
+st, feed = call(f"/rest/v1/v_feed?select=quiz_attempts,quiz_restarts&id=eq.{d.get('submission_id')}")
+check(
+    "le nombre de reprises est enregistré et visible par l'organisateur",
+    st == 200 and feed and feed[0]["quiz_restarts"] == 2 and feed[0]["quiz_attempts"] == 7,
+    str(feed),
+)
+
+print("\n=== 10. Cohérence des vues ===")
 st_now = state()
 check("les cinq jauges sont présentes", len(st_now["gauges"]) == 5, str(len(st_now["gauges"])))
 check(
@@ -368,21 +428,32 @@ check("un défi inconnu est refusé", st >= 400, str(d))
 
 # ---------------------------------------------------------------- nettoyage
 if "--keep" not in sys.argv:
-    print("\n=== 10. Nettoyage ===")
+    print("\n=== 11. Nettoyage ===")
     sys.path.insert(0, str(ROOT / "tools"))
     import apply_sql
 
     ok, res = apply_sql.run(
-        "delete from public.participants where lower(first_name) = 'zztest';"
+        "delete from public.participants where lower(btrim(first_name)) = 'zztest';"
     )
     check("profils et soumissions de test supprimés", ok, str(res))
     st_now = state()
-    check(
-        "les jauges sont revenues à zéro",
-        all(g["points"] == 0 for g in st_now["gauges"]),
-        str([(g["pillar"], g["points"]) for g in st_now["gauges"]]),
+    restants = [
+        s["first_name"] + " " + s["last_name"]
+        for s in st_now["scores"]
+        if s["first_name"].strip().lower() == PREFIXE_TEST
+    ]
+    check("plus aucun profil de test dans la base", not restants, str(restants))
+    ok, rows = apply_sql.run(
+        "select count(*) as n from public.submissions s "
+        "join public.participants p on p.id = s.submitter_id "
+        "where lower(btrim(p.first_name)) = 'zztest';"
     )
-    check("plus aucun participant de test", len(st_now["scores"]) == 0, str(len(st_now["scores"])))
+    check("plus aucune soumission de test", ok and rows[0]["n"] == 0, str(rows))
+    check(
+        "les données des joueurs réels sont intactes",
+        sorted(joueurs_reels()) == sorted(reels),
+        f"avant {sorted(reels)}, après {sorted(joueurs_reels())}",
+    )
 
 print(f"\n{'=' * 52}")
 print(f"{len(PASS)} tests réussis, {len(FAIL)} échec(s)")

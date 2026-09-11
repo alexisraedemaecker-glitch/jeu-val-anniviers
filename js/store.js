@@ -208,7 +208,7 @@ function uuid() {
  * envoyee. Si l'envoi echoue faute de reseau, elle reste en attente et repart
  * automatiquement plus tard. Le retour indique si c'est parti tout de suite.
  */
-export async function submit({ challengeId, memberIds, file, note, quizAttempts }) {
+export async function submit({ challengeId, memberIds, file, note, quizAttempts, quizRestarts }) {
   if (!state.me) throw new Error("Choisissez d'abord votre profil");
   const challenge = CHALLENGE_BY_ID[challengeId];
   if (!challenge) throw new Error("Défi inconnu");
@@ -230,6 +230,7 @@ export async function submit({ challengeId, memberIds, file, note, quizAttempts 
     member_ids: Array.from(new Set([...(memberIds || []), state.me.id])),
     note: (note || "").trim() || null,
     quiz_attempts: quizAttempts || 0,
+    quiz_restarts: quizRestarts || 0,
     photo,
     photo_name: photoName,
     photo_type: photo ? photo.type : null,
@@ -289,7 +290,8 @@ async function flushOne(item) {
       p_member_ids: item.member_ids,
       p_photo_path: path,
       p_note: item.note,
-      p_quiz_attempts: item.quiz_attempts
+      p_quiz_attempts: item.quiz_attempts,
+      p_quiz_restarts: item.quiz_restarts || 0
     });
     if (error) throw error;
 

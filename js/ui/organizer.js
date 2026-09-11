@@ -168,6 +168,11 @@ function Panel({ go }) {
               <span class="chip plain">passage ${f.repeat_index}</span>
               <span class="chip plain">jauge +${Number(f.gauge_points || 0)}</span>
               ${f.quiz_attempts > 0 ? html`<span class="chip plain">${f.quiz_attempts} réponses données</span>` : null}
+              ${f.quiz_restarts > 0
+                ? html`<span class="chip warn">${f.quiz_restarts} ${f.quiz_restarts === 1 ? "reprise" : "reprises"} du quiz</span>`
+                : f.quiz_attempts > 0
+                  ? html`<span class="chip ok">sans faute</span>`
+                  : null}
               ${!f.photo_path ? html`<span class="chip warn">sans photo</span>` : null}
             </div>
             <div class="small">

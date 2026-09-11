@@ -55,7 +55,7 @@ to anon, authenticated;
 revoke all on function public.recompute_synergies() from anon, authenticated;
 grant execute on function public.ensure_participant(text, text, text) to anon, authenticated;
 grant execute on function public.set_vibe(uuid, text)                 to anon, authenticated;
-grant execute on function public.submit_challenge(text, text, uuid, uuid[], text, text, int) to anon, authenticated;
+grant execute on function public.submit_challenge(text, text, uuid, uuid[], text, text, int, int) to anon, authenticated;
 grant execute on function public.check_organizer(text)                to anon, authenticated;
 grant execute on function public.delete_submission(uuid, text)        to anon, authenticated;
 grant execute on function public.game_state()                         to anon, authenticated;

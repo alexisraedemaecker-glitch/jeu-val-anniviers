@@ -61,8 +61,17 @@ create table if not exists public.submissions (
   photo_path    text,
   note          text,
   quiz_attempts int not null default 0,
+  -- Nombre de fois que le quiz a du etre repris depuis le debut apres une
+  -- mauvaise reponse. Zero signifie un sans faute du premier coup.
+  quiz_restarts int not null default 0,
   created_at    timestamptz not null default now()
 );
+-- create table if not exists ne touche pas une table deja creee. Les colonnes
+-- ajoutees apres coup ont donc besoin de leur propre instruction, pour que ce
+-- fichier reste rejouable aussi bien sur une base neuve que sur une base
+-- existante.
+alter table public.submissions add column if not exists quiz_restarts int not null default 0;
+
 create index if not exists submissions_challenge_idx on public.submissions (challenge_id, created_at, id);
 create index if not exists submissions_created_idx   on public.submissions (created_at desc);
 
@@ -89,6 +98,19 @@ create table if not exists public.app_settings (
 
 -- ------------------------------------------------------------------ vues
 
+-- create or replace view ne sait qu'ajouter des colonnes a la fin. Des qu'une
+-- colonne est inseree au milieu, il faut recreer la vue. Les vues ne stockent
+-- rien, tout est recalcule a la lecture, donc les supprimer ne coute rien et
+-- garde ce fichier rejouable apres n'importe quelle evolution.
+-- Les droits sont redonnes juste apres, dans 03_security.sql.
+drop view if exists public.v_feed;
+drop view if exists public.v_challenge_stats;
+drop view if exists public.v_collective_status;
+drop view if exists public.v_personal_scores;
+drop view if exists public.v_pillar_gauges;
+drop view if exists public.v_synergy_gauge;
+drop view if exists public.v_submission_gauge;
+
 -- Rendement degressif : pour un meme defi, la 1re validation de la journee
 -- vaut 100 pourcent des points a la jauge, la 2e 50, la 3e 25, etc.
 -- Calcule a la lecture, donc une suppression par l'organisateur retasse
@@ -106,13 +128,21 @@ select s.id            as submission_id,
 from public.submissions s
 join public.challenges c on c.id = s.challenge_id;
 
--- Bonus de jauge apporte par les synergies : 5 points sur chacun des deux piliers.
+-- Bonus de jauge apporte par les synergies : 5 points sur chacun des deux
+-- piliers concernes, UNE SEULE FOIS par synergie, a sa premiere decouverte.
+-- Les personnes suivantes qui la debloquent recoivent bien leurs 10 points
+-- personnels, mais n'ajoutent plus rien aux jauges collectives. Sans cela, une
+-- synergie trouvee par vingt personnes aurait verse cent points dans chaque
+-- jauge et fausse tout le calibrage.
 create or replace view public.v_synergy_gauge as
+with decouvertes as (
+  select distinct synergy_id from public.synergy_unlocks
+)
 select sy.pillar_a as pillar, sy.gauge_bonus::numeric as gauge_points
-  from public.synergy_unlocks u join public.synergies sy on sy.id = u.synergy_id
+  from decouvertes d join public.synergies sy on sy.id = d.synergy_id
 union all
 select sy.pillar_b as pillar, sy.gauge_bonus::numeric as gauge_points
-  from public.synergy_unlocks u join public.synergies sy on sy.id = u.synergy_id;
+  from decouvertes d join public.synergies sy on sy.id = d.synergy_id;
 
 -- Les cinq jauges collectives, plafonnees a leur maximum.
 create or replace view public.v_pillar_gauges as
@@ -199,6 +229,7 @@ select s.id,
        s.photo_path,
        s.note,
        s.quiz_attempts,
+       s.quiz_restarts,
        s.created_at,
        s.submitter_id,
        (sp.first_name || ' ' || sp.last_name) as submitter_name,
