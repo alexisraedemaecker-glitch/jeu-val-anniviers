@@ -1,0 +1,139 @@
+// Mise en cache de l'enveloppe de l'application.
+//
+// Strategie volontairement prudente pour un evenement d'une journee :
+//   - fichiers de l'application : le reseau d'abord, avec un delai court, puis
+//     le cache. On est donc toujours a jour quand il y a du reseau, et l'app
+//     s'ouvre quand meme quand il n'y en a pas.
+//   - photos du stockage Supabase : le cache d'abord, elles ne changent jamais.
+//   - appels a la base : jamais de cache, les scores doivent etre justes.
+
+const CACHE = "anniviers2056-v1";
+const NET_TIMEOUT = 4000;
+
+const SHELL = [
+  "./",
+  "index.html",
+  "app.css",
+  "manifest.webmanifest",
+  "js/app.js",
+  "js/config.js",
+  "js/store.js",
+  "js/queue.js",
+  "js/image.js",
+  "js/data/pillars.js",
+  "js/data/challenges.js",
+  "js/data/synergies.js",
+  "js/ui/bits.js",
+  "js/ui/onboarding.js",
+  "js/ui/challenges.js",
+  "js/ui/challenge.js",
+  "js/ui/progress.js",
+  "js/ui/ranking.js",
+  "js/ui/gallery.js",
+  "js/ui/me.js",
+  "js/ui/organizer.js",
+  "js/vendor/htm-preact.js",
+  "js/vendor/supabase.js",
+  "assets/icon-192.png",
+  "assets/icon-512.png"
+];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((cache) =>
+        // addAll echoue en entier si un seul fichier manque : on y va un par un.
+        Promise.all(SHELL.map((url) => cache.add(new Request(url, { cache: "reload" })).catch(() => null)))
+      )
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
+function fromNetworkFirst(request) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (resp) => {
+      if (!settled) {
+        settled = true;
+        resolve(resp);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      caches.match(request).then((hit) => {
+        if (hit) done(hit);
+      });
+    }, NET_TIMEOUT);
+
+    fetch(request)
+      .then((resp) => {
+        clearTimeout(timer);
+        if (resp && resp.ok && resp.type !== "opaque") {
+          const copy = resp.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, copy).catch(() => null));
+        }
+        done(resp);
+      })
+      .catch(() => {
+        clearTimeout(timer);
+        caches.match(request).then((hit) => {
+          done(
+            hit ||
+              new Response("Hors ligne et cette page n'est pas en cache.", {
+                status: 503,
+                headers: { "Content-Type": "text/plain; charset=utf-8" }
+              })
+          );
+        });
+      });
+  });
+}
+
+function fromCacheFirst(request) {
+  return caches.match(request).then((hit) => {
+    if (hit) return hit;
+    return fetch(request).then((resp) => {
+      if (resp && resp.ok) {
+        const copy = resp.clone();
+        caches.open(CACHE).then((cache) => cache.put(request, copy).catch(() => null));
+      }
+      return resp;
+    });
+  });
+}
+
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  let url;
+  try {
+    url = new URL(req.url);
+  } catch (err) {
+    return;
+  }
+
+  // Photos du stockage Supabase : immuables, donc le cache d'abord.
+  if (url.pathname.includes("/storage/v1/object/public/")) {
+    event.respondWith(fromCacheFirst(req));
+    return;
+  }
+
+  // Tout le reste de Supabase (base, temps reel, depots) passe directement.
+  if (url.hostname.endsWith(".supabase.co")) return;
+
+  // Fichiers de l'application.
+  if (url.origin === self.location.origin) {
+    event.respondWith(fromNetworkFirst(req));
+  }
+});

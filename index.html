@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Le Val d'Anniviers en 2056</title>
+<meta name="description" content="Jeu collectif d'une journée dans le Val d'Anniviers. Cinq piliers à faire remonter, trente neuf défis, et une vallée à sauver.">
+<meta name="theme-color" content="#1d3b57">
+<meta name="color-scheme" content="light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Anniviers 2056">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="app">
+  <div class="boot">
+    <div class="boot-icon">⛰</div>
+    <p>Chargement de la vallée</p>
+    <noscript><p class="boot-warn">Cette application a besoin de JavaScript activé.</p></noscript>
+  </div>
+</div>
+
+<script src="js/vendor/htm-preact.js"></script>
+<script src="js/vendor/supabase.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

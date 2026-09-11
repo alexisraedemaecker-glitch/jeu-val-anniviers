@@ -1,0 +1,25 @@
+# Secrets : ne jamais committer
+.env
+.env.local
+.env.*.local
+*.secret
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editeurs
+.vscode/
+.idea/
+
+# Temporaire
+tmp/
+*.log
+
+# Fichiers SQL locaux contenant des secrets
+supabase/*.local.sql
+
+# Python
+__pycache__/
+*.pyc
