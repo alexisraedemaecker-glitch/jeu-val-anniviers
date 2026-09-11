@@ -272,20 +272,29 @@ begin
   end if;
 
   delete from public.submissions where id = p_submission;
-
-  if v_path is not null then
-    -- Une photo orpheline est moins grave qu'une suppression qui echoue :
-    -- si le stockage refuse, on garde quand meme la suppression des points.
-    begin
-      delete from storage.objects where bucket_id = 'preuves' and name = v_path;
-    exception when others then
-      raise warning 'Photo non supprimée du stockage : %', v_path;
-    end;
-  end if;
-
   perform public.recompute_synergies();
-  return jsonb_build_object('deleted', true);
+
+  -- Supabase interdit la suppression directe dans les tables de stockage, il
+  -- faut passer par son API. On renvoie donc le chemin : la photo est desormais
+  -- orpheline, et la policy "preuves menage" autorise a la retirer.
+  return jsonb_build_object('deleted', true, 'photo_path', v_path);
 end;
+$$;
+
+-- Vrai uniquement si plus aucune soumission ne reference cette photo.
+-- Sert de garde a la policy de suppression du stockage : on ne peut retirer
+-- qu'une photo devenue orpheline, donc uniquement apres qu'un organisateur a
+-- supprime la soumission correspondante avec son code.
+create or replace function public.photo_est_orpheline(p_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select not exists (
+    select 1 from public.submissions where photo_path = p_name
+  );
 $$;
 
 -- Etat complet du jeu en un seul appel reseau. Utile en montagne : une requete

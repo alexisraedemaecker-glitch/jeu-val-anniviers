@@ -460,11 +460,24 @@ export function forgetOrganizer() {
 }
 
 export async function deleteSubmission(id) {
-  const { error } = await sb.rpc("delete_submission", {
+  const { data, error } = await sb.rpc("delete_submission", {
     p_submission: id,
     p_pin: state.organizerPin
   });
   if (error) throw new Error(friendly(error));
+
+  // La soumission est partie, la photo est donc orpheline. Supabase interdit de
+  // la supprimer en SQL, on passe par son API de stockage. Si cela echoue, la
+  // photo reste dans le bucket sans plus apparaitre nulle part : sans gravite.
+  const path = data && data.photo_path;
+  if (path) {
+    try {
+      await sb.storage.from(PHOTO_BUCKET).remove([path]);
+    } catch (err) {
+      console.warn("Photo non retirée du stockage", err);
+    }
+  }
+
   await refresh({ feed: true });
   setState({ toast: { kind: "success", text: "Soumission supprimée" } });
 }

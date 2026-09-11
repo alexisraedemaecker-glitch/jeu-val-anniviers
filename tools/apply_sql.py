@@ -10,12 +10,27 @@ Usage :
     python3 tools/apply_sql.py --sql "select 1"   # execute une requete ponctuelle
 """
 import json
+import ssl
 import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+def ssl_context():
+    """Certains Python installes depuis python.org n'ont pas de magasin de
+    certificats configure. On se rabat sur celui fourni par certifi."""
+    try:
+        import certifi
+
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
+
+
+CTX = ssl_context()
 
 
 def env():
@@ -59,7 +74,7 @@ def run(sql):
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=180, context=CTX) as resp:
             raw = resp.read().decode("utf-8")
             return True, (json.loads(raw) if raw.strip() else [])
     except urllib.error.HTTPError as e:

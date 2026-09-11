@@ -59,6 +59,7 @@ grant execute on function public.submit_challenge(text, text, uuid, uuid[], text
 grant execute on function public.check_organizer(text)                to anon, authenticated;
 grant execute on function public.delete_submission(uuid, text)        to anon, authenticated;
 grant execute on function public.game_state()                         to anon, authenticated;
+grant execute on function public.photo_est_orpheline(text)            to anon, authenticated;
 
 -- -------------------------------------------------------------- stockage
 
@@ -72,6 +73,7 @@ on conflict (id) do update
 
 drop policy if exists "preuves lecture"   on storage.objects;
 drop policy if exists "preuves depot"     on storage.objects;
+drop policy if exists "preuves menage"    on storage.objects;
 
 create policy "preuves lecture" on storage.objects
   for select to anon, authenticated
@@ -81,8 +83,16 @@ create policy "preuves depot" on storage.objects
   for insert to anon, authenticated
   with check (bucket_id = 'preuves');
 
--- Pas de policy update ni delete : une photo deposee ne peut pas etre
--- ecrasee ni supprimee depuis le navigateur. Seul delete_submission le fait.
+-- Supabase interdit la suppression directe en SQL dans storage.objects, il faut
+-- passer par son API depuis le navigateur. Pour que ce ne soit pas une porte
+-- ouverte, la policy n'autorise que les photos devenues orphelines, c'est a dire
+-- celles dont la soumission a deja ete supprimee par un organisateur muni du
+-- code. Une photo rattachee a une soumission vivante reste intouchable.
+create policy "preuves menage" on storage.objects
+  for delete to anon, authenticated
+  using (bucket_id = 'preuves' and public.photo_est_orpheline(name));
+
+-- Pas de policy update : une photo deposee ne peut jamais etre ecrasee.
 
 -- ------------------------------------------------------------- temps reel
 
