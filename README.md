@@ -89,6 +89,33 @@ compte à trois niveaux.
 L'enveloppe de l'application est mise en cache par un service worker, donc elle
 s'ouvre même sans réseau une fois qu'elle a été chargée une première fois.
 
+## Tests
+
+`tools/selftest.py` rejoue toute la logique de jeu contre la vraie base, en
+utilisant uniquement la clé dont dispose le navigateur. Il crée des profils de
+test, joue des défis, puis nettoie tout derrière lui.
+
+```bash
+python3 tools/selftest.py
+```
+
+Les 47 contrôles couvrent la création de profil et la déduplication des noms, le
+rendement dégressif sur trois passages, le score personnel non dégressif, le non
+cumul d'un même défi par une même personne, l'idempotence après coupure réseau,
+le dépôt et la lecture des photos, le refus d'un chemin de photo malveillant, le
+déclenchement d'une synergie pour tout le groupe du moment, le code
+organisateur, la suppression avec recalcul complet, et le retassage des passages
+suivants.
+
+## Une décision à connaître
+
+Supabase interdit la suppression directe en SQL dans `storage.objects`, via un
+déclencheur `protect_delete`. La suppression d'une photo passe donc par l'API de
+stockage, depuis le navigateur. Pour que ce ne soit pas une porte ouverte, la
+règle de sécurité n'autorise à supprimer qu'une photo devenue orpheline, c'est à
+dire dont la soumission a déjà été retirée par un organisateur muni du code. Une
+photo rattachée à une soumission vivante reste intouchable.
+
 ## Travailler sur le projet
 
 Aucune dépendance à installer. Pour un aperçu local :

@@ -23,3 +23,6 @@ supabase/*.local.sql
 # Python
 __pycache__/
 *.pyc
+
+# Mémo local contenant le code organisateur
+MEMO-JOUR-J.local.md
