@@ -116,6 +116,18 @@ règle de sécurité n'autorise à supprimer qu'une photo devenue orpheline, c'e
 dire dont la soumission a déjà été retirée par un organisateur muni du code. Une
 photo rattachée à une soumission vivante reste intouchable.
 
+## Remise à zéro avant l'événement
+
+Après les essais, pour repartir d'une page blanche sans toucher au catalogue
+ni au code organisateur :
+
+```bash
+python3 tools/reset_jour_j.py
+```
+
+Sans argument, il se contente d'afficher ce qui serait effacé. Ajouter
+`--confirmer` pour effacer réellement.
+
 ## Travailler sur le projet
 
 Aucune dépendance à installer. Pour un aperçu local :
