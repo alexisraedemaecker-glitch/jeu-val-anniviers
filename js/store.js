@@ -557,6 +557,10 @@ export async function boot() {
   checkSilentSynergies();
   setState({ booted: true });
 
+  // Quelqu'un qui rouvre l'application en retrouvant du reseau ne doit pas
+  // attendre le prochain cycle : on vide la file tout de suite, en tache de fond.
+  flushQueue();
+
   setInterval(() => {
     if (state.online) flushQueue();
   }, SYNC_INTERVAL_MS);
