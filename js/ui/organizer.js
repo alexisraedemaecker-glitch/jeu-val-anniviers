@@ -12,7 +12,7 @@ import {
   friendly
 } from "../store.js";
 import { PILLARS, PILLAR_BY_ID } from "../data/pillars.js";
-import { CHALLENGES } from "../data/challenges.js";
+import { CHALLENGES, CHALLENGE_BY_ID } from "../data/challenges.js";
 import { Banner, Spinner, Empty, dateTimeShort, pillarColor } from "./bits.js";
 
 export function Organizer({ go }) {
@@ -155,6 +155,16 @@ function Panel({ go }) {
       : rows.map((f) => {
           const p = PILLAR_BY_ID[f.pillar];
           const url = photoUrl(f.photo_path);
+          // Sans faute veut dire autant de réponses que de questions et aucune
+          // reprise. Compter les seules reprises suffirait à tort pour les
+          // soumissions faites avant que l'erreur devienne éliminatoire.
+          const def = CHALLENGE_BY_ID[f.challenge_id];
+          const nbQuestions = ((def && def.quiz) || []).length;
+          const sansFaute =
+            nbQuestions > 0 &&
+            f.quiz_attempts === nbQuestions &&
+            (f.quiz_restarts || 0) === 0;
+          const erreurs = Math.max(0, (f.quiz_attempts || 0) - nbQuestions);
           return html`<div key=${f.id} class="card" style=${{ borderLeft: "5px solid " + pillarColor(f.pillar) }}>
             <div class="spread" style="align-items:flex-start">
               <div class="grow">
@@ -170,9 +180,11 @@ function Panel({ go }) {
               ${f.quiz_attempts > 0 ? html`<span class="chip plain">${f.quiz_attempts} réponses données</span>` : null}
               ${f.quiz_restarts > 0
                 ? html`<span class="chip warn">${f.quiz_restarts} ${f.quiz_restarts === 1 ? "reprise" : "reprises"} du quiz</span>`
-                : f.quiz_attempts > 0
+                : sansFaute
                   ? html`<span class="chip ok">sans faute</span>`
-                  : null}
+                  : erreurs > 0
+                    ? html`<span class="chip warn">${erreurs} ${erreurs === 1 ? "erreur" : "erreurs"}</span>`
+                    : null}
               ${!f.photo_path ? html`<span class="chip warn">sans photo</span>` : null}
             </div>
             <div class="small">
