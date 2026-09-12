@@ -34,8 +34,13 @@ supabase/
   02_functions.sql       fonctions serveur
   03_security.sql        RLS, droits, stockage, temps réel
   04_seed.sql            catalogue, généré depuis js/data
+assets/
+  randos/                profils, tracés et GPX, générés depuis Randos/
+  photos/                photos fournies
+Randos/                  vos fichiers GPX d'origine, non publiés
 tools/
   check.py               contrôles de cohérence du catalogue
+  gpx.py                 lit les GPX, dessine profils et tracés
   gen_seed.py            régénère 04_seed.sql depuis js/data
   gen_icons.py           régénère les icônes
   shuffle_quiz.py        répartit la position des bonnes réponses
@@ -43,6 +48,31 @@ tools/
   selftest.py            tests de bout en bout contre la vraie base
   reset_jour_j.py        remise à zéro avant l'événement
 ```
+
+## L'onglet Activités
+
+Accessible sans s'identifier, puisqu'il ne dépend d'aucune donnée de jeu.
+Quatre catégories, les mêmes que celles des défis.
+
+La partie sportive est entièrement dérivée des fichiers GPX du dossier
+`Randos`. `tools/gpx.py` calcule distance, dénivelé et durée, puis dessine le
+profil altimétrique et le tracé en SVG à partir des seules données du fichier.
+Le dénivelé est calculé sur des altitudes lissées avec un seuil, sinon le bruit
+GPS ajoute des centaines de mètres imaginaires. La durée suit la méthode des
+panneaux suisses : 4 km/h à plat, 300 m/h en montée, 500 m/h en descente, le
+plus grand des deux verticaux plus la moitié du plus petit.
+
+Après toute modification du dossier `Randos` :
+
+```bash
+python3 tools/gpx.py --build
+```
+
+Cela réécrit `assets/randos/` et `js/data/randos-stats.js`. Les textes rédigés à
+la main vivent séparément dans `js/data/activites.js` et ne sont jamais touchés.
+
+Les horaires de bus sont lus en direct dans l'horaire officiel suisse, via
+transport.opendata.ch, avec repli sur un lien vers les CFF si le réseau manque.
 
 ## Administration
 
