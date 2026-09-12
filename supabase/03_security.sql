@@ -15,13 +15,15 @@ alter table public.participants       enable row level security;
 alter table public.submissions        enable row level security;
 alter table public.submission_members enable row level security;
 alter table public.synergy_unlocks    enable row level security;
+alter table public.quiz_lockouts      enable row level security;
 alter table public.app_settings       enable row level security;
 
 do $$
 declare t text;
 begin
   foreach t in array array['pillars','challenges','synergies','participants',
-                           'submissions','submission_members','synergy_unlocks']
+                           'submissions','submission_members','synergy_unlocks',
+                           'quiz_lockouts']
   loop
     execute format('drop policy if exists %I on public.%I', 'lecture_publique_' || t, t);
     execute format(
@@ -42,13 +44,14 @@ grant usage on schema public to anon, authenticated;
 
 grant select on
   public.pillars, public.challenges, public.synergies, public.participants,
-  public.submissions, public.submission_members, public.synergy_unlocks
+  public.submissions, public.submission_members, public.synergy_unlocks,
+  public.quiz_lockouts
 to anon, authenticated;
 
 grant select on
   public.v_submission_gauge, public.v_synergy_gauge, public.v_pillar_gauges,
   public.v_personal_scores, public.v_collective_status, public.v_challenge_stats,
-  public.v_feed
+  public.v_feed, public.v_lockouts
 to anon, authenticated;
 
 -- Fonctions appelables depuis l'application.
@@ -60,6 +63,17 @@ grant execute on function public.check_organizer(text)                to anon, a
 grant execute on function public.delete_submission(uuid, text)        to anon, authenticated;
 grant execute on function public.game_state()                         to anon, authenticated;
 grant execute on function public.photo_est_orpheline(text)            to anon, authenticated;
+grant execute on function public.lockout_minutes()                    to anon, authenticated;
+grant execute on function public.lockout_until(uuid, text)            to anon, authenticated;
+grant execute on function public.report_quiz_failure(text, text, uuid, uuid[]) to anon, authenticated;
+
+-- Administration. Chacune verifie le code organisateur avant d'agir, le droit
+-- d'appel ne suffit donc pas a en faire quoi que ce soit.
+grant execute on function public.admin_clear_lockouts(text, uuid, text)        to anon, authenticated;
+grant execute on function public.admin_rename_participant(text, uuid, text, text) to anon, authenticated;
+grant execute on function public.admin_delete_participant(text, uuid)          to anon, authenticated;
+grant execute on function public.admin_reset_game(text, text)                  to anon, authenticated;
+grant execute on function public.admin_set_lockout_minutes(text, int)          to anon, authenticated;
 
 -- -------------------------------------------------------------- stockage
 
@@ -107,7 +121,8 @@ $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['submissions','submission_members','synergy_unlocks','participants']
+  foreach t in array array['submissions','submission_members','synergy_unlocks',
+                           'participants','quiz_lockouts']
   loop
     if not exists (
       select 1 from pg_publication_tables
@@ -125,3 +140,4 @@ $$;
 alter table public.submissions        replica identity full;
 alter table public.submission_members replica identity full;
 alter table public.synergy_unlocks    replica identity full;
+alter table public.quiz_lockouts      replica identity full;

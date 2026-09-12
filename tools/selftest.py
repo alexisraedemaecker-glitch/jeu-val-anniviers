@@ -387,7 +387,92 @@ check("la photo a bien disparu du stockage", st >= 400, f"code {st}")
 ok, rows = _a.run("select count(*) as n from storage.objects where name = " + repr(name).replace('"', "'") + ";")
 check("plus aucune ligne pour cette photo dans le stockage", ok and rows[0]["n"] == 0, str(rows))
 
-print("\n=== 9. Reprises de quiz ===")
+print("\n=== 9. Attente après un quiz raté ===")
+cid = str(uuid.uuid4())
+st, d = rpc(
+    "report_quiz_failure",
+    {
+        "p_client_id": cid,
+        "p_challenge_id": "le-pourquoi-des-bisses",
+        "p_participant": A,
+        "p_member_ids": [B],
+    },
+)
+check("un quiz raté est enregistré", st == 200 and d.get("until"), str(d))
+check("la durée par défaut est de 30 minutes", d.get("minutes") == 30, str(d))
+
+st, d2 = rpc("report_quiz_failure", {"p_client_id": cid, "p_challenge_id": "le-pourquoi-des-bisses",
+                                     "p_participant": A, "p_member_ids": [B]})
+check("le renvoi du même signalement ne prolonge pas l'attente", d2.get("duplicate") is True, str(d2))
+
+st, d = rpc("lockout_until", {"p_participant": A, "p_challenge": "le-pourquoi-des-bisses"})
+check("l'auteur du ratage est en attente", st == 200 and d, str(d))
+st, d = rpc("lockout_until", {"p_participant": B, "p_challenge": "le-pourquoi-des-bisses"})
+check("toute l'équipe présente est en attente, pas seulement l'auteur", st == 200 and d, str(d))
+st, d = rpc("lockout_until", {"p_participant": G, "p_challenge": "le-pourquoi-des-bisses"})
+check("une personne absente du groupe n'est pas pénalisée", st == 200 and d is None, str(d))
+st, d = rpc("lockout_until", {"p_participant": A, "p_challenge": "ou-va-leau"})
+check("l'attente ne concerne que ce défi là", st == 200 and d is None, str(d))
+
+st, d = rpc("submit_challenge", {"p_client_id": str(uuid.uuid4()),
+                                 "p_challenge_id": "le-pourquoi-des-bisses", "p_submitter": A})
+check("soumettre pendant l'attente est refusé par le serveur", st >= 400, str(d))
+
+# Un membre encore en attente ne doit pas profiter du defi joue par un autre.
+st, d = rpc("submit_challenge", {"p_client_id": str(uuid.uuid4()),
+                                 "p_challenge_id": "le-pourquoi-des-bisses",
+                                 "p_submitter": G, "p_member_ids": [A, B]})
+ok = st == 200 and len(d.get("members", [])) == 1 and len(d.get("excluded", [])) == 2
+check("un membre en attente est écarté des points, sans bloquer le groupe", ok, str(d))
+sub_bisses = d.get("submission_id")
+check(
+    "seule la personne libre reçoit les points",
+    score(state(), G)["defis_faits"] > 0 and "le-pourquoi-des-bisses" not in (state()["done"].get(A) or []),
+    f"A a fait {state()['done'].get(A)}",
+)
+
+st, d = rpc("admin_clear_lockouts", {"p_pin": "0000"})
+check("lever une attente sans le bon code est refusé", st >= 400, str(d))
+st, d = rpc("admin_clear_lockouts", {"p_pin": PIN, "p_participant": A,
+                                     "p_challenge": "le-pourquoi-des-bisses"})
+check("l'organisateur peut lever une attente", st == 200 and d.get("levees") == 1, str(d))
+st, d = rpc("lockout_until", {"p_participant": A, "p_challenge": "le-pourquoi-des-bisses"})
+check("l'attente levée libère bien la personne", st == 200 and d is None, str(d))
+st, d = rpc("lockout_until", {"p_participant": B, "p_challenge": "le-pourquoi-des-bisses"})
+check("lever une attente ne touche pas les autres", st == 200 and d is not None, str(d))
+rpc("admin_clear_lockouts", {"p_pin": PIN})
+rpc("delete_submission", {"p_submission": sub_bisses, "p_pin": PIN})
+
+print("\n=== 10. Administration ===")
+st, d = rpc("admin_rename_participant", {"p_pin": "0000", "p_id": G, "p_first": "Pirate", "p_last": "X"})
+check("renommer sans le bon code est refusé", st >= 400, str(d))
+st, d = rpc("admin_rename_participant", {"p_pin": PIN, "p_id": G, "p_first": "Zztest", "p_last": "Gamma2"})
+check("l'organisateur peut renommer un profil", st == 200 and d.get("last_name") == "Gamma2", str(d))
+st, d = rpc("admin_rename_participant", {"p_pin": PIN, "p_id": G, "p_first": "Zztest", "p_last": "Alpha"})
+check("renommer vers un nom déjà pris est refusé", st >= 400, str(d))
+rpc("admin_rename_participant", {"p_pin": PIN, "p_id": G, "p_first": "Zztest", "p_last": "Gamma"})
+
+st, d = rpc("admin_set_lockout_minutes", {"p_pin": "0000", "p_minutes": 5})
+check("changer la durée sans le bon code est refusé", st >= 400, str(d))
+st, d = rpc("admin_set_lockout_minutes", {"p_pin": PIN, "p_minutes": 5})
+check("l'organisateur peut changer la durée de l'attente", st == 200 and d == 5, str(d))
+st, d = rpc("game_state", {})
+check("la nouvelle durée est visible par l'application", d["settings"]["lockout_minutes"] == 5, str(d["settings"]))
+st, d = rpc("admin_set_lockout_minutes", {"p_pin": PIN, "p_minutes": 9999})
+check("une durée aberrante est refusée", st >= 400, str(d))
+rpc("admin_set_lockout_minutes", {"p_pin": PIN, "p_minutes": 30})
+
+st, d = rpc("admin_reset_game", {"p_pin": PIN, "p_confirmation": "oui"})
+check("la remise à zéro exige la phrase exacte de confirmation", st >= 400, str(d))
+st, d = rpc("admin_reset_game", {"p_pin": "0000", "p_confirmation": "REMISE A ZERO"})
+check("la remise à zéro exige aussi le bon code", st >= 400, str(d))
+
+avant_suppr = len(state()["scores"])
+st, d = rpc("admin_delete_participant", {"p_pin": PIN, "p_id": G})
+check("l'organisateur peut supprimer un profil", st == 200 and d.get("deleted"), str(d))
+check("le profil a bien disparu du classement", len(state()["scores"]) == avant_suppr - 1, str(len(state()["scores"])))
+
+print("\n=== 11. Reprises de quiz ===")
 cid = str(uuid.uuid4())
 st, d = rpc(
     "submit_challenge",
@@ -407,7 +492,7 @@ check(
     str(feed),
 )
 
-print("\n=== 10. Cohérence des vues ===")
+print("\n=== 12. Cohérence des vues ===")
 st_now = state()
 check("les cinq jauges sont présentes", len(st_now["gauges"]) == 5, str(len(st_now["gauges"])))
 check(
@@ -428,7 +513,7 @@ check("un défi inconnu est refusé", st >= 400, str(d))
 
 # ---------------------------------------------------------------- nettoyage
 if "--keep" not in sys.argv:
-    print("\n=== 11. Nettoyage ===")
+    print("\n=== 13. Nettoyage ===")
     sys.path.insert(0, str(ROOT / "tools"))
     import apply_sql
 

@@ -99,7 +99,7 @@ export function Me({ go }) {
     <div class="card">
       <h2>Réglages</h2>
       <button class="btn ghost block" onClick=${() => go("#/organisateur")}>
-        Vue organisateur
+        Administration
       </button>
       <div style="height:.5rem"></div>
       <button class="btn quiet block" onClick=${() => {

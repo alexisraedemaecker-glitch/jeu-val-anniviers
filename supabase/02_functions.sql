@@ -156,6 +156,8 @@ declare
   v_gauge     numeric;
   v_index     int;
   v_path      text := nullif(btrim(coalesce(p_photo_path, '')), '');
+  v_bloque    timestamptz;
+  v_exclus    jsonb;
 begin
   if coalesce(btrim(p_client_id), '') = '' then
     raise exception 'Identifiant de soumission manquant';
@@ -184,11 +186,32 @@ begin
     raise exception 'Profil introuvable';
   end if;
 
-  -- Le groupe du moment contient toujours la personne qui soumet.
+  -- Penalite en cours apres un quiz rate : la soumission est refusee.
+  -- Le controle est ici, cote serveur, donc recharger l'application ne sert a rien.
+  v_bloque := public.lockout_until(p_submitter, p_challenge_id);
+  if v_bloque is not null then
+    raise exception 'Défi en attente jusqu''à % (ENATTENTE %)',
+      to_char(v_bloque at time zone 'Europe/Zurich', 'HH24:MI'),
+      to_char(v_bloque, 'YYYY-MM-DD"T"HH24:MI:SSOF');
+  end if;
+
+  -- Le groupe du moment contient toujours la personne qui soumet. Les membres
+  -- encore sous penalite sur ce defi en sont ecartes : ils ne peuvent pas en
+  -- profiter avant la fin de leur attente.
   select coalesce(array_agg(distinct x), array[]::uuid[]) into v_members
   from unnest(coalesce(p_member_ids, array[]::uuid[]) || array[p_submitter]) as t(x)
   where x is not null
-    and exists (select 1 from public.participants pp where pp.id = x);
+    and exists (select 1 from public.participants pp where pp.id = x)
+    and (x = p_submitter or public.lockout_until(x, p_challenge_id) is null);
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'participant_id', x,
+           'until', public.lockout_until(x, p_challenge_id))), '[]'::jsonb)
+    into v_exclus
+  from unnest(coalesce(p_member_ids, array[]::uuid[])) as t(x)
+  where x is not null
+    and x <> p_submitter
+    and public.lockout_until(x, p_challenge_id) is not null;
 
   -- Chemin de photo : on refuse tout ce qui sort de la convention de nommage.
   if v_path is not null and v_path !~ '^[0-9a-zA-Z][0-9a-zA-Z/_.-]{0,200}$' then
@@ -235,6 +258,7 @@ begin
     'gauge_points',  coalesce(v_gauge, 0),
     'repeat_index',  coalesce(v_index, 1),
     'members',       to_jsonb(v_members),
+    'excluded',      v_exclus,
     'new_synergies', v_new
   );
 end;
@@ -304,6 +328,95 @@ as $$
   );
 $$;
 
+-- =====================================================================
+-- Penalite apres un quiz rate
+-- =====================================================================
+
+-- Duree de la penalite, modifiable sans redeploiement de l'application.
+create or replace function public.lockout_minutes()
+returns int
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (select nullif(btrim(value), '')::int from public.app_settings where key = 'quiz_lockout_minutes'),
+    30
+  );
+$$;
+
+-- Fin de penalite pour une personne sur un defi, ou null si elle est libre.
+create or replace function public.lockout_until(p_participant uuid, p_challenge text)
+returns timestamptz
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select max(until) from public.quiz_lockouts
+   where participant_id = p_participant
+     and challenge_id = p_challenge
+     and until > now();
+$$;
+
+-- Enregistre un quiz rate. La penalite frappe toute l'equipe presente au
+-- moment du ratage, pas seulement la personne qui a clique.
+-- Idempotente sur client_id, pour survivre a une file d'attente hors ligne.
+create or replace function public.report_quiz_failure(
+  p_client_id    text,
+  p_challenge_id text,
+  p_participant  uuid,
+  p_member_ids   uuid[] default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_members uuid[];
+  v_minutes int := public.lockout_minutes();
+  v_until   timestamptz;
+  v_deja    timestamptz;
+begin
+  if coalesce(btrim(p_client_id), '') = '' then
+    raise exception 'Identifiant manquant';
+  end if;
+  if not exists (select 1 from public.challenges where id = p_challenge_id) then
+    raise exception 'Défi inconnu : %', p_challenge_id;
+  end if;
+  if not exists (select 1 from public.participants where id = p_participant) then
+    raise exception 'Profil introuvable';
+  end if;
+
+  -- Rejeu d'un signalement deja enregistre : on renvoie la penalite existante.
+  select max(until) into v_deja from public.quiz_lockouts where client_id = p_client_id;
+  if v_deja is not null then
+    return jsonb_build_object('until', v_deja, 'minutes', v_minutes, 'duplicate', true);
+  end if;
+
+  select coalesce(array_agg(distinct x), array[]::uuid[]) into v_members
+  from unnest(coalesce(p_member_ids, array[]::uuid[]) || array[p_participant]) as t(x)
+  where x is not null
+    and exists (select 1 from public.participants pp where pp.id = x);
+
+  v_until := now() + make_interval(mins => v_minutes);
+
+  insert into public.quiz_lockouts (client_id, participant_id, challenge_id, triggered_by, until)
+  select p_client_id, x, p_challenge_id, p_participant, v_until
+  from unnest(v_members) as t(x)
+  on conflict (client_id, participant_id) do nothing;
+
+  return jsonb_build_object(
+    'until',     v_until,
+    'minutes',   v_minutes,
+    'members',   to_jsonb(v_members),
+    'duplicate', false
+  );
+end;
+$$;
+
 -- Etat complet du jeu en un seul appel reseau. Utile en montagne : une requete
 -- plutot que six, et tout ce dont l'app a besoin pour se redessiner.
 create or replace function public.game_state()
@@ -334,6 +447,157 @@ as $$
                               from public.submission_members m
                               join public.submissions s on s.id = m.submission_id
                              group by m.participant_id) d),
+    -- Penalites encore actives, pour que chaque appareil sache qui attend.
+    'lockouts',    (select coalesce(jsonb_agg(jsonb_build_object(
+                              'participant_id', l.participant_id,
+                              'challenge_id',   l.challenge_id,
+                              'until',          l.until)), '[]'::jsonb)
+                      from public.quiz_lockouts l where l.until > now()),
+    'settings',    jsonb_build_object('lockout_minutes', public.lockout_minutes()),
     'server_time', now()
   );
+$$;
+
+-- =====================================================================
+-- Administration. Toutes ces fonctions exigent le code organisateur.
+-- =====================================================================
+
+create or replace function public.admin_clear_lockouts(
+  p_pin         text,
+  p_participant uuid default null,
+  p_challenge   text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_n int;
+begin
+  if not public.check_organizer(p_pin) then
+    raise exception 'Code organisateur incorrect';
+  end if;
+  delete from public.quiz_lockouts
+   where until > now()
+     and (p_participant is null or participant_id = p_participant)
+     and (p_challenge is null or challenge_id = p_challenge);
+  get diagnostics v_n = row_count;
+  return jsonb_build_object('levees', v_n);
+end;
+$$;
+
+create or replace function public.admin_rename_participant(
+  p_pin   text,
+  p_id    uuid,
+  p_first text,
+  p_last  text
+)
+returns public.participants
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v public.participants;
+  f text := btrim(coalesce(p_first, ''));
+  l text := btrim(coalesce(p_last, ''));
+begin
+  if not public.check_organizer(p_pin) then
+    raise exception 'Code organisateur incorrect';
+  end if;
+  if f = '' or l = '' then
+    raise exception 'Le prénom et le nom sont obligatoires';
+  end if;
+  if exists (select 1 from public.participants
+              where id <> p_id
+                and lower(btrim(first_name)) = lower(f)
+                and lower(btrim(last_name)) = lower(l)) then
+    raise exception 'Ce prénom et ce nom existent déjà';
+  end if;
+  update public.participants set first_name = f, last_name = l
+   where id = p_id returning * into v;
+  if not found then
+    raise exception 'Profil introuvable';
+  end if;
+  return v;
+end;
+$$;
+
+-- Supprime un profil et tout ce qui en depend. Renvoie les photos devenues
+-- orphelines, que l'application retire ensuite par l'API de stockage.
+create or replace function public.admin_delete_participant(p_pin text, p_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_photos text[];
+begin
+  if not public.check_organizer(p_pin) then
+    raise exception 'Code organisateur incorrect';
+  end if;
+  select coalesce(array_agg(photo_path), array[]::text[]) into v_photos
+    from public.submissions where submitter_id = p_id and photo_path is not null;
+  delete from public.participants where id = p_id;
+  if not found then
+    raise exception 'Profil introuvable';
+  end if;
+  perform public.recompute_synergies();
+  return jsonb_build_object('deleted', true, 'photos', to_jsonb(v_photos));
+end;
+$$;
+
+-- Remise a zero complete du jeu. Le catalogue, les synergies et le code
+-- organisateur ne sont pas touches.
+create or replace function public.admin_reset_game(p_pin text, p_confirmation text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_photos text[];
+  v_joueurs int;
+  v_soumissions int;
+begin
+  if not public.check_organizer(p_pin) then
+    raise exception 'Code organisateur incorrect';
+  end if;
+  if upper(btrim(coalesce(p_confirmation, ''))) <> 'REMISE A ZERO' then
+    raise exception 'Confirmation incorrecte';
+  end if;
+
+  select coalesce(array_agg(photo_path), array[]::text[]) into v_photos
+    from public.submissions where photo_path is not null;
+  select count(*) into v_joueurs from public.participants;
+  select count(*) into v_soumissions from public.submissions;
+
+  delete from public.quiz_lockouts;
+  delete from public.participants;
+
+  return jsonb_build_object(
+    'joueurs_supprimes',     v_joueurs,
+    'soumissions_supprimees', v_soumissions,
+    'photos',                to_jsonb(v_photos)
+  );
+end;
+$$;
+
+create or replace function public.admin_set_lockout_minutes(p_pin text, p_minutes int)
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.check_organizer(p_pin) then
+    raise exception 'Code organisateur incorrect';
+  end if;
+  if p_minutes is null or p_minutes < 0 or p_minutes > 720 then
+    raise exception 'Durée hors limites, entre 0 et 720 minutes';
+  end if;
+  insert into public.app_settings (key, value) values ('quiz_lockout_minutes', p_minutes::text)
+    on conflict (key) do update set value = excluded.value;
+  return p_minutes;
+end;
 $$;

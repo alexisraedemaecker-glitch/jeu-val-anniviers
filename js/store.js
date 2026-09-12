@@ -36,6 +36,9 @@ export const state = {
   done: {},
   feed: [],
   feedLoaded: false,
+  lockouts: [],
+  localLockouts: readLocalLockouts(),
+  lockoutMinutes: 30,
   pending: [],
   syncing: false,
   online: typeof navigator === "undefined" ? true : navigator.onLine !== false,
@@ -142,6 +145,8 @@ export async function refresh({ feed = false } = {}) {
       stats: data.stats || {},
       unlocks: data.unlocks || [],
       done: data.done || {},
+      lockouts: data.lockouts || [],
+      lockoutMinutes: (data.settings && data.settings.lockout_minutes) || 30,
       loading: false,
       loadError: null,
       lastSync: new Date(),
@@ -190,6 +195,106 @@ export function photoUrl(path) {
   if (!path) return null;
   const { data } = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path);
   return data ? data.publicUrl : null;
+}
+
+// --------------------------------------------------------------- penalites
+
+// Une penalite est d'abord posee sur l'appareil, immediatement, puis confirmee
+// par le serveur. Le verrou local evite de pouvoir reprendre le quiz en
+// rechargeant la page, et le verrou serveur est celui qui compte vraiment au
+// moment de la soumission.
+const LOCK_KEY = "anniviers2056.lockouts";
+
+function readLocalLockouts() {
+  try {
+    const v = JSON.parse(localStorage.getItem(LOCK_KEY) || "[]");
+    return Array.isArray(v) ? v.filter((l) => new Date(l.until) > new Date()) : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function writeLocalLockouts(list) {
+  const clean = list.filter((l) => new Date(l.until) > new Date());
+  try {
+    localStorage.setItem(LOCK_KEY, JSON.stringify(clean));
+  } catch (err) {
+    /* sans importance */
+  }
+  setState({ localLockouts: clean });
+}
+
+/** Fin de penalite pour une personne sur un defi, ou null si elle est libre. */
+export function lockedUntil(participantId, challengeId) {
+  if (!participantId) return null;
+  const now = Date.now();
+  let max = null;
+  for (const l of state.lockouts) {
+    if (l.participant_id === participantId && l.challenge_id === challengeId) {
+      const t = new Date(l.until).getTime();
+      if (t > now && (max === null || t > max)) max = t;
+    }
+  }
+  for (const l of state.localLockouts) {
+    if (l.participant_id === participantId && l.challenge_id === challengeId) {
+      const t = new Date(l.until).getTime();
+      if (t > now && (max === null || t > max)) max = t;
+    }
+  }
+  return max ? new Date(max) : null;
+}
+
+export function myLockUntil(challengeId) {
+  return state.me ? lockedUntil(state.me.id, challengeId) : null;
+}
+
+/**
+ * Signale un quiz rate. La penalite frappe tout le groupe du moment. Elle est
+ * posee localement tout de suite, puis envoyee au serveur, avec mise en file
+ * d'attente si le reseau manque.
+ */
+export async function reportQuizFailure({ challengeId, memberIds }) {
+  if (!state.me) return null;
+  const clientId = uuid();
+  const ids = Array.from(new Set([...(memberIds || []), state.me.id]));
+  const until = new Date(Date.now() + state.lockoutMinutes * 60000).toISOString();
+
+  // Verrou local immediat, pour tout de suite et meme sans reseau.
+  writeLocalLockouts([
+    ...state.localLockouts,
+    ...ids.map((id) => ({ participant_id: id, challenge_id: challengeId, until }))
+  ]);
+
+  const item = {
+    client_id: clientId,
+    kind: "failure",
+    challenge_id: challengeId,
+    submitter_id: state.me.id,
+    member_ids: ids,
+    created_at: new Date().toISOString(),
+    attempts: 0,
+    last_error: null
+  };
+  await queue.put(item);
+  await refreshPending();
+  const res = await flushOne(item);
+  await refreshPending();
+  if (res.ok && res.data && res.data.until) {
+    // On aligne le verrou local sur l'heure du serveur, qui fait foi.
+    writeLocalLockouts([
+      ...state.localLockouts.filter(
+        (l) => !(l.challenge_id === challengeId && ids.includes(l.participant_id))
+      ),
+      ...ids.map((id) => ({
+        participant_id: id,
+        challenge_id: challengeId,
+        until: res.data.until
+      }))
+    ]);
+    refresh();
+    return new Date(res.data.until);
+  }
+  return new Date(until);
 }
 
 // ------------------------------------------------------------- soumissions
@@ -260,6 +365,18 @@ async function flushOne(item) {
   // indication, seul le navigateur sait vraiment si la radio est coupee.
   if (probablyOffline()) return { ok: false, error: "Pas de réseau" };
   try {
+    if (item.kind === "failure") {
+      const { data, error } = await sb.rpc("report_quiz_failure", {
+        p_client_id: item.client_id,
+        p_challenge_id: item.challenge_id,
+        p_participant: item.submitter_id,
+        p_member_ids: item.member_ids
+      });
+      if (error) throw error;
+      await queue.remove(item.client_id);
+      return { ok: true, data };
+    }
+
     let path = null;
     if (item.photo && item.photo_name) {
       path = item.photo_name;
@@ -321,6 +438,7 @@ function isPermanent(err) {
   const code = err && (err.code || err.status);
   if (code === "PGRST301" || code === 401 || code === 403) return false;
   return (
+    msg.includes("défi en attente") ||
     msg.includes("défi inconnu") ||
     msg.includes("profil introuvable") ||
     msg.includes("chemin de photo invalide") ||
@@ -366,6 +484,7 @@ export async function refreshPending() {
   setState({
     pending: items.map((i) => ({
       client_id: i.client_id,
+      kind: i.kind || "submission",
       challenge_id: i.challenge_id,
       created_at: i.created_at,
       attempts: i.attempts || 0,
@@ -461,6 +580,97 @@ export function forgetOrganizer() {
   setState({ organizerPin: "" });
 }
 
+/** Photos devenues orphelines, retirees par l'API de stockage. */
+async function purgePhotos(paths) {
+  const liste = (paths || []).filter(Boolean);
+  if (!liste.length) return;
+  try {
+    await sb.storage.from(PHOTO_BUCKET).remove(liste);
+  } catch (err) {
+    console.warn("Photos non retirées du stockage", err);
+  }
+}
+
+export async function adminClearLockouts({ participantId, challengeId } = {}) {
+  const { data, error } = await sb.rpc("admin_clear_lockouts", {
+    p_pin: state.organizerPin,
+    p_participant: participantId || null,
+    p_challenge: challengeId || null
+  });
+  if (error) throw new Error(friendly(error));
+  await refresh();
+  const n = (data && data.levees) || 0;
+  setState({
+    toast: {
+      kind: "success",
+      text: n === 0 ? "Aucune attente à lever" : n === 1 ? "1 attente levée" : `${n} attentes levées`
+    }
+  });
+  return n;
+}
+
+export async function adminRenameParticipant(id, first, last) {
+  const { error } = await sb.rpc("admin_rename_participant", {
+    p_pin: state.organizerPin,
+    p_id: id,
+    p_first: first,
+    p_last: last
+  });
+  if (error) throw new Error(friendly(error));
+  await refresh({ feed: true });
+  setState({ toast: { kind: "success", text: "Profil renommé" } });
+}
+
+export async function adminDeleteParticipant(id) {
+  const { data, error } = await sb.rpc("admin_delete_participant", {
+    p_pin: state.organizerPin,
+    p_id: id
+  });
+  if (error) throw new Error(friendly(error));
+  await purgePhotos(data && data.photos);
+  await refresh({ feed: true });
+  setState({ toast: { kind: "success", text: "Profil supprimé" } });
+}
+
+export async function adminResetGame(confirmation) {
+  const { data, error } = await sb.rpc("admin_reset_game", {
+    p_pin: state.organizerPin,
+    p_confirmation: confirmation
+  });
+  if (error) throw new Error(friendly(error));
+  await purgePhotos(data && data.photos);
+  try {
+    localStorage.removeItem("anniviers2056.seenSynergies");
+    localStorage.removeItem("anniviers2056.lockouts");
+  } catch (err) {
+    /* sans importance */
+  }
+  setState({ localLockouts: [] });
+  await refresh({ feed: true });
+  setState({ toast: { kind: "success", text: "Jeu remis à zéro" } });
+  return data;
+}
+
+export async function adminSetLockoutMinutes(minutes) {
+  const { data, error } = await sb.rpc("admin_set_lockout_minutes", {
+    p_pin: state.organizerPin,
+    p_minutes: minutes
+  });
+  if (error) throw new Error(friendly(error));
+  await refresh();
+  setState({ toast: { kind: "success", text: `Attente réglée sur ${data} minutes` } });
+  return data;
+}
+
+export async function loadLockouts() {
+  const { data, error } = await sb
+    .from("v_lockouts")
+    .select("*")
+    .order("until", { ascending: true });
+  if (error) throw new Error(friendly(error));
+  return data || [];
+}
+
 export async function deleteSubmission(id) {
   const { data, error } = await sb.rpc("delete_submission", {
     p_submission: id,
@@ -471,15 +681,7 @@ export async function deleteSubmission(id) {
   // La soumission est partie, la photo est donc orpheline. Supabase interdit de
   // la supprimer en SQL, on passe par son API de stockage. Si cela echoue, la
   // photo reste dans le bucket sans plus apparaitre nulle part : sans gravite.
-  const path = data && data.photo_path;
-  if (path) {
-    try {
-      await sb.storage.from(PHOTO_BUCKET).remove([path]);
-    } catch (err) {
-      console.warn("Photo non retirée du stockage", err);
-    }
-  }
-
+  await purgePhotos([data && data.photo_path]);
   await refresh({ feed: true });
   setState({ toast: { kind: "success", text: "Soumission supprimée" } });
 }
@@ -502,6 +704,10 @@ export function friendly(err) {
   }
   if (/row-level security|permission denied/i.test(raw)) {
     return "Action non autorisée";
+  }
+  const attente = raw.match(/Défi en attente jusqu'à (\d{2}:\d{2})/);
+  if (attente) {
+    return `Ce défi est encore en attente jusqu'à ${attente[1]}`;
   }
   return raw || "Une erreur est survenue";
 }

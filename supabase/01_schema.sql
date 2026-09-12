@@ -90,6 +90,23 @@ create table if not exists public.synergy_unlocks (
   unique (participant_id, synergy_id)
 );
 
+-- Penalite apres un quiz rate. Une ligne par personne presente dans le groupe
+-- du moment, ce qui fait porter l'attente a tout le groupe et pas seulement a
+-- celui qui a clique. Le blocage est verifie cote serveur au moment de la
+-- soumission, donc recharger l'application ne le contourne pas.
+create table if not exists public.quiz_lockouts (
+  id             uuid primary key default gen_random_uuid(),
+  client_id      text not null,          -- cle d'idempotence de l'appareil
+  participant_id uuid not null references public.participants(id) on delete cascade,
+  challenge_id   text not null references public.challenges(id),
+  triggered_by   uuid references public.participants(id) on delete set null,
+  created_at     timestamptz not null default now(),
+  until          timestamptz not null,
+  unique (client_id, participant_id)
+);
+create index if not exists quiz_lockouts_actifs_idx
+  on public.quiz_lockouts (participant_id, challenge_id, until desc);
+
 -- Reglages prives. RLS active sans aucune policy : inaccessible depuis le navigateur.
 create table if not exists public.app_settings (
   key   text primary key,
@@ -103,6 +120,7 @@ create table if not exists public.app_settings (
 -- rien, tout est recalcule a la lecture, donc les supprimer ne coute rien et
 -- garde ce fichier rejouable apres n'importe quelle evolution.
 -- Les droits sont redonnes juste apres, dans 03_security.sql.
+drop view if exists public.v_lockouts;
 drop view if exists public.v_feed;
 drop view if exists public.v_challenge_stats;
 drop view if exists public.v_collective_status;
@@ -217,6 +235,25 @@ from public.challenges c
 left join public.submissions s      on s.challenge_id = c.id
 left join public.v_submission_gauge g on g.submission_id = s.id
 group by c.id;
+
+-- Penalites encore actives, avec les noms, pour l'ecran d'administration.
+create or replace view public.v_lockouts as
+select l.id,
+       l.participant_id,
+       (p.first_name || ' ' || p.last_name) as participant_name,
+       l.challenge_id,
+       c.name as challenge_name,
+       c.pillar,
+       l.created_at,
+       l.until,
+       l.triggered_by,
+       (t.first_name || ' ' || t.last_name) as triggered_by_name,
+       greatest(0, ceil(extract(epoch from (l.until - now())) / 60))::int as minutes_restantes
+from public.quiz_lockouts l
+join public.participants p on p.id = l.participant_id
+join public.challenges   c on c.id = l.challenge_id
+left join public.participants t on t.id = l.triggered_by
+where l.until > now();
 
 -- Galerie et vue organisateur : une ligne par soumission, membres agreges.
 create or replace view public.v_feed as

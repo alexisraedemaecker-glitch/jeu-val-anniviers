@@ -138,7 +138,7 @@ function titleFor(route) {
     classement: ["Classement", "En direct"],
     album: ["L'album", "Les photos de la journée"],
     moi: ["Mon profil", state.me ? `${state.me.first_name} ${state.me.last_name}` : ""],
-    organisateur: ["Organisateur", "Relecture de la journée"]
+    organisateur: ["Administration", "Gestion du jeu"]
   };
   const t = map[route.name] || map.defis;
   return { main: t[0], sub: t[1] };
