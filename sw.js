@@ -7,7 +7,7 @@
 //   - photos du stockage Supabase : le cache d'abord, elles ne changent jamais.
 //   - appels a la base : jamais de cache, les scores doivent etre justes.
 
-const CACHE = "anniviers2056-v1";
+const CACHE = "anniviers2056-v2";
 const NET_TIMEOUT = 4000;
 
 const SHELL = [
@@ -75,7 +75,11 @@ function fromNetworkFirst(request) {
       });
     }, NET_TIMEOUT);
 
-    fetch(request)
+    // no-cache force une revalidation aupres du serveur. Sans cela, le cache
+    // HTTP de GitHub Pages, regle sur dix minutes, pourrait servir une version
+    // ancienne alors qu'une correction vient d'etre publiee. La revalidation
+    // repond 304 et ne coute presque rien quand rien n'a change.
+    fetch(new Request(request.url, { cache: "no-cache", credentials: "omit" }))
       .then((resp) => {
         clearTimeout(timer);
         if (resp && resp.ok && resp.type !== "opaque") {
