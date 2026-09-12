@@ -94,23 +94,24 @@ main { flex: 1; padding: .9rem .9rem calc(var(--tab-h) + 1.4rem + env(safe-area-
 
 .tabbar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
-  display: grid; grid-template-columns: repeat(5, 1fr);
+  display: grid; grid-template-columns: repeat(6, 1fr);
   background: var(--card); border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
 }
 .tabbar a {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 1px; height: var(--tab-h); text-decoration: none; color: var(--ink-faint);
-  font-size: .66rem; font-weight: 600; position: relative;
+  font-size: .6rem; font-weight: 600; position: relative;
+  padding: 0 1px; text-align: center; line-height: 1.1;
 }
-.tabbar a .ic { font-size: 1.28rem; line-height: 1; }
+.tabbar a .ic { font-size: 1.2rem; line-height: 1; }
 .tabbar a.on { color: var(--accent); }
 .tabbar a.on::before {
   content: ""; position: absolute; top: 0; left: 22%; right: 22%; height: 3px;
   background: var(--accent); border-radius: 0 0 3px 3px;
 }
 .tabbar .badge {
-  position: absolute; top: 7px; right: calc(50% - 21px);
+  position: absolute; top: 6px; right: calc(50% - 18px);
   background: var(--bad); color: #fff; font-size: .6rem; min-width: 16px; height: 16px;
   border-radius: 999px; display: grid; place-items: center; padding: 0 4px;
 }

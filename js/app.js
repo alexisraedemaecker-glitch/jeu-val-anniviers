@@ -12,12 +12,14 @@ import { Ranking } from "./ui/ranking.js";
 import { Gallery } from "./ui/gallery.js";
 import { Me, Pending } from "./ui/me.js";
 import { Organizer } from "./ui/organizer.js";
+import { Activites } from "./ui/activites.js";
 import { Banner } from "./ui/bits.js";
 
 const TABS = [
   { href: "#/defis", icon: "🎯", label: "Défis" },
+  { href: "#/activites", icon: "🧭", label: "Activités" },
   { href: "#/progression", icon: "📊", label: "Piliers" },
-  { href: "#/classement", icon: "🏅", label: "Classement" },
+  { href: "#/classement", icon: "🏅", label: "Score" },
   { href: "#/album", icon: "📷", label: "Album" },
   { href: "#/moi", icon: "🙋", label: "Moi" }
 ];
@@ -58,12 +60,29 @@ function App() {
   }, [state.toast]);
 
   if (!state.me) {
+    const surActivites = route.name === "activites";
     return html`<div class="shell">
       <header class="topbar">
-        <div class="topbar-title">Anniviers 2056<small>Identification</small></div>
+        ${surActivites
+          ? html`<button class="topbar-back" aria-label="Retour"
+                   onClick=${() => go("#/")}>‹</button>`
+          : null}
+        <div class="topbar-title">
+          ${surActivites ? "Activités" : "Anniviers 2056"}
+          <small>${surActivites ? "Le week end dans la vallée" : "Identification"}</small>
+        </div>
         <${NetDot} />
       </header>
-      <main><${Onboarding} /></main>
+      <main>
+        ${surActivites
+          ? html`<${Activites} go=${go} identifie=${false} />`
+          : html`<div class="stack">
+              <${Onboarding} />
+              <button class="btn quiet block" onClick=${() => go("#/activites")}>
+                🧭 Voir les activités du week end sans m'identifier
+              </button>
+            </div>`}
+      </main>
       <${Toast} />
     </div>`;
   }
@@ -97,13 +116,14 @@ function App() {
       ${route.name !== "moi" && state.pending.length ? html`<${Pending} />` : null}
 
       ${route.name === "defis" ? html`<${ChallengeList} go=${go} />` : null}
+      ${route.name === "activites" ? html`<${Activites} go=${go} identifie=${true} />` : null}
       ${route.name === "defi" ? html`<${ChallengeDetail} id=${route.id} go=${go} />` : null}
       ${route.name === "progression" ? html`<${Progress} />` : null}
       ${route.name === "classement" ? html`<${Ranking} />` : null}
       ${route.name === "album" ? html`<${Gallery} />` : null}
       ${route.name === "moi" ? html`<${Me} go=${go} />` : null}
       ${route.name === "organisateur" ? html`<${Organizer} go=${go} />` : null}
-      ${["defis", "defi", "progression", "classement", "album", "moi", "organisateur"].includes(route.name)
+      ${["defis", "defi", "activites", "progression", "classement", "album", "moi", "organisateur"].includes(route.name)
         ? null
         : html`<${ChallengeList} go=${go} />`}
     </main>
@@ -134,6 +154,7 @@ function titleFor(route) {
   const map = {
     defis: ["Les défis", "39 défis, 5 piliers"],
     defi: ["Un défi", "Validation"],
+    activites: ["Activités", "Le week end dans la vallée"],
     progression: ["Les piliers", "Objectif collectif"],
     classement: ["Classement", "En direct"],
     album: ["L'album", "Les photos de la journée"],

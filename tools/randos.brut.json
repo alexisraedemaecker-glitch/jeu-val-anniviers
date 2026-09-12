@@ -1,0 +1,406 @@
+[
+  {
+    "id": "espace-weisshorn-cabane-du-petit-mountet-zinal",
+    "nom": "Espace Weisshorn › Cabane du Petit Mountet › Zinal",
+    "gpx": "assets/randos/espace-weisshorn-cabane-du-petit-mountet-zinal.gpx",
+    "profil": "assets/randos/espace-weisshorn-cabane-du-petit-mountet-zinal-profil.svg",
+    "trace": "assets/randos/espace-weisshorn-cabane-du-petit-mountet-zinal-trace.svg",
+    "distance_km": 14.4,
+    "montee_m": 193,
+    "descente_m": 1175,
+    "alt_min": 1670,
+    "alt_max": 2654,
+    "heures": 6.26,
+    "niveau": "moyenne",
+    "niveau_texte": "Une vraie sortie de montagne, il faut être un peu habitué à marcher.",
+    "boucle": false,
+    "depart": {
+      "lat": 46.15006,
+      "lon": 7.59532,
+      "alt": 2654
+    },
+    "arrivee": {
+      "lat": 46.136413,
+      "lon": 7.626396,
+      "alt": 1670
+    },
+    "waypoints": []
+  },
+  {
+    "id": "tsape-sommet-de-l-illhorn-cabane-illhorn",
+    "nom": "Tsapé › Sommet de l’Illhorn › Cabane Illhorn",
+    "gpx": "assets/randos/tsape-sommet-de-l-illhorn-cabane-illhorn.gpx",
+    "profil": "assets/randos/tsape-sommet-de-l-illhorn-cabane-illhorn-profil.svg",
+    "trace": "assets/randos/tsape-sommet-de-l-illhorn-cabane-illhorn-trace.svg",
+    "distance_km": 4.4,
+    "montee_m": 197,
+    "descente_m": 527,
+    "alt_min": 2143,
+    "alt_max": 2670,
+    "heures": 2.48,
+    "niveau": "facile",
+    "niveau_texte": "Peu de dénivelé, à la portée de tout le monde avec de bonnes chaussures.",
+    "boucle": false,
+    "depart": {
+      "lat": 46.25146,
+      "lon": 7.620895,
+      "alt": 2473
+    },
+    "arrivee": {
+      "lat": 46.256107,
+      "lon": 7.597147,
+      "alt": 2143
+    },
+    "waypoints": [
+      {
+        "nom": "Illhorn Hut",
+        "lat": 46.256107,
+        "lon": 7.597154
+      }
+    ]
+  },
+  {
+    "id": "espace-weisshorn-corne-de-sorebois-lac-de-chateaupre",
+    "nom": "Espace Weisshorn › Corne de Sorebois › Lac de Chateaupré",
+    "gpx": "assets/randos/espace-weisshorn-corne-de-sorebois-lac-de-chateaupre.gpx",
+    "profil": "assets/randos/espace-weisshorn-corne-de-sorebois-lac-de-chateaupre-profil.svg",
+    "trace": "assets/randos/espace-weisshorn-corne-de-sorebois-lac-de-chateaupre-trace.svg",
+    "distance_km": 7.8,
+    "montee_m": 312,
+    "descente_m": 625,
+    "alt_min": 2362,
+    "alt_max": 2800,
+    "heures": 3.72,
+    "niveau": "facile",
+    "niveau_texte": "Peu de dénivelé, à la portée de tout le monde avec de bonnes chaussures.",
+    "boucle": false,
+    "depart": {
+      "lat": 46.14975,
+      "lon": 7.595639,
+      "alt": 2676
+    },
+    "arrivee": {
+      "lat": 46.106022,
+      "lon": 7.580317,
+      "alt": 2362
+    },
+    "waypoints": [
+      {
+        "nom": "Lake Châteaupré",
+        "lat": 46.105992,
+        "lon": 7.580325
+      }
+    ]
+  },
+  {
+    "id": "tignousa-hotel-weisshorn-zinal",
+    "nom": "Tignousa › Hôtel Weisshorn › Zinal",
+    "gpx": "assets/randos/tignousa-hotel-weisshorn-zinal.gpx",
+    "profil": "assets/randos/tignousa-hotel-weisshorn-zinal-profil.svg",
+    "trace": "assets/randos/tignousa-hotel-weisshorn-zinal-trace.svg",
+    "distance_km": 15.7,
+    "montee_m": 361,
+    "descente_m": 852,
+    "alt_min": 1676,
+    "alt_max": 2333,
+    "heures": 6.24,
+    "niveau": "moyenne",
+    "niveau_texte": "Une vraie sortie de montagne, il faut être un peu habitué à marcher.",
+    "boucle": false,
+    "depart": {
+      "lat": 46.229178,
+      "lon": 7.609984,
+      "alt": 2168
+    },
+    "arrivee": {
+      "lat": 46.137239,
+      "lon": 7.624987,
+      "alt": 1676
+    },
+    "waypoints": [
+      {
+        "nom": "Tignousa",
+        "lat": 46.229156,
+        "lon": 7.609925
+      },
+      {
+        "nom": "Hotel Weisshorn",
+        "lat": 46.208282,
+        "lon": 7.618068
+      }
+    ]
+  },
+  {
+    "id": "chandolin-hotel-weisshorn-saint-luc",
+    "nom": "Chandolin › Hôtel Weisshorn › Saint-Luc",
+    "gpx": "assets/randos/chandolin-hotel-weisshorn-saint-luc.gpx",
+    "profil": "assets/randos/chandolin-hotel-weisshorn-saint-luc-profil.svg",
+    "trace": "assets/randos/chandolin-hotel-weisshorn-saint-luc-trace.svg",
+    "distance_km": 13.8,
+    "montee_m": 427,
+    "descente_m": 921,
+    "alt_min": 1577,
+    "alt_max": 2333,
+    "heures": 5.99,
+    "niveau": "moyenne",
+    "niveau_texte": "Une vraie sortie de montagne, il faut être un peu habitué à marcher.",
+    "boucle": false,
+    "depart": {
+      "lat": 46.256107,
+      "lon": 7.597147,
+      "alt": 2134
+    },
+    "arrivee": {
+      "lat": 46.221087,
+      "lon": 7.59598,
+      "alt": 1641
+    },
+    "waypoints": [
+      {
+        "nom": "Illhorn Hut",
+        "lat": 46.256107,
+        "lon": 7.597154
+      },
+      {
+        "nom": "Hotel Weisshorn",
+        "lat": 46.208282,
+        "lon": 7.618068
+      }
+    ]
+  },
+  {
+    "id": "lac-de-chateaupre-cabane-de-moiry-a-r",
+    "nom": "Lac de Chateaupré › Cabane de Moiry À/R",
+    "gpx": "assets/randos/lac-de-chateaupre-cabane-de-moiry-a-r.gpx",
+    "profil": "assets/randos/lac-de-chateaupre-cabane-de-moiry-a-r-profil.svg",
+    "trace": "assets/randos/lac-de-chateaupre-cabane-de-moiry-a-r-trace.svg",
+    "distance_km": 5.9,
+    "montee_m": 437,
+    "descente_m": 431,
+    "alt_min": 2349,
+    "alt_max": 2787,
+    "heures": 3.35,
+    "niveau": "moyenne",
+    "niveau_texte": "Une vraie sortie de montagne, il faut être un peu habitué à marcher.",
+    "boucle": true,
+    "depart": {
+      "lat": 46.106551,
+      "lon": 7.578895,
+      "alt": 2349
+    },
+    "arrivee": {
+      "lat": 46.106551,
+      "lon": 7.578895,
+      "alt": 2353
+    },
+    "waypoints": [
+      {
+        "nom": "Cabane de Moiry",
+        "lat": 46.09093,
+        "lon": 7.595378
+      }
+    ]
+  },
+  {
+    "id": "barrage-de-moiry-cabane-de-moiry-ar",
+    "nom": "Barrage de Moiry › Cabane de Moiry AR",
+    "gpx": "assets/randos/barrage-de-moiry-cabane-de-moiry-ar.gpx",
+    "profil": "assets/randos/barrage-de-moiry-cabane-de-moiry-ar-profil.svg",
+    "trace": "assets/randos/barrage-de-moiry-cabane-de-moiry-ar-trace.svg",
+    "distance_km": 17.4,
+    "montee_m": 751,
+    "descente_m": 753,
+    "alt_min": 2146,
+    "alt_max": 2785,
+    "heures": 7.62,
+    "niveau": "exigeante",
+    "niveau_texte": "Grosse journée, dénivelé important. Partez tôt et prévoyez de l'eau.",
+    "boucle": true,
+    "depart": {
+      "lat": 46.137659,
+      "lon": 7.570141,
+      "alt": 2148
+    },
+    "arrivee": {
+      "lat": 46.137659,
+      "lon": 7.570141,
+      "alt": 2146
+    },
+    "waypoints": [
+      {
+        "nom": "Moiry Dam",
+        "lat": 46.13765,
+        "lon": 7.57012
+      },
+      {
+        "nom": "Cabane de Moiry",
+        "lat": 46.09093,
+        "lon": 7.595378
+      }
+    ]
+  },
+  {
+    "id": "bendolla-cabane-des-becs-de-bosson",
+    "nom": "Bendolla › Cabane des Becs de Bosson",
+    "gpx": "assets/randos/bendolla-cabane-des-becs-de-bosson.gpx",
+    "profil": "assets/randos/bendolla-cabane-des-becs-de-bosson-profil.svg",
+    "trace": "assets/randos/bendolla-cabane-des-becs-de-bosson-trace.svg",
+    "distance_km": 13.6,
+    "montee_m": 824,
+    "descente_m": 803,
+    "alt_min": 2127,
+    "alt_max": 2951,
+    "heures": 6.94,
+    "niveau": "moyenne",
+    "niveau_texte": "Une vraie sortie de montagne, il faut être un peu habitué à marcher.",
+    "boucle": true,
+    "depart": {
+      "lat": 46.180262,
+      "lon": 7.558211,
+      "alt": 2127
+    },
+    "arrivee": {
+      "lat": 46.180262,
+      "lon": 7.558211,
+      "alt": 2147
+    },
+    "waypoints": [
+      {
+        "nom": "Bendolla (2,130 m)",
+        "lat": 46.180209,
+        "lon": 7.558163
+      }
+    ]
+  },
+  {
+    "id": "zinal-roc-de-la-vache-cabane-du-petit-mountet",
+    "nom": "Zinal › Roc de la Vache › Cabane du Petit Mountet",
+    "gpx": "assets/randos/zinal-roc-de-la-vache-cabane-du-petit-mountet.gpx",
+    "profil": "assets/randos/zinal-roc-de-la-vache-cabane-du-petit-mountet-profil.svg",
+    "trace": "assets/randos/zinal-roc-de-la-vache-cabane-du-petit-mountet-trace.svg",
+    "distance_km": 13.9,
+    "montee_m": 1051,
+    "descente_m": 1051,
+    "alt_min": 1679,
+    "alt_max": 2545,
+    "heures": 8.04,
+    "niveau": "exigeante",
+    "niveau_texte": "Grosse journée, dénivelé important. Partez tôt et prévoyez de l'eau.",
+    "boucle": true,
+    "depart": {
+      "lat": 46.12709,
+      "lon": 7.630365,
+      "alt": 1679
+    },
+    "arrivee": {
+      "lat": 46.12709,
+      "lon": 7.630365,
+      "alt": 1679
+    },
+    "waypoints": [
+      {
+        "nom": "Parking",
+        "lat": 46.127208,
+        "lon": 7.630352
+      },
+      {
+        "nom": "Cabane du Petit Mountet",
+        "lat": 46.092261,
+        "lon": 7.633304
+      }
+    ]
+  },
+  {
+    "id": "le-prillet-le-touno-hotel-weisshorn",
+    "nom": "Le Prillet › Le Touno › Hôtel Weisshorn",
+    "gpx": "assets/randos/le-prillet-le-touno-hotel-weisshorn.gpx",
+    "profil": "assets/randos/le-prillet-le-touno-hotel-weisshorn-profil.svg",
+    "trace": "assets/randos/le-prillet-le-touno-hotel-weisshorn-trace.svg",
+    "distance_km": 13.8,
+    "montee_m": 1157,
+    "descente_m": 1104,
+    "alt_min": 1704,
+    "alt_max": 2862,
+    "heures": 8.41,
+    "niveau": "exigeante",
+    "niveau_texte": "Grosse journée, dénivelé important. Partez tôt et prévoyez de l'eau.",
+    "boucle": true,
+    "depart": {
+      "lat": 46.217761,
+      "lon": 7.612332,
+      "alt": 1704
+    },
+    "arrivee": {
+      "lat": 46.217761,
+      "lon": 7.612332,
+      "alt": 1757
+    },
+    "waypoints": [
+      {
+        "nom": "Hotel Weisshorn",
+        "lat": 46.208282,
+        "lon": 7.618068
+      }
+    ]
+  },
+  {
+    "id": "zinal-plat-de-la-le-cabane-du-mountet-ar",
+    "nom": "Zinal Plat de la Lé › Cabane du Mountet AR",
+    "gpx": "assets/randos/zinal-plat-de-la-le-cabane-du-mountet-ar.gpx",
+    "profil": "assets/randos/zinal-plat-de-la-le-cabane-du-mountet-ar-profil.svg",
+    "trace": "assets/randos/zinal-plat-de-la-le-cabane-du-mountet-ar-trace.svg",
+    "distance_km": 20.0,
+    "montee_m": 1186,
+    "descente_m": 1183,
+    "alt_min": 1676,
+    "alt_max": 2859,
+    "heures": 10.13,
+    "niveau": "exigeante",
+    "niveau_texte": "Grosse journée, dénivelé important. Partez tôt et prévoyez de l'eau.",
+    "boucle": true,
+    "depart": {
+      "lat": 46.12709,
+      "lon": 7.630365,
+      "alt": 1676
+    },
+    "arrivee": {
+      "lat": 46.12709,
+      "lon": 7.630365,
+      "alt": 1679
+    },
+    "waypoints": [
+      {
+        "nom": "Parking",
+        "lat": 46.127208,
+        "lon": 7.630352
+      }
+    ]
+  },
+  {
+    "id": "zinal-cabane-de-tracuit-ar",
+    "nom": "Zinal › Cabane de Tracuit AR",
+    "gpx": "assets/randos/zinal-cabane-de-tracuit-ar.gpx",
+    "profil": "assets/randos/zinal-cabane-de-tracuit-ar-profil.svg",
+    "trace": "assets/randos/zinal-cabane-de-tracuit-ar-trace.svg",
+    "distance_km": 14.7,
+    "montee_m": 1531,
+    "descente_m": 1513,
+    "alt_min": 1684,
+    "alt_max": 3216,
+    "heures": 10.3,
+    "niveau": "exigeante",
+    "niveau_texte": "Grosse journée, dénivelé important. Partez tôt et prévoyez de l'eau.",
+    "boucle": true,
+    "depart": {
+      "lat": 46.127312,
+      "lon": 7.630488,
+      "alt": 1684
+    },
+    "arrivee": {
+      "lat": 46.127312,
+      "lon": 7.630488,
+      "alt": 1702
+    },
+    "waypoints": []
+  }
+]

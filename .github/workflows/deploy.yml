@@ -43,6 +43,7 @@ jobs:
             --exclude '_site' \
             --exclude 'supabase' \
             --exclude 'tools' \
+            --exclude 'Randos' \
             --exclude '.env*' \
             --exclude '*.local.sql' \
             ./ _site/

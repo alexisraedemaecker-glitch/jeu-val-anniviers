@@ -7,7 +7,7 @@
 //   - photos du stockage Supabase : le cache d'abord, elles ne changent jamais.
 //   - appels a la base : jamais de cache, les scores doivent etre justes.
 
-const CACHE = "anniviers2056-v2";
+const CACHE = "anniviers2056-v3";
 const NET_TIMEOUT = 4000;
 
 const SHELL = [
@@ -32,6 +32,11 @@ const SHELL = [
   "js/ui/gallery.js",
   "js/ui/me.js",
   "js/ui/organizer.js",
+  "js/ui/activites.js",
+  "js/data/activites.js",
+  "js/data/randos-stats.js",
+  "assets/photos/hotel-weisshorn-vue.jpg",
+  "assets/photos/hotel-weisshorn.jpg",
   "js/vendor/htm-preact.js",
   "js/vendor/supabase.js",
   "assets/icon-192.png",
@@ -135,6 +140,13 @@ self.addEventListener("fetch", (event) => {
 
   // Tout le reste de Supabase (base, temps reel, depots) passe directement.
   if (url.hostname.endsWith(".supabase.co")) return;
+
+  // Profils, tracés et fichiers GPX : immuables, donc le cache d'abord, et
+  // mis en cache au fil des consultations plutôt qu'à l'installation.
+  if (url.origin === self.location.origin && url.pathname.includes("/assets/randos/")) {
+    event.respondWith(fromCacheFirst(req));
+    return;
+  }
 
   // Fichiers de l'application.
   if (url.origin === self.location.origin) {
