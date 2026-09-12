@@ -38,8 +38,26 @@ tools/
   check.py               contrôles de cohérence du catalogue
   gen_seed.py            régénère 04_seed.sql depuis js/data
   gen_icons.py           régénère les icônes
+  shuffle_quiz.py        répartit la position des bonnes réponses
   apply_sql.py           applique les fichiers SQL à Supabase
+  selftest.py            tests de bout en bout contre la vraie base
+  reset_jour_j.py        remise à zéro avant l'événement
 ```
+
+## Administration
+
+L'écran d'administration, protégé par le code organisateur, se trouve dans
+l'onglet Moi puis Administration. Cinq onglets :
+
+- **Tableau de bord** : avancement des jauges, couverture du catalogue, défis
+  jamais joués, découvertes trouvées, inscrits sans aucun défi.
+- **Soumissions** : toutes les soumissions avec leurs photos, et la suppression.
+- **Joueurs** : renommer ou supprimer un profil, repérage des doublons.
+- **Attentes** : les pénalités en cours, levables une par une ou toutes.
+- **Réglages** : durée de l'attente, et remise à zéro du jeu.
+
+Toutes ces fonctions vérifient le code organisateur côté serveur. Le droit de
+les appeler ne suffit pas à en faire quoi que ce soit.
 
 ## Règles du jeu implémentées
 
@@ -55,7 +73,21 @@ compte qu'une seule fois par personne, même si elle le refait avec un autre
 groupe.
 
 **Synergies.** Recalculées entièrement à chaque soumission et à chaque
-suppression, donc toujours cohérentes avec l'état réel des soumissions.
+suppression, donc toujours cohérentes avec l'état réel des soumissions. Le
+bonus de 10 points est personnel et va à chaque personne qui débloque la
+synergie. Le bonus de 5 points sur chacune des deux jauges n'est versé qu'une
+seule fois, à la première découverte.
+
+**Quiz sans droit à l'erreur.** Une mauvaise réponse fait rater le défi pour
+toute l'équipe présente, qui doit attendre avant de pouvoir le reprendre. La
+durée vit dans `app_settings` et se règle depuis l'écran d'administration, sans
+redéploiement. Le blocage est vérifié côté serveur au moment de la soumission,
+recharger l'application ne le contourne donc pas. Un verrou local prend effet
+immédiatement, même sans réseau, et le signalement du ratage passe par la même
+file d'attente que les soumissions.
+
+Conséquence sur l'écran de défi : le groupe du moment se choisit avant le quiz
+et se fige pendant, sinon on ne saurait pas qui pénaliser.
 
 **Objectif collectif.** Seuil global de 700 points sur 1000, et plancher
 minimal de 40 points par pilier.
@@ -99,13 +131,18 @@ test, joue des défis, puis nettoie tout derrière lui.
 python3 tools/selftest.py
 ```
 
-Les 47 contrôles couvrent la création de profil et la déduplication des noms, le
+Les 77 contrôles couvrent la création de profil et la déduplication des noms, le
 rendement dégressif sur trois passages, le score personnel non dégressif, le non
 cumul d'un même défi par une même personne, l'idempotence après coupure réseau,
 le dépôt et la lecture des photos, le refus d'un chemin de photo malveillant, le
 déclenchement d'une synergie pour tout le groupe du moment, le code
-organisateur, la suppression avec recalcul complet, et le retassage des passages
-suivants.
+organisateur, la suppression avec recalcul complet, le retassage des passages
+suivants, la pénalité après un quiz raté et sa portée sur toute l'équipe, et
+toutes les fonctions d'administration.
+
+Le test refuse de tourner quand de vrais joueurs sont enregistrés, pour ne pas
+décaler leur rendement dégressif. Ajouter `--force` pour passer outre. Il ne
+nettoie jamais que ses propres données.
 
 ## Une décision à connaître
 
