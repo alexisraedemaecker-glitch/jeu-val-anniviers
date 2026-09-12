@@ -61,10 +61,20 @@ export function subscribe(fn) {
 
 export function notify() {
   if (frame) return;
-  frame = requestAnimationFrame(() => {
+  // On groupe les redessins, mais surtout pas avec requestAnimationFrame :
+  // celui ci ne s'execute jamais quand la page est masquee. Un telephone
+  // verrouille ou bascule sur une autre application gelerait alors l'affichage.
+  // setTimeout, lui, se declenche toujours.
+  frame = setTimeout(() => {
     frame = null;
-    listeners.forEach((fn) => fn());
-  });
+    listeners.forEach((fn) => {
+      try {
+        fn();
+      } catch (err) {
+        console.error("Redessin en échec", err);
+      }
+    });
+  }, 0);
 }
 
 export function setState(patch) {
