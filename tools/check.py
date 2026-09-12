@@ -148,6 +148,21 @@ for row in challenges + synergies + pillars:
                 err(f"{row['id']}{path} : tiret interdit dans un texte joueur → {text[:70]!r}")
                 break
 
+# --- gabarits htm ------------------------------------------------------------
+# Dans htm, <//> ferme la balise ouverte. Un </p> ou </div> juste apres est donc
+# orphelin, et le gabarit entier echoue silencieusement au rendu. Ce bug s'etait
+# glisse dans trois ecrans de chargement, invisibles tant que les donnees
+# arrivaient vite.
+import re as _re
+
+for js in sorted((Path(__file__).resolve().parent.parent / "js").rglob("*.js")):
+    if "vendor" in js.parts:
+        continue
+    texte = js.read_text(encoding="utf-8")
+    for num, ligne in enumerate(texte.splitlines(), start=1):
+        if _re.search(r"<//>\s*</[a-zA-Z]", ligne):
+            err(f"{js.name} ligne {num} : <//> suivi d'une balise fermante, gabarit htm cassé")
+
 # --- rapport ----------------------------------------------------------------
 print(f"{len(pillars)} piliers, {len(challenges)} défis, {len(synergies)} synergies")
 total = sum(c["points"] for c in challenges)

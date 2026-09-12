@@ -30,7 +30,7 @@ function Board() {
   });
 
   if (state.loading && !rows.length) {
-    return html`<div class="card"><p class="muted small row"><${Spinner} dark=${true} /> Chargement<//></p></div>`;
+    return html`<div class="card"><p class="muted small row"><${Spinner} dark=${true} /> Chargement</p></div>`;
   }
   if (!rows.length) {
     return html`<${Empty} icon="🏅">Personne n'est encore enregistré.<//>`;

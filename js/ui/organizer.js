@@ -510,7 +510,7 @@ function Attentes({ onError }) {
 
   if (rows === null) {
     return html`<div class="card">
-      <p class="muted small row"><${Spinner} dark=${true} /> Chargement<//></p>
+      <p class="muted small row"><${Spinner} dark=${true} /> Chargement</p>
     </div>`;
   }
 

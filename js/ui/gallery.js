@@ -48,7 +48,7 @@ export function Gallery() {
     </p>
 
     ${!state.feedLoaded && !state.feed.length
-      ? html`<div class="card"><p class="muted small row"><${Spinner} dark=${true} /> Chargement de l'album<//></p></div>`
+      ? html`<div class="card"><p class="muted small row"><${Spinner} dark=${true} /> Chargement de l'album</p></div>`
       : photos.length === 0
         ? html`<${Empty} icon="📷">
             Aucune photo pour le moment. Les premières arriveront dès les premiers défis validés.
