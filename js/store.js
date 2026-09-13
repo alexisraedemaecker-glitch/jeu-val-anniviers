@@ -56,6 +56,12 @@ let frame = null;
 
 export function subscribe(fn) {
   listeners.add(fn);
+  // Une notification emise avant cet abonnement serait perdue, et l'ecran
+  // resterait sur ses valeurs de depart jusqu'au prochain evenement. Preact
+  // execute les effets apres le premier rendu, donc la course est reelle :
+  // les donnees arrivent souvent avant que l'interface ne se soit abonnee.
+  // On redessine donc systematiquement juste apres un abonnement.
+  notify();
   return () => listeners.delete(fn);
 }
 
@@ -774,6 +780,9 @@ export async function boot() {
   connectRealtime();
   checkSilentSynergies();
   setState({ booted: true });
+  // Filet de securite : si toutes les donnees sont arrivees avant que
+  // l'interface ne se soit abonnee, ce rappel tardif la remet a jour.
+  setTimeout(notify, 300);
 
   // Quelqu'un qui rouvre l'application en retrouvant du reseau ne doit pas
   // attendre le prochain cycle : on vide la file tout de suite, en tache de fond.
