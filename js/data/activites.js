@@ -131,6 +131,62 @@ export const ACCES = {
   }
 };
 
+// ------------------------------------------------- retours des traversées
+
+// Une traversée ne ramène pas là où on s'est garé. Pour chacune, voici le
+// trajet de retour réel, avec le dernier bus relevé dans l'horaire officiel.
+export const RETOURS = {
+  "espace-weisshorn-cabane-du-petit-mountet-zinal": {
+    depuis: "Zinal",
+    vers: "Grimentz, où vous avez laissé la voiture",
+    minutes: 50,
+    station_de: "8501791",
+    station_a: "8570949",
+    dernier: "Dernier bus de Zinal vers 19h20",
+    texte:
+      "Vous partez de Grimentz par le téléphérique et vous arrivez à Zinal, dans l'autre branche de la vallée. Comptez environ 50 minutes de bus pour revenir à Grimentz, avec un changement à Vissoie."
+  },
+  "espace-weisshorn-corne-de-sorebois-lac-de-chateaupre": {
+    depuis: "Parking du glacier de Moiry",
+    vers: "Grimentz, où vous avez laissé la voiture",
+    minutes: 25,
+    station_de: "8581942",
+    station_a: "8570949",
+    dernier: "Dernier bus du parking du glacier à 17h12",
+    alerte:
+      "C'est la traversée la plus exposée. Le dernier bus du parking du glacier part à 17h12, et le suivant est le lendemain matin. Ratez le et vous êtes à 29 kilomètres de Chandolin sans transport.",
+    texte:
+      "Vous partez de Grimentz par le téléphérique et vous arrivez au bout de la route du Val de Moiry, à cinq kilomètres à vol d'oiseau du départ. Le plus sûr est de laisser une voiture au parking du glacier avant de monter."
+  },
+  "tignousa-hotel-weisshorn-zinal": {
+    depuis: "Zinal",
+    vers: "Saint-Luc, au pied du funiculaire",
+    minutes: 40,
+    station_de: "8501791",
+    station_a: "8501779",
+    dernier: "Dernier bus de Zinal vers 19h20",
+    texte:
+      "La plus longue traversée de la sélection, dix kilomètres à vol d'oiseau entre le départ et l'arrivée. Comptez 40 à 60 minutes de bus pour revenir à Saint-Luc, avec un changement à Vissoie."
+  },
+  "chandolin-hotel-weisshorn-saint-luc": {
+    depuis: "Saint-Luc",
+    vers: "Chandolin",
+    minutes: 15,
+    station_de: "8501779",
+    station_a: "8501755",
+    dernier: "Bus jusqu'en début de soirée",
+    texte:
+      "La traversée la plus simple à gérer. Le bus 454 relie Saint-Luc à Chandolin en un quart d'heure, sans changement, et il y en a régulièrement jusqu'en début de soirée."
+  },
+  "tsape-sommet-de-l-illhorn-cabane-illhorn": {
+    depuis: "Cabane Illhorn",
+    vers: "Chandolin",
+    minutes: null,
+    texte:
+      "Vous montez par le télésiège et vous redescendez à pied sur la Cabane Illhorn, puis sur le village. Aucun transport à prévoir, environ 45 minutes de descente entre la cabane et Chandolin."
+  }
+};
+
 // ------------------------------------------------------------ randonnées
 
 // Les chiffres viennent tous du fichier GPX, calculés par tools/gpx.py.
@@ -158,7 +214,18 @@ export const RANDOS = [
       "Attention, vous n'arrivez pas là où vous êtes partis. Prévoyez une voiture au parking du glacier, ou vérifiez les derniers bus, ils sont rares."
   },
   {
+    id: "cabane-illhorn-pas-de-l-illsee-lac-noir-tsape",
+    nom: "Cabane Illhorn, Pas de l'Illsee, Lac Noir, Le Tsapé",
+    acces: "cabane-illhorn",
+    arrivee: "Retour à la Cabane Illhorn",
+    resume:
+      "Une boucle au dessus de Chandolin, par le Pas de l'Illsee et les petits lacs de l'autre versant. On passe de la vue sur la Couronne à la vue sur la vallée du Rhône, et on redescend par le Tsapé.",
+    conseil:
+      "Tout se fait depuis Chandolin, sans voiture ni transport. C'est la boucle la plus pratique du week end."
+  },
+  {
     id: "lac-de-chateaupre-cabane-de-moiry-a-r",
+    coup_de_coeur: true,
     nom: "Lac de Chateaupré, Cabane de Moiry, aller et retour",
     acces: "moiry-glacier",
     arrivee: "Retour au point de départ",
@@ -182,8 +249,6 @@ export const RANDOS = [
     nom: "Chandolin, Hôtel Weisshorn, Saint-Luc",
     acces: "cabane-illhorn",
     arrivee: "Saint-Luc",
-    photo: "assets/photos/hotel-weisshorn.jpg",
-    photo_legende: "L'Hôtel Weisshorn, posé seul à 2337 mètres.",
     resume:
       "Le grand balcon d'Anniviers, de Chandolin à Saint-Luc en passant devant l'Hôtel Weisshorn. Un sentier de traversée presque toujours à la même altitude, avec la Couronne Impériale en face pendant des heures.",
     conseil:
@@ -194,8 +259,6 @@ export const RANDOS = [
     nom: "Tignousa, Hôtel Weisshorn, Zinal",
     acces: "st-luc-funiculaire",
     arrivee: "Zinal",
-    photo: "assets/photos/hotel-weisshorn-vue.jpg",
-    photo_legende: "La vue depuis l'Hôtel Weisshorn.",
     resume:
       "La grande traversée du balcon, de Tignousa jusqu'au fond de la vallée. C'est la partie la plus connue du tour, celle qui longe la Couronne Impériale du début à la fin.",
     conseil:
@@ -246,6 +309,16 @@ export const RANDOS = [
     resume:
       "La montée au cœur du cirque glaciaire, au pied des quatre mille. Longue et soutenue, mais le décor au bout est parmi les plus impressionnants des Alpes.",
     conseil: "Vingt kilomètres et plus de mille mètres de montée. À réserver aux marcheurs entraînés."
+  },
+  {
+    id: "zinal-cabane-d-arpitettaz",
+    nom: "Zinal, Cabane d'Arpitettaz",
+    acces: "zinal",
+    arrivee: "Retour à Zinal",
+    resume:
+      "La montée au vallon d'Arpitettaz, entre le Besso et le Weisshorn, à l'écart des itinéraires les plus fréquentés. Une longue journée dans un cirque sauvage, face aux séracs.",
+    conseil:
+      "Dix huit kilomètres et plus de mille mètres de montée. Partez tôt, il n'y a pas de raccourci pour rentrer."
   },
   {
     id: "zinal-cabane-de-tracuit-ar",
@@ -334,6 +407,34 @@ export const TABLES = [
     ],
     carte_note:
       "Carte été 2026 relevée sur le site de la cabane. Les prix sont en francs suisses et peuvent avoir changé."
+  },
+  {
+    id: "hotel-weisshorn",
+    nom: "Hôtel Weisshorn",
+    lieu: "Sur les hauteurs de Saint-Luc, 2337 mètres",
+    acces: "st-luc-funiculaire",
+    horaire: "Du 13 juin au 11 octobre 2026",
+    tel: "027 475 11 06",
+    lien: "https://www.valdanniviers.ch/fr/P111708/hotel-weisshorn",
+    photo: "assets/photos/hotel-weisshorn.jpg",
+    photo_legende: "L'Hôtel Weisshorn, seul à 2337 mètres.",
+    resume:
+      "Le grand bâtiment blanc posé seul sur le balcon, visible de toute la vallée. Bâti en 1882, il ne se rejoint qu'à pied, et c'est justement ce qui en fait le lieu le plus mémorable du coin. Cuisine du terroir, et une terrasse face à la Couronne Impériale.",
+    note:
+      "Aucune route n'y mène. Depuis Tignousa, comptez environ une heure et demie de marche presque plate, ou montez depuis Saint-Luc. Trois des randonnées de la sélection passent devant."
+  },
+  {
+    id: "cabane-bella-tola",
+    nom: "Cabane Bella Tola",
+    lieu: "Au cœur du domaine de Saint-Luc, environ 2346 mètres",
+    acces: "st-luc-funiculaire",
+    horaire: "Saison d'été jusqu'au 21 septembre 2026. Cuisine servie de 11h30 à 15h",
+    tel: "027 476 15 67",
+    lien: "https://cabanebellatola.ch/",
+    resume:
+      "Une cabane lodge en plein domaine, à une demi heure de marche de l'arrivée du funiculaire. Cuisine traditionnelle, terrasse au soleil, et la Bella Tola juste au dessus.",
+    note:
+      "La saison d'été se termine le 21 septembre, votre week end est dans les tout derniers jours. La cuisine ferme à 15h, ne montez pas trop tard."
   },
   {
     id: "espace-weisshorn",

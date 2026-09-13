@@ -13,6 +13,7 @@ import {
   CHANDOLIN,
   ACCES,
   REMONTEES,
+  RETOURS,
   RANDOS,
   TABLES,
   CULTURE,
@@ -90,6 +91,64 @@ export function Activites({ go, identifie }) {
   </div>`;
 }
 
+// -------------------------------------------------------------- photos
+
+/** Photos en bande défilante, avec agrandissement au clic. */
+function Photos({ photos }) {
+  const [zoom, setZoom] = useState(null);
+  if (!photos || !photos.length) return null;
+  return html`<div>
+    <div style="display:flex;gap:.5rem;overflow-x:auto;padding:.1rem 0 .5rem;-webkit-overflow-scrolling:touch">
+      ${photos.map(
+        (p, i) => html`<button key=${p.src} onClick=${() => setZoom(i)}
+            style="flex:0 0 auto;padding:0;border:1px solid var(--line);background:#e8e3d8;border-radius:10px;overflow:hidden;width:190px">
+          <img src=${p.src} alt=${p.legende} loading="lazy"
+               style="width:190px;height:130px;object-fit:cover;display:block" />
+          <span class="tiny faint" style="display:block;padding:.28rem .4rem;text-align:left;line-height:1.2">
+            ${p.legende}
+          </span>
+        </button>`
+      )}
+    </div>
+    ${zoom !== null ? html`<${PhotoZoom} photos=${photos} i=${zoom} setI=${setZoom} />` : null}
+  </div>`;
+}
+
+function PhotoZoom({ photos, i, setI }) {
+  const p = photos[i];
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") setI(null);
+      if (e.key === "ArrowRight") setI((i + 1) % photos.length);
+      if (e.key === "ArrowLeft") setI((i - 1 + photos.length) % photos.length);
+    }
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [i]);
+  return html`<div class="lightbox" onClick=${(e) => { if (e.target === e.currentTarget) setI(null); }}>
+    <button class="close" onClick=${() => setI(null)}>Fermer</button>
+    <div class="frame"><img src=${p.src} alt=${p.legende} /></div>
+    <div class="info">
+      <strong>${p.legende}</strong>
+      ${photos.length > 1
+        ? html`<div class="row" style="margin-top:.5rem;gap:.5rem">
+            <button class="btn sm quiet grow" onClick=${() => setI((i - 1 + photos.length) % photos.length)}>
+              Précédente
+            </button>
+            <span class="tiny" style="opacity:.7">${i + 1} sur ${photos.length}</span>
+            <button class="btn sm quiet grow" onClick=${() => setI((i + 1) % photos.length)}>
+              Suivante
+            </button>
+          </div>`
+        : null}
+    </div>
+  </div>`;
+}
+
 // ------------------------------------------------------------ randonnées
 
 function Randos({ ouvert, setOuvert }) {
@@ -109,8 +168,8 @@ function Randos({ ouvert, setOuvert }) {
   return html`<div class="stack">
     <div class="card flat">
       <p class="small muted" style="margin:0 0 .5rem">
-        Douze parcours, du plus tranquille au plus sérieux. Les durées sont celles des panneaux
-        suisses, marche seule, sans les pauses. Comptez large.
+        ${liste.length} parcours, du plus tranquille au plus sérieux. Les durées sont celles des
+        panneaux suisses, marche seule, sans les pauses. Comptez large.
       </p>
       <div class="filters" style="margin:0">
         ${[
@@ -134,6 +193,7 @@ function Rando({ r, ouvert, onToggle }) {
   const s = r.stats;
   const a = ACCES[r.acces];
   const rm = a && a.remontee ? REMONTEES[a.remontee] : null;
+  const retour = RETOURS[r.id];
 
   return html`<div class="card" style=${{ borderLeft: "5px solid var(--p-montagne)" }}>
     <button class="row" style="width:100%;text-align:left;background:none;border:0;padding:0;gap:.6rem"
@@ -146,6 +206,11 @@ function Rando({ r, ouvert, onToggle }) {
           <span class="chip plain">${s.distance_km} km</span>
           <span class="chip plain">${s.montee_m} m de montée</span>
           ${a ? html`<span class="chip plain">🚗 ${tempsCourt(a.voiture.minutes)} de Chandolin</span>` : null}
+          ${r.coup_de_coeur ? html`<span class="chip ok">♥ coup de cœur</span>` : null}
+          ${!s.boucle ? html`<span class="chip warn">traversée</span>` : null}
+          ${s.photos && s.photos.length
+            ? html`<span class="chip plain">📷 ${s.photos.length}</span>`
+            : null}
         </div>
       </span>
       <span class="faint" style="font-size:1.3rem">${ouvert ? "▴" : "▾"}</span>
@@ -155,11 +220,34 @@ function Rando({ r, ouvert, onToggle }) {
       ? html`<div style="margin-top:.8rem">
           <p class="small">${r.resume}</p>
 
-          ${r.photo
-            ? html`<figure style="margin:0 0 .8rem">
-                <div class="photo-prev"><img src=${r.photo} alt=${r.photo_legende} loading="lazy" /></div>
-                <figcaption class="tiny faint" style="margin-top:.25rem">${r.photo_legende}</figcaption>
-              </figure>`
+          <${Photos} photos=${s.photos} />
+
+          ${retour
+            ? html`<div class="card flat"
+                style=${retour.minutes
+                  ? { margin: "0 0 .8rem", background: "var(--warn-soft)", borderColor: "#e3c98f" }
+                  : { margin: "0 0 .8rem", background: "var(--accent-soft)", borderColor: "#b4cbdd" }}>
+                <h4 style=${{ fontSize: ".9rem", margin: "0 0 .3rem", color: retour.minutes ? "#6c4511" : "#17364f" }}>
+                  ${retour.minutes ? "⚠ Ce n'est pas une boucle" : "↩ Le retour"}
+                </h4>
+                <p class="small" style=${{ margin: "0 0 .4rem", color: retour.minutes ? "#6c4511" : "#17364f" }}>
+                  ${retour.texte}
+                </p>
+                ${retour.minutes
+                  ? html`<p class="tiny" style="margin:0;color:#6c4511">
+                      <strong>Retour</strong> de ${retour.depuis} vers ${retour.vers},
+                      environ ${tempsCourt(retour.minutes)} en bus. ${retour.dernier}.
+                    </p>`
+                  : null}
+                ${retour.alerte
+                  ? html`<p class="tiny" style="margin:.4rem 0 0;color:var(--bad);font-weight:650">
+                      ${retour.alerte}
+                    </p>`
+                  : null}
+                ${retour.station_de
+                  ? html`<${HorairesRetour} de=${retour.station_de} vers=${retour.station_a} />`
+                  : null}
+              </div>`
             : null}
 
           <div class="stack">
@@ -252,16 +340,27 @@ function Remontee({ rm, note }) {
  * Si le réseau manque, on retombe simplement sur un lien vers les CFF.
  */
 function Horaires({ station }) {
+  return html`<${Liaisons} de=${CHANDOLIN.station} vers=${station}
+    libelle="Voir les prochains départs depuis Chandolin" />`;
+}
+
+/** Horaires du retour, pour une traversée. */
+function HorairesRetour({ de, vers }) {
+  return html`<${Liaisons} de=${de} vers=${vers} libelle="Voir les prochains retours" />`;
+}
+
+function Liaisons({ de, vers, libelle }) {
   const [etat, setEtat] = useState("repos");
   const [cx, setCx] = useState([]);
+  const station = vers;
 
   async function charger() {
     setEtat("chargement");
     try {
       const u =
         "https://transport.opendata.ch/v1/connections?from=" +
-        encodeURIComponent(CHANDOLIN.station) +
-        "&to=" + encodeURIComponent(station) + "&limit=4";
+        encodeURIComponent(de) +
+        "&to=" + encodeURIComponent(vers) + "&limit=4";
       const r = await fetch(u);
       if (!r.ok) throw new Error("horaire indisponible");
       const d = await r.json();
@@ -273,14 +372,12 @@ function Horaires({ station }) {
   }
 
   const lienCff =
-    "https://www.cff.ch/acheter-vos-billets.html?nach=" + encodeURIComponent(station) +
-    "&von=" + encodeURIComponent(CHANDOLIN.station);
+    "https://www.cff.ch/acheter-vos-billets.html?nach=" + encodeURIComponent(vers) +
+    "&von=" + encodeURIComponent(de);
 
   return html`<div style="margin-top:.5rem">
     ${etat === "repos"
-      ? html`<button class="btn sm quiet block" onClick=${charger}>
-          Voir les prochains départs depuis Chandolin
-        </button>`
+      ? html`<button class="btn sm quiet block" onClick=${charger}>${libelle}</button>`
       : null}
     ${etat === "chargement"
       ? html`<p class="small muted row"><${Spinner} dark=${true} /> Lecture de l'horaire</p>`
@@ -363,6 +460,16 @@ function Fiches({ items, ouvert, setOuvert, icone }) {
         ${estOuvert
           ? html`<div style="margin-top:.7rem">
               <p class="small">${it.resume}</p>
+              ${it.photo
+                ? html`<figure style="margin:0 0 .7rem">
+                    <div class="photo-prev">
+                      <img src=${it.photo} alt=${it.photo_legende || it.nom} loading="lazy" />
+                    </div>
+                    ${it.photo_legende
+                      ? html`<figcaption class="tiny faint" style="margin-top:.25rem">${it.photo_legende}</figcaption>`
+                      : null}
+                  </figure>`
+                : null}
               ${it.histoire
                 ? html`<div>
                     <hr class="sep" />

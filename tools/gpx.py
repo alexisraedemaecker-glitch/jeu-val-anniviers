@@ -9,9 +9,11 @@ Usage :
     python3 tools/gpx.py            # resume a l'ecran
     python3 tools/gpx.py --build    # ecrit assets/randos/ et js/data/randos.js
 """
+import hashlib
 import json
 import math
 import re
+import shutil
 import sys
 import unicodedata
 import xml.etree.ElementTree as ET
@@ -20,7 +22,68 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "Randos"
 OUT_ASSETS = ROOT / "assets" / "randos"
+OUT_PHOTOS = ROOT / "assets" / "photos" / "randos"
 NS = {"g": "http://www.topografix.com/GPX/1/1"}
+
+IMAGES = (".jpg", ".jpeg", ".png", ".webp", ".avif")
+LARGEUR_MAX = 1100
+QUALITE = 58
+
+# Certains fichiers GPX portent un nom technique. On les renomme pour
+# l'affichage et pour le nom du fichier telechargeable.
+NOMS = {
+    "from Zinal to Cabane d'Arpitettaz": "Zinal › Cabane d'Arpitettaz",
+    "Cabane Illhorn - Pas de l’Illsee - Illsee - Lac Noir - Tsapé":
+        "Cabane Illhorn › Pas de l'Illsee › Lac Noir › Tsapé",
+}
+
+# Legendes des photos, deduites du nom de fichier. Celles qui sortent mal
+# sont corrigees ici.
+LEGENDES = {
+    "zinal-village-2-sierre-anniviers-marketing-s": "Le village de Zinal",
+    "lac-de-chateaupre": "Le lac de Chateaupré",
+    "cabane-petit-mountet": "La Cabane du Petit Mountet",
+    "illhorn": "L'Illhorn",
+    "illhorn2": "L'Illhorn",
+    "illhorn-et": "L'Illhorn",
+    "moiry-longit": "Le lac de Moiry",
+    "chateaupre2": "Le lac de Chateaupré",
+    "tracuit2": "La Cabane de Tracuit",
+    "tracuit3": "Vers la Cabane de Tracuit",
+    "tracuit4": "La Cabane de Tracuit",
+    "arpitettaz1": "La Cabane d'Arpitettaz",
+    "arpitettaz2": "Vers la Cabane d'Arpitettaz",
+    "arpitettaz3": "La Cabane d'Arpitettaz",
+    "grand-mountet": "La Cabane du Grand Mountet",
+    "grand-mountet-2": "Vers le Grand Mountet",
+    "grand-mountet-3": "Le cirque du Grand Mountet",
+    "roc-de-la-vache-1": "Le Roc de la Vache",
+    "roc-de-la-vache-2": "Depuis le Roc de la Vache",
+    "roc-de-la-vache3": "Le Roc de la Vache",
+    "becs-de-bosson": "Les Becs de Bosson",
+    "cabane-des-becs-de-bosson": "La Cabane des Becs de Bosson",
+    "lac-de-lona": "Le lac de Lona",
+    "lac-de-touno": "Le lac du Touno",
+    "le-touno": "Le Touno",
+    "le-prilet": "Le Prillet",
+    "le-tsape": "Le Tsapé",
+    "pas-de-l-illsee": "Le Pas de l'Illsee",
+    "lac-noir": "Le Lac Noir",
+    "cabane-illhorn": "La Cabane Illhorn",
+    "hotel-weisshorn": "L'Hôtel Weisshorn",
+    "vue-hotel-weisshorn": "La vue depuis l'Hôtel Weisshorn",
+    "espace-weisshorn-int": "L'Espace Weisshorn",
+    "cabane-du-petit-mountet": "La Cabane du Petit Mountet",
+    "cabane-de-moiry-interieur": "L'intérieur de la Cabane de Moiry",
+    "cabane-de-moiry-vue": "La vue depuis la Cabane de Moiry",
+    "cabane-de-tracuit": "La Cabane de Tracuit",
+    "barrage-de-moiry": "Le barrage de Moiry",
+    "lac-de-moiry": "Le lac de Moiry",
+    "plat-de-la-lee": "Le Plat de la Lée",
+    "corne-de-sorebois": "La Corne de Sorebois",
+    "bendolla": "Bendolla",
+    "tignousa": "Tignousa",
+}
 
 
 def slug(texte):
@@ -87,6 +150,7 @@ def lire(path):
     if not nom:
         nom = racine.findtext("g:trk/g:name", default=path.stem, namespaces=NS)
     nom = nom.replace(">", "›").strip()
+    nom = NOMS.get(nom, nom)
 
     pts = []
     for trkpt in racine.iterfind(".//g:trkpt", NS):
@@ -134,6 +198,7 @@ def lire(path):
 
     return {
         "fichier": path.name,
+        "dossier": path.parent,
         "nom": nom,
         "points": pts,
         "cumul": cumul,
@@ -151,6 +216,83 @@ def lire(path):
         "niveau": niveau,
         "niveau_texte": niveau_txt,
     }
+
+
+# ------------------------------------------------------------------- photos
+
+
+def legende_de(nom_fichier):
+    """Legende lisible, deduite du nom de fichier puis corrigee si besoin."""
+    base = Path(nom_fichier).stem
+    base = re.sub(r"\s*copie\s*$", "", base, flags=re.I)
+    cle = slug(base)
+    if cle in LEGENDES:
+        return LEGENDES[cle]
+    # Repli : on nettoie le nom de fichier
+    txt = re.sub(r"[-_]+", " ", base).strip()
+    txt = re.sub(r"\s+", " ", txt)
+    return txt[:1].upper() + txt[1:] if txt else "Photo"
+
+
+def redimensionner(src, dst):
+    """Reduit et recompresse une image avec l'outil integre de macOS.
+
+    sips ne sait pas lire l'AVIF, qui est de toute facon deja tres compact :
+    ces fichiers la sont copies tels quels. Tous les navigateurs de telephone
+    recents les affichent.
+    """
+    import subprocess
+
+    if src.suffix.lower() == ".avif":
+        shutil.copy(src, dst.with_suffix(".avif"))
+        return dst.with_suffix(".avif")
+    r = subprocess.run(
+        ["sips", "-Z", str(LARGEUR_MAX), "-s", "format", "jpeg",
+         "-s", "formatOptions", str(QUALITE), str(src), "--out", str(dst)],
+        capture_output=True,
+    )
+    if r.returncode != 0 or not dst.exists():
+        shutil.copy(src, dst)
+    return dst
+
+
+def photos_de(dossier, vues):
+    """Photos d'un dossier de randonnee, dedupliquees par contenu.
+
+    Une meme photo peut illustrer deux randonnees : elle n'est stockee qu'une
+    fois sur le disque, mais reste listee dans les deux fiches.
+    """
+    sorties = []
+    for f in sorted(dossier.iterdir()):
+        if f.suffix.lower() not in IMAGES or f.name.startswith("."):
+            continue
+        digest = hashlib.md5(f.read_bytes()).hexdigest()[:10]
+        if digest in vues:
+            chemin = vues[digest]
+        else:
+            cible = OUT_PHOTOS / f"{digest}{'.avif' if f.suffix.lower() == '.avif' else '.jpg'}"
+            ecrit = redimensionner(f, cible)
+            chemin = f"assets/photos/randos/{ecrit.name}"
+            vues[digest] = chemin
+        sorties.append({"src": chemin, "legende": legende_de(f.name)})
+    # Le meme fichier deux fois dans une fiche n'apporte rien
+    uniques, dejavu = [], set()
+    for p in sorties:
+        if p["src"] in dejavu:
+            continue
+        dejavu.add(p["src"])
+        uniques.append(p)
+    # Plusieurs vues du meme sujet : on numerote pour ne pas repeter le
+    # meme mot trois fois de suite sous trois photos differentes.
+    compte = {}
+    for p in uniques:
+        compte[p["legende"]] = compte.get(p["legende"], 0) + 1
+    vu = {}
+    for p in uniques:
+        if compte[p["legende"]] > 1:
+            vu[p["legende"]] = vu.get(p["legende"], 0) + 1
+            p["legende"] = f"{p['legende']} ({vu[p['legende']]})"
+    return uniques
 
 
 # ------------------------------------------------------------------ dessins
@@ -311,6 +453,8 @@ def main():
         return
 
     OUT_ASSETS.mkdir(parents=True, exist_ok=True)
+    OUT_PHOTOS.mkdir(parents=True, exist_ok=True)
+    vues = {}
     sortie = []
     for r in rows:
         s = slug(r["nom"])
@@ -318,10 +462,12 @@ def main():
         (OUT_ASSETS / f"{s}-trace.svg").write_text(svg_trace(r), encoding="utf-8")
         src = next(p for p in fichiers() if p.name == r["fichier"])
         (OUT_ASSETS / f"{s}.gpx").write_bytes(src.read_bytes())
+        photos = photos_de(r["dossier"], vues)
         sortie.append(
             {
                 "id": s,
                 "nom": r["nom"],
+                "photos": photos,
                 "gpx": f"assets/randos/{s}.gpx",
                 "profil": f"assets/randos/{s}-profil.svg",
                 "trace": f"assets/randos/{s}-trace.svg",
@@ -348,8 +494,8 @@ def main():
     # la main dans js/data/activites.js : regenerer les traces ne touche
     # jamais a la prose.
     leger = [
-        {k: r[k] for k in ("id","nom","gpx","profil","trace","distance_km","montee_m",
-                           "descente_m","alt_min","alt_max","heures","niveau",
+        {k: r[k] for k in ("id","nom","gpx","profil","trace","photos","distance_km",
+                           "montee_m","descente_m","alt_min","alt_max","heures","niveau",
                            "niveau_texte","boucle","depart","arrivee")}
         for r in sortie
     ]
@@ -363,7 +509,10 @@ def main():
     )
     (ROOT / "js" / "data" / "randos-stats.js").write_text(js, encoding="utf-8")
 
+    total_photos = sum(len(r["photos"]) for r in sortie)
+    poids = sum(f.stat().st_size for f in OUT_PHOTOS.iterdir()) / 1048576
     print(f"\n{len(sortie)} randonnées exportées vers assets/randos/")
+    print(f"{total_photos} photos référencées, {len(vues)} fichiers distincts, {poids:.1f} Mo")
     print("Statistiques dans js/data/randos-stats.js")
 
 
