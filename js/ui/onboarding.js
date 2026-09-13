@@ -87,6 +87,15 @@ function Diaporama({ i, setI, pause, ouvrir }) {
 
   <button type="button" class="diapo-espace" onClick=${() => ouvrir(bas)}
           aria-label=${"Voir en grand : " + PALIERS_VALLEE[bas].legende}>
+    <span class="diapo-nette" aria-hidden="true">
+      <img src=${PALIERS_VALLEE[bas].src_small} srcset=${jeu(PALIERS_VALLEE[bas])} sizes="100vw"
+           alt="" />
+      ${haut !== null
+        ? html`<img class=${"entrante" + (visible ? " visible" : "")}
+                 src=${PALIERS_VALLEE[haut].src_small} srcset=${jeu(PALIERS_VALLEE[haut])}
+                 sizes="100vw" alt="" />`
+        : null}
+    </span>
     <span class="loupe" aria-hidden="true">⤢</span>
     <span class="txt">
       <span class="ligne">

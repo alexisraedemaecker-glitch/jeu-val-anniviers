@@ -99,6 +99,17 @@ laisser dépasser le haut de la première carte : on voit qu'il y a du contenu
 dessous, il vient glisser par dessus l'image au défilement. Le récit long est
 replié derrière `Lire l'histoire en entier`, pour la même raison.
 
+Les images sont en 16 sur 9 et un téléphone est en portrait : un cadrage plein
+écran perdrait la moitié de la largeur. En dessous d'un rapport de 5 sur 4, la
+photo est donc affichée entière et nette sur toute la largeur, et c'est la même
+image, floutée et agrandie derrière, qui remplit le reste de l'écran. Rien n'est
+coupé, l'écran reste plein, et une photo en 16 sur 9 sur toute la largeur est
+aussi grande qu'elle peut l'être sans perdre ses bords. Sur un écran en paysage,
+le cadrage plein écran reprend la main et la couche nette disparaît.
+
+Pour voir le détail, le plein écran garde son zoom par appui et son invitation à
+coucher le téléphone.
+
 La légende est rendue par le composant qui possède l'image, à partir de la
 couche du dessous. Une légende calculée à côté, sur la valeur visée par le
 diaporama, annoncerait la photo suivante pendant toute la seconde du fondu.
