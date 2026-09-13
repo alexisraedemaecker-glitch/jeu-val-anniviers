@@ -377,3 +377,49 @@ input[type=file] { display: none; }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* ---------------------------------------- illustration evolutive de la vallee */
+
+.vallee {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1376 / 768;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #16212c;
+  border: 1px solid var(--line);
+}
+.vallee img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* La couche du dessus apparait en fondu par dessus l'ancienne, qui reste
+   visible dessous le temps de la transition. Aucun clignotement. */
+.vallee img.entrante {
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+.vallee img.entrante.visible { opacity: 1; }
+
+.vallee-legende {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 1.6rem .8rem .6rem;
+  background: linear-gradient(to top, rgba(12, 18, 24, .82), rgba(12, 18, 24, 0));
+  color: #fff;
+  display: flex; align-items: flex-end; gap: .6rem;
+}
+.vallee-legende .txt { flex: 1; min-width: 0; font-weight: 650; font-size: .92rem; line-height: 1.25; }
+.vallee-legende .pct {
+  font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  line-height: 1; white-space: nowrap;
+}
+.vallee-legende .pct small { font-size: .62rem; font-weight: 600; opacity: .8; display: block; text-align: right; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vallee img.entrante { transition: none; }
+}

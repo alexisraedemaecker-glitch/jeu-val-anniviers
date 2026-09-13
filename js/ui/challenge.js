@@ -323,8 +323,8 @@ function Form({ c, go }) {
           </div>`}
       ${bloques.length
         ? html`<${Banner} kind="warn">
-            ${bloques.map((b) => `${b.nom} est en attente sur ce défi jusqu'à ${b.heure}`).join(". ")}.
-            ${bloques.length === 1 ? "Cette personne ne recevra pas" : "Ces personnes ne recevront pas"}
+            ${bloques.map((b) => `${b.nom} est en attente sur ce défi jusqu'à ${b.heure}`).join(". ")}.${" "}
+            ${bloques.length === 1 ? "Cette personne ne recevra pas" : "Ces personnes ne recevront pas"}${" "}
             les points de ce défi.
           <//>`
         : null}

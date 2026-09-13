@@ -109,7 +109,7 @@ export function Me({ go }) {
         }
       }}>Changer de profil</button>
       <p class="tiny faint" style="margin-top:.6rem">
-        ${state.lastSync ? `Dernière mise à jour à ${dateTimeShort(state.lastSync.toISOString())}.` : ""}
+        ${state.lastSync ? `Dernière mise à jour à ${dateTimeShort(state.lastSync.toISOString())}.` : ""}${" "}
         Temps réel ${state.realtime}.
       </p>
     </div>

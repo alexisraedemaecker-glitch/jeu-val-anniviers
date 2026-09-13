@@ -1,9 +1,90 @@
 // Les cinq jauges collectives en direct, et l'avancement vers l'objectif.
-const { html } = window.htmPreact;
+const { html, useState, useEffect, useRef } = window.htmPreact;
 
 import { state } from "../store.js";
 import { VICTORY } from "../data/pillars.js";
+import { palierVallee } from "../data/vallee.js";
 import { Gauge, Spinner, Banner } from "./bits.js";
+
+/** Progression collective en pourcentage, calculée comme la condition de
+    victoire : somme des cinq jauges divisée par leur maximum cumulé. */
+export function pourcentageCollectif() {
+  const c = state.collective;
+  if (!c || !c.total_max) return 0;
+  return Math.max(0, Math.min(100, (c.total / c.total_max) * 100));
+}
+
+/**
+ * Illustration évolutive de la vallée.
+ *
+ * Le palier suit la progression collective. Quand il change, la nouvelle
+ * image est d'abord préchargée, puis apparaît en fondu par dessus l'ancienne
+ * en une seconde. L'ancienne n'est retirée qu'à la fin, donc rien ne
+ * clignote. Si le fondu ne peut pas jouer, par exemple sur un écran
+ * verrouillé, l'image est simplement remplacée.
+ */
+function Vallee() {
+  const pct = pourcentageCollectif();
+  const palier = palierVallee(pct);
+
+  const [dessous, setDessous] = useState(palier);
+  const [entrante, setEntrante] = useState(null);
+  const [visible, setVisible] = useState(false);
+  const minuteries = useRef([]);
+
+  useEffect(() => {
+    if (palier.src === dessous.src) return undefined;
+    let annule = false;
+    const nettoyer = () => minuteries.current.forEach(clearTimeout);
+    nettoyer();
+
+    const poser = () => {
+      if (annule) return;
+      setEntrante(palier);
+      setVisible(false);
+      minuteries.current = [
+        setTimeout(() => !annule && setVisible(true), 60),
+        setTimeout(() => {
+          if (annule) return;
+          setDessous(palier);
+          setEntrante(null);
+          setVisible(false);
+        }, 1200)
+      ];
+    };
+
+    // On ne lance le fondu qu'une fois la nouvelle image en cache.
+    const img = new Image();
+    img.onload = poser;
+    img.onerror = () => !annule && setDessous(palier);
+    img.src = palier.src;
+    if (img.complete) poser();
+
+    return () => {
+      annule = true;
+      nettoyer();
+    };
+  }, [palier.src]);
+
+  const tailles = "(max-width: 700px) 100vw, 700px";
+  const jeu = (p) => `${p.src_small} 760w, ${p.src} 1376w`;
+
+  return html`<figure class="card" style="padding:0;overflow:hidden;margin-bottom:.8rem">
+    <div class="vallee">
+      <img src=${dessous.src} srcset=${jeu(dessous)} sizes=${tailles}
+           alt=${"Le Val d'Anniviers en 2056 : " + dessous.legende} />
+      ${entrante
+        ? html`<img class=${"entrante" + (visible ? " visible" : "")}
+                 src=${entrante.src} srcset=${jeu(entrante)} sizes=${tailles}
+                 alt=${"Le Val d'Anniviers en 2056 : " + entrante.legende} />`
+        : null}
+      <figcaption class="vallee-legende">
+        <span class="txt">${(entrante || dessous).legende}</span>
+        <span class="pct">${Math.round(pct)}<span style="font-size:.62em"> %</span><small>restauré</small></span>
+      </figcaption>
+    </div>
+  </figure>`;
+}
 
 export function Progress() {
   const col = state.collective;
@@ -15,6 +96,8 @@ export function Progress() {
   const underFloor = col ? col.piliers_sous_plancher : 0;
 
   return html`<div class="stack">
+    <${Vallee} />
+
     <div class="card">
       <div class="card-head">
         <h2>Objectif collectif</h2>
@@ -43,13 +126,14 @@ export function Progress() {
           ? html`<${Banner} kind="warn">
               ${underFloor === 1
                 ? "Un pilier est encore sous le plancher minimal."
-                : `${underFloor} piliers sont encore sous le plancher minimal.`}
+                : `${underFloor} piliers sont encore sous le plancher minimal.`}${" "}
               Même en atteignant le seuil global, l'objectif ne sera pas validé tant qu'un pilier
               reste à l'abandon.
             <//>`
           : html`<p class="small muted" style="margin-top:.5rem">
-              Tous les piliers ont dépassé leur plancher minimal. Il reste
-              ${Math.max(0, VICTORY.global_target - total)} points pour atteindre le seuil collectif.
+              Tous les piliers ont dépassé leur plancher minimal.
+              Il reste ${Math.max(0, VICTORY.global_target - total)} points pour atteindre le seuil
+              collectif.
             </p>`}
     </div>
 

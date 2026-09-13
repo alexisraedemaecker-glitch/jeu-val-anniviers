@@ -7,7 +7,7 @@
 //   - photos du stockage Supabase : le cache d'abord, elles ne changent jamais.
 //   - appels a la base : jamais de cache, les scores doivent etre justes.
 
-const CACHE = "anniviers2056-v4";
+const CACHE = "anniviers2056-v5";
 const NET_TIMEOUT = 4000;
 
 const SHELL = [
@@ -35,6 +35,19 @@ const SHELL = [
   "js/ui/activites.js",
   "js/data/activites.js",
   "js/data/randos-stats.js",
+  "js/data/vallee.js",
+  "assets/vallee/vallee-00.jpg",
+  "assets/vallee/vallee-20.jpg",
+  "assets/vallee/vallee-40.jpg",
+  "assets/vallee/vallee-60.jpg",
+  "assets/vallee/vallee-80.jpg",
+  "assets/vallee/vallee-100.jpg",
+  "assets/vallee/vallee-00-small.jpg",
+  "assets/vallee/vallee-20-small.jpg",
+  "assets/vallee/vallee-40-small.jpg",
+  "assets/vallee/vallee-60-small.jpg",
+  "assets/vallee/vallee-80-small.jpg",
+  "assets/vallee/vallee-100-small.jpg",
   "js/vendor/htm-preact.js",
   "js/vendor/supabase.js",
   "assets/icon-192.png",
@@ -143,7 +156,7 @@ self.addEventListener("fetch", (event) => {
   // mis en cache au fil des consultations plutôt qu'à l'installation.
   if (
     url.origin === self.location.origin &&
-    (url.pathname.includes("/assets/randos/") || url.pathname.includes("/assets/photos/"))
+    (url.pathname.includes("/assets/randos/") || url.pathname.includes("/assets/photos/") || url.pathname.includes("/assets/vallee/"))
   ) {
     event.respondWith(fromCacheFirst(req));
     return;
