@@ -21,7 +21,7 @@ import {
   SOURCES
 } from "../data/activites.js";
 import { STATS_BY_ID } from "../data/randos-stats.js";
-import { Banner, Spinner, Empty } from "./bits.js";
+import { Banner, Spinner, Empty, PhotoZoom } from "./bits.js";
 
 const COULEUR_NIVEAU = { facile: "ok", moyenne: "warn", exigeante: "bad" };
 
@@ -135,48 +135,6 @@ function Photos({ photos }) {
         </div>`
       : html`<p class="tiny faint" style="margin:.1rem 0 0">Appuyez pour agrandir</p>`}
     ${zoom !== null ? html`<${PhotoZoom} photos=${photos} i=${zoom} setI=${setZoom} />` : null}
-  </div>`;
-}
-
-function PhotoZoom({ photos, i, setI }) {
-  const p = photos[i];
-  const [zoom, setZoom] = useState(false);
-  const suivante = () => { setZoom(false); setI((i + 1) % photos.length); };
-  const precedente = () => { setZoom(false); setI((i - 1 + photos.length) % photos.length); };
-
-  useEffect(() => {
-    function onKey(e) {
-      if (e.key === "Escape") setI(null);
-      if (e.key === "ArrowRight") suivante();
-      if (e.key === "ArrowLeft") precedente();
-    }
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [i]);
-
-  return html`<div class="lightbox" onClick=${(e) => { if (e.target === e.currentTarget) setI(null); }}>
-    <button class="close" onClick=${() => setI(null)}>Fermer</button>
-    <div class=${"frame" + (zoom ? " zoom" : "")}
-         onClick=${(e) => { if (e.target === e.currentTarget) setI(null); }}>
-      <img src=${p.src} alt=${p.legende} onClick=${() => setZoom(!zoom)} />
-    </div>
-    <div class="info">
-      <strong>${p.legende}</strong>
-      <div class="tiny" style="opacity:.7;margin-top:.15rem">
-        ${zoom ? "Appuyez sur la photo pour revenir" : "Appuyez sur la photo pour zoomer, ou couchez le téléphone"}
-      </div>
-      ${photos.length > 1
-        ? html`<div class="row" style="margin-top:.5rem;gap:.5rem">
-            <button class="btn sm quiet grow" onClick=${precedente}>Précédente</button>
-            <span class="tiny nowrap" style="opacity:.75">${i + 1} sur ${photos.length}</span>
-            <button class="btn sm quiet grow" onClick=${suivante}>Suivante</button>
-          </div>`
-        : null}
-    </div>
   </div>`;
 }
 

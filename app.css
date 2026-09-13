@@ -380,14 +380,29 @@ input[type=file] { display: none; }
 
 /* ---------------------------------------- illustration evolutive de la vallee */
 
+/* L'illustration sort du rembourrage de la page pour occuper toute la largeur
+   de l'ecran. Un cadrage un peu plus haut que l'image d'origine lui donne la
+   presence qu'elle merite, sans perdre le raccard ni les sommets. */
 .vallee {
   position: relative;
   width: 100%;
-  aspect-ratio: 1376 / 768;
-  border-radius: var(--radius);
+  aspect-ratio: 16 / 10;
   overflow: hidden;
   background: #16212c;
-  border: 1px solid var(--line);
+  border: 0;
+  cursor: zoom-in;
+  display: block;
+  padding: 0;
+  text-align: left;
+}
+@media (min-width: 620px) {
+  .vallee { aspect-ratio: 1376 / 768; border-radius: var(--radius); }
+}
+.vallee .loupe {
+  position: absolute; top: .6rem; right: .6rem;
+  background: rgba(12, 18, 24, .55); color: #fff;
+  width: 32px; height: 32px; border-radius: 9px;
+  display: grid; place-items: center; font-size: 1rem;
 }
 .vallee img {
   position: absolute;
@@ -408,10 +423,11 @@ input[type=file] { display: none; }
 .vallee-legende {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  padding: 1.6rem .8rem .6rem;
-  background: linear-gradient(to top, rgba(12, 18, 24, .82), rgba(12, 18, 24, 0));
+  padding: 1.8rem .9rem .7rem;
+  background: linear-gradient(to top, rgba(12, 18, 24, .85), rgba(12, 18, 24, 0));
   color: #fff;
   display: flex; align-items: flex-end; gap: .6rem;
+  text-align: left;
 }
 .vallee-legende .txt { flex: 1; min-width: 0; font-weight: 650; font-size: .92rem; line-height: 1.25; }
 .vallee-legende .pct {
@@ -419,6 +435,7 @@ input[type=file] { display: none; }
   line-height: 1; white-space: nowrap;
 }
 .vallee-legende .pct small { font-size: .62rem; font-weight: 600; opacity: .8; display: block; text-align: right; }
+.vallee-legende .aide { font-size: .7rem; font-weight: 500; opacity: .78; display: block; margin-top: .1rem; }
 
 @media (prefers-reduced-motion: reduce) {
   .vallee img.entrante { transition: none; }
@@ -508,9 +525,19 @@ input[type=file] { display: none; }
   transform-origin: center center;
 }
 /* Un appui agrandit la photo pour en examiner le détail, un second la remet. */
-.lightbox .frame.zoom { overflow: auto; }
-.lightbox .frame.zoom img { position: static; display: block; margin: 0 auto; }
-.lightbox .frame.zoom img { transform: scale(2.2); cursor: zoom-out; }
+/* Agrandissement : on elargit reellement l'image plutot que de la mettre a
+   l'echelle. Une mise a l'echelle ne change pas la taille de la boite, et le
+   deplacement dans l'image serait alors impossible. La marge automatique
+   centre l'image tant qu'elle tient, et laisse defiler des qu'elle deborde. */
+.lightbox .frame.zoom { overflow: auto; display: flex; }
+.lightbox .frame.zoom img {
+  position: static;
+  margin: auto;
+  transform: none;
+  max-width: none; max-height: none;
+  width: 220%; height: auto;
+  cursor: zoom-out;
+}
 .lightbox .frame img { cursor: zoom-in; }
 .lightbox .info { flex: 0 0 auto; padding: .3rem .7rem 0; }
 

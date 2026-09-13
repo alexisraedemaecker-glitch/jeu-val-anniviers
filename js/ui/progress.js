@@ -4,7 +4,7 @@ const { html, useState, useEffect, useRef } = window.htmPreact;
 import { state } from "../store.js";
 import { VICTORY } from "../data/pillars.js";
 import { palierVallee } from "../data/vallee.js";
-import { Gauge, Spinner, Banner } from "./bits.js";
+import { Gauge, Spinner, Banner, PhotoZoom } from "./bits.js";
 
 /** Progression collective en pourcentage, calculée comme la condition de
     victoire : somme des cinq jauges divisée par leur maximum cumulé. */
@@ -30,6 +30,7 @@ function Vallee() {
   const [dessous, setDessous] = useState(palier);
   const [entrante, setEntrante] = useState(null);
   const [visible, setVisible] = useState(false);
+  const [plein, setPlein] = useState(null);
   const minuteries = useRef([]);
 
   useEffect(() => {
@@ -66,11 +67,13 @@ function Vallee() {
     };
   }, [palier.src]);
 
-  const tailles = "(max-width: 700px) 100vw, 700px";
+  const tailles = "100vw";
   const jeu = (p) => `${p.src_small} 760w, ${p.src} 1376w`;
+  const courant = entrante || dessous;
 
-  return html`<figure class="card" style="padding:0;overflow:hidden;margin-bottom:.8rem">
-    <div class="vallee">
+  return html`<figure style="margin:0 -.9rem .8rem">
+    <button type="button" class="vallee" onClick=${() => setPlein(0)}
+            aria-label=${"Agrandir l'illustration : " + courant.legende}>
       <img src=${dessous.src} srcset=${jeu(dessous)} sizes=${tailles}
            alt=${"Le Val d'Anniviers en 2056 : " + dessous.legende} />
       ${entrante
@@ -78,11 +81,20 @@ function Vallee() {
                  src=${entrante.src} srcset=${jeu(entrante)} sizes=${tailles}
                  alt=${"Le Val d'Anniviers en 2056 : " + entrante.legende} />`
         : null}
-      <figcaption class="vallee-legende">
-        <span class="txt">${(entrante || dessous).legende}</span>
+      <span class="loupe" aria-hidden="true">⤢</span>
+      <span class="vallee-legende">
+        <span class="txt">
+          ${courant.legende}
+          <span class="aide">Appuyez pour voir en grand</span>
+        </span>
         <span class="pct">${Math.round(pct)}<span style="font-size:.62em"> %</span><small>restauré</small></span>
-      </figcaption>
-    </div>
+      </span>
+    </button>
+    ${plein !== null
+      ? html`<${PhotoZoom}
+          photos=${[{ src: courant.src, legende: `${courant.legende} · ${Math.round(pct)} pour cent restauré` }]}
+          i=${0} setI=${setPlein} />`
+      : null}
   </figure>`;
 }
 
