@@ -49,6 +49,35 @@ tools/
   reset_jour_j.py        remise à zéro avant l'événement
 ```
 
+## Illustration évolutive de la vallée
+
+Six images, une par palier de restauration, affichées au dessus des jauges sur
+l'écran des piliers. Le palier suit le pourcentage de progression collective,
+calculé exactement comme la condition de victoire.
+
+Les sources vivent dans `EvolutionValAnniviers`, nommées par leur palier.
+`tools/gen_vallee.py` les renomme, les réduit et les recompresse vers
+`assets/vallee/`, en version large et en version étroite pour les petits
+écrans, puis écrit `js/data/vallee.js`.
+
+```bash
+python3 tools/gen_vallee.py
+```
+
+Le changement de palier est un fondu d'une seconde. La nouvelle image est
+préchargée avant que le fondu commence, et l'ancienne n'est retirée qu'à la
+fin, ce qui évite tout clignotement. Les six images sont préchargées par le
+service worker, donc l'illustration reste visible sans réseau.
+
+## Un piège de htm à connaître
+
+htm supprime complètement l'espace quand un saut de ligne sépare du texte d'une
+expression. `Il reste\n  ${n} points` affiche `Il reste700 points`. Écrire
+`${" "}` avant le saut, ou garder le texte et l'expression sur la même ligne.
+
+`tools/check_espaces.py` détecte ce motif dans tous les gabarits et fait échouer
+la publication le cas échéant.
+
 ## L'onglet Activités
 
 Accessible sans s'identifier, puisqu'il ne dépend d'aucune donnée de jeu.
