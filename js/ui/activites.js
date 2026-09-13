@@ -271,7 +271,10 @@ function Rando({ r, ouvert, onToggle }) {
           </div>
 
           <p class="tiny faint" style="margin:.5rem 0 .8rem">
-            ${s.niveau_texte} Départ en vert, arrivée en rouge.
+            ${s.niveau_texte}
+            ${s.boucle
+              ? " Le départ et l'arrivée sont au même endroit."
+              : " Départ en vert, arrivée en rouge."}
           </p>
 
           <hr class="sep" />
