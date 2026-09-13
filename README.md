@@ -62,6 +62,15 @@ GPS ajoute des centaines de mètres imaginaires. La durée suit la méthode des
 panneaux suisses : 4 km/h à plat, 300 m/h en montée, 500 m/h en descente, le
 plus grand des deux verticaux plus la moitié du plus petit.
 
+Chaque randonnée vit dans son sous dossier de `Randos`, avec son fichier GPX et
+ses photos. Les images sont redimensionnées à 1100 pixels, recompressées, puis
+dédupliquées par contenu : une photo qui illustre deux randonnées n'est stockée
+qu'une fois mais reste listée dans les deux fiches. Les légendes sont déduites du
+nom de fichier, puis corrigées par la table `LEGENDES` de `tools/gpx.py`.
+
+L'AVIF est copié tel quel : `sips` ne sait pas le lire, et ce format est de toute
+façon déjà très compact.
+
 Après toute modification du dossier `Randos` :
 
 ```bash
