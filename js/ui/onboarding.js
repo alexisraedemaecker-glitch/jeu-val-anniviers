@@ -127,6 +127,9 @@ export function Onboarding() {
   // Diaporama d'arriere plan et photo ouverte en grand.
   const [vue, setVue] = useState(0);
   const [plein, setPlein] = useState(null);
+  // Le recit complet est replie par defaut : sur un telephone, un long texte
+  // recouvrirait justement les photos que l'on veut faire voir.
+  const [histoire, setHistoire] = useState(false);
 
   useEffect(() => () => apercu && URL.revokeObjectURL(apercu), [apercu]);
 
@@ -237,24 +240,41 @@ export function Onboarding() {
     <${Diaporama} i=${vue} setI=${setVue} pause=${plein !== null}
       ouvrir=${() => setPlein(vue)} />
 
+    <button type="button" class="diapo-espace" onClick=${() => setPlein(vue)}
+            aria-label=${"Voir en grand : " + PALIERS_VALLEE[vue].legende}>
+      <span class="loupe" aria-hidden="true">⤢</span>
+      <span class="txt">
+        <span class="grow">${PALIERS_VALLEE[vue].legende}</span>
+        <span class="aide">Appuyez pour voir en grand</span>
+      </span>
+    </button>
+
     <div class="card">
       <h1>Le Val d'Anniviers en 2056</h1>
       <p class="muted small">
-        Nous sommes en 2056 et la vallée s'est dégradée. Les glaciers ont reculé, les alpages se
-        sont vidés, une partie de la mémoire locale s'est effacée. Vous intervenez depuis 2026.
-        Votre mission est de redécouvrir ce qui rend cette vallée riche, et de la faire remonter.
+        Nous sommes en 2056 et la vallée s'est dégradée. Vous intervenez depuis 2026 pour lui
+        rendre ce qui fait sa richesse. Commencez par vous identifier.
       </p>
-      <p class="muted small">
-        Chacun joue en son nom. Les groupes se forment et se déforment librement au fil de la
-        journée. Commencez par vous identifier.
-      </p>
-      <button class="btn sm ghost" style="white-space:nowrap" onClick=${() => setPlein(vue)}>
-        ⤢ Voir la vallée en grand
+      ${histoire
+        ? html`<${Frag}>
+            <p class="muted small">
+              Les glaciers ont reculé, les alpages se sont vidés, une partie de la mémoire locale
+              s'est effacée. Votre mission est de redécouvrir ce qui rend cette vallée riche, et de
+              la faire remonter.
+            </p>
+            <p class="muted small">
+              Chacun joue en son nom. Les groupes se forment et se déforment librement au fil de la
+              journée.
+            </p>
+            <p class="tiny faint">
+              En fond défilent les six états de la vallée, du plus abandonné au plus vivant. C'est
+              ce chemin que la journée doit parcourir.
+            </p>
+          <//>`
+        : null}
+      <button class="btn sm ghost" type="button" onClick=${() => setHistoire(!histoire)}>
+        ${histoire ? "Masquer l'histoire" : "Lire l'histoire en entier"}
       </button>
-      <p class="tiny faint" style="margin:.4rem 0 0">
-        En fond, la vallée telle qu'elle est aujourd'hui en 2056, puis telle qu'elle pourrait
-        redevenir. Photo affichée : ${PALIERS_VALLEE[vue].legende.toLowerCase()}.
-      </p>
     </div>
 
     ${error ? html`<${Banner} kind="bad">${error}<//>` : null}

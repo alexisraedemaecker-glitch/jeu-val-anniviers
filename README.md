@@ -93,7 +93,13 @@ quatre secondes chacun avec un fondu d'une seconde, donc un tour complet en une
 trentaine de secondes : le temps d'une inscription. Le but du jeu se lit ainsi
 sans une ligne d'explication.
 
-Un appui sur le fond, ou le bouton `Voir la vallée en grand`, ouvre la photo en
+Sur un téléphone, les cartes occupent toute la largeur et masqueraient
+complètement le fond. Une bande d'environ un tiers de la hauteur est donc
+réservée en haut de l'écran : le contenu commence dessous et vient glisser par
+dessus au défilement. Le récit long est replié derrière `Lire l'histoire en
+entier`, pour la même raison.
+
+Un appui sur la bande, ou sur le fond partout où il se voit, ouvre la photo en
 plein écran. Le défilement s'arrête alors, et il reprend à la fermeture sur la
 photo que la personne vient de regarder.
 
