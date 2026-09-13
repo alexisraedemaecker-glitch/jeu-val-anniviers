@@ -17,11 +17,13 @@ import {
   RANDOS,
   TABLES,
   CULTURE,
+  LIEUX_CULTURELS,
+  THEMES_DESTINATION,
   CHILL,
   SOURCES
 } from "../data/activites.js";
 import { STATS_BY_ID } from "../data/randos-stats.js";
-import { Banner, Spinner, Empty, PhotoZoom } from "./bits.js";
+import { Banner, Spinner, Empty, PhotoZoom, Frag } from "./bits.js";
 
 const COULEUR_NIVEAU = { facile: "ok", moyenne: "warn", exigeante: "bad" };
 
@@ -70,7 +72,13 @@ export function Activites({ go, identifie }) {
 
     ${cat === "sportif" ? html`<${Randos} ouvert=${ouvert} setOuvert=${setOuvert} />` : null}
     ${cat === "culinaire" ? html`<${Fiches} items=${TABLES} ouvert=${ouvert} setOuvert=${setOuvert} icone="🧀" />` : null}
-    ${cat === "culturel" ? html`<${Fiches} items=${CULTURE} ouvert=${ouvert} setOuvert=${setOuvert} icone="📚" />` : null}
+    ${cat === "culturel"
+      ? html`<${Frag}>
+          <${Fiches} items=${CULTURE} ouvert=${ouvert} setOuvert=${setOuvert} icone="📚" />
+          <${LieuxCulturels} />
+          <${Themes} />
+        <//>`
+      : null}
     ${cat === "chill" ? html`<${Fiches} items=${CHILL} ouvert=${ouvert} setOuvert=${setOuvert} icone="🍃" />` : null}
 
     <div class="card flat">
@@ -87,6 +95,64 @@ export function Activites({ go, identifie }) {
             rel="noopener noreferrer">${s.nom}</a>`
         )}
       </div>
+    </div>
+  </div>`;
+}
+
+/**
+ * Les lieux culturels de la vallee. Volontairement compact : une ligne par
+ * lieu, groupee par village, et le detail sur le site officiel ou les horaires
+ * sont a jour.
+ */
+function LieuxCulturels() {
+  const villages = [];
+  LIEUX_CULTURELS.forEach((l) => {
+    const v = villages.find((x) => x.nom === l.village);
+    if (v) v.lieux.push(l);
+    else villages.push({ nom: l.village, lieux: [l] });
+  });
+
+  return html`<div class="card">
+    <h3>Musées et lieux à visiter</h3>
+    <p class="small muted">
+      Douze lieux ouverts dans la vallée, la plupart gratuits ou à quelques francs. Les horaires
+      changent en fin de saison, chaque fiche mène à la page officielle qui les tient à jour.
+    </p>
+    ${villages.map(
+      (v) => html`<div key=${v.nom} class="lieux-village">
+        <h4>${v.nom}</h4>
+        ${v.lieux.map(
+          (l) => html`<a key=${l.nom} class="lieu" href=${l.lien} target="_blank" rel="noopener noreferrer">
+            <span class="grow">
+              <strong>${l.nom}</strong>
+              <span class="tiny faint" style="display:block">${l.resume}</span>
+            </span>
+            <span class="fleche" aria-hidden="true">↗</span>
+          </a>`
+        )}
+      </div>`
+    )}
+  </div>`;
+}
+
+/** Les autres portes d'entree du site officiel, pour creuser un sujet. */
+function Themes() {
+  return html`<div class="card">
+    <h3>Pour aller plus loin</h3>
+    <p class="small muted">
+      Les rubriques du site officiel de la destination, si vous voulez préparer autre chose que ce
+      qui est listé ici.
+    </p>
+    <div class="lieux-village">
+      ${THEMES_DESTINATION.map(
+        (t) => html`<a key=${t.nom} class="lieu" href=${t.lien} target="_blank" rel="noopener noreferrer">
+          <span class="grow">
+            <strong>${t.nom}</strong>
+            <span class="tiny faint" style="display:block">${t.resume}</span>
+          </span>
+          <span class="fleche" aria-hidden="true">↗</span>
+        </a>`
+      )}
     </div>
   </div>`;
 }

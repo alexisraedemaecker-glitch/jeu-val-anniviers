@@ -16,6 +16,7 @@ import {
   loadLockouts,
   adminClearLockouts,
   adminRenameParticipant,
+  adminResetCode,
   adminDeleteParticipant,
   adminResetGame,
   adminSetLockoutMinutes,
@@ -405,6 +406,22 @@ function Joueurs({ onError }) {
     }
   }
 
+  async function changerCode(p) {
+    const code = prompt(
+      `Nouveau code pour ${p.first_name} ${p.last_name}\n\nQuatre caractères au moins. Donnez le lui de vive voix, il remplace l'ancien.`
+    );
+    if (!code) return;
+    setBusy(p.id);
+    onError(null);
+    try {
+      await adminResetCode(p.id, code);
+    } catch (err) {
+      onError(friendly(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function supprimer(p) {
     if (!confirm(`Supprimer définitivement ${p.first_name} ${p.last_name} ?\n\nSes ${p.defis_faits} défi(s), ses photos et ses points disparaissent. Les jauges se recalculent.`)) {
       return;
@@ -470,6 +487,8 @@ function Joueurs({ onError }) {
                     setFirst(p.first_name);
                     setLast(p.last_name);
                   }}>Renommer</button>
+                  <button class="btn sm quiet grow" disabled=${busy === p.id}
+                          onClick=${() => changerCode(p)}>Code oublié</button>
                   <button class="btn sm danger ghost grow" disabled=${busy === p.id}
                           onClick=${() => supprimer(p)}>Supprimer</button>
                 </div>

@@ -37,6 +37,9 @@ export const state = {
   done: {},
   feed: [],
   feedLoaded: false,
+  posts: [],
+  postsLoaded: false,
+  notifications: [],
   lockouts: [],
   localLockouts: readLocalLockouts(),
   lockoutMinutes: 30,
@@ -145,12 +148,13 @@ export async function setPortrait(file) {
   return me;
 }
 
-export async function signIn(firstName, lastName, vibe, photoPath) {
+export async function signIn(firstName, lastName, vibe, photoPath, code) {
   const { data, error } = await sb.rpc("ensure_participant", {
     p_first: firstName,
     p_last: lastName,
     p_vibe: vibe || null,
-    p_photo: photoPath || null
+    p_photo: photoPath || null,
+    p_code: code || null
   });
   if (error) throw new Error(friendly(error));
   const me = Array.isArray(data) ? data[0] : data;
@@ -234,6 +238,116 @@ export async function refresh({ feed = false } = {}) {
     });
   }
   if (feed || state.feedLoaded) await refreshFeed();
+}
+
+/** Le fil social : publications, cornes, commentaires et notifications. */
+export async function refreshPosts() {
+  try {
+    const { data, error } = await sb.rpc("feed_state", {
+      p_participant: state.me ? state.me.id : null
+    });
+    if (error) throw error;
+    setState({
+      posts: (data && data.posts) || [],
+      notifications: (data && data.notifications) || [],
+      postsLoaded: true
+    });
+  } catch (err) {
+    console.warn("Fil indisponible", err);
+  }
+}
+
+export function unreadCount() {
+  return state.notifications.filter((n) => !n.read_at).length;
+}
+
+/** Envoie une photo libre dans le bucket des preuves et renvoie son chemin. */
+export async function uploadPhotoLibre(file) {
+  const out = await compress(file);
+  const blob = out.blob;
+  const ext = blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg";
+  const name = `${uuid()}.${ext}`;
+  const { error } = await sb.storage.from(PHOTO_BUCKET).upload(name, blob, {
+    contentType: blob.type || "image/jpeg",
+    cacheControl: "31536000",
+    upsert: false
+  });
+  if (error) throw new Error(friendly(error));
+  return name;
+}
+
+export async function addPost({ texte, file, mentions }) {
+  if (!state.me) throw new Error("Identifiez vous d'abord");
+  const chemin = file ? await uploadPhotoLibre(file) : null;
+  const { error } = await sb.rpc("add_post", {
+    p_client_id: uuid(),
+    p_author: state.me.id,
+    p_texte: texte || null,
+    p_photo: chemin,
+    p_mentions: mentions || []
+  });
+  if (error) throw new Error(friendly(error));
+  await refreshPosts();
+  setState({ toast: { kind: "success", text: chemin ? "Photo publiée" : "Message publié" } });
+}
+
+export async function addComment(postId, texte, mentions) {
+  if (!state.me) throw new Error("Identifiez vous d'abord");
+  const { error } = await sb.rpc("add_comment", {
+    p_client_id: uuid(),
+    p_author: state.me.id,
+    p_post: postId,
+    p_texte: texte,
+    p_mentions: mentions || []
+  });
+  if (error) throw new Error(friendly(error));
+  await refreshPosts();
+}
+
+export async function toggleKudo(postId) {
+  if (!state.me) throw new Error("Identifiez vous d'abord");
+  // Retour immediat : la corne s'allume avant l'aller retour reseau.
+  const posts = state.posts.map((p) => {
+    if (p.id !== postId) return p;
+    const ids = (p.kudos_ids || []).slice();
+    const i = ids.indexOf(state.me.id);
+    if (i >= 0) ids.splice(i, 1);
+    else ids.push(state.me.id);
+    return { ...p, kudos_ids: ids };
+  });
+  setState({ posts });
+  const { error } = await sb.rpc("toggle_kudo", { p_participant: state.me.id, p_post: postId });
+  if (error) {
+    await refreshPosts();
+    throw new Error(friendly(error));
+  }
+  await refreshPosts();
+}
+
+export async function markNotificationsRead() {
+  if (!state.me || !unreadCount()) return;
+  setState({ notifications: state.notifications.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() })) });
+  const { error } = await sb.rpc("mark_notifications_read", { p_participant: state.me.id });
+  if (error) console.warn("Notifications non marquées", error);
+}
+
+export async function deletePost(postId) {
+  if (!state.me) throw new Error("Identifiez vous d'abord");
+  const { data, error } = await sb.rpc("delete_post", {
+    p_post: postId,
+    p_participant: state.me.id,
+    p_pin: state.organizerPin || null
+  });
+  if (error) throw new Error(friendly(error));
+  if (data && data.photo_path) {
+    try {
+      await sb.storage.from(PHOTO_BUCKET).remove([data.photo_path]);
+    } catch (err) {
+      console.warn("Photo non retirée", err);
+    }
+  }
+  await refreshPosts();
+  setState({ toast: { kind: "success", text: "Publication retirée" } });
 }
 
 export async function refreshFeed() {
@@ -699,6 +813,18 @@ export async function adminDeleteParticipant(id) {
   setState({ toast: { kind: "success", text: "Profil supprimé" } });
 }
 
+/** Remet le code d'un joueur qui l'a oublie. */
+export async function adminResetCode(id, code) {
+  const { error } = await sb.rpc("admin_reset_code", {
+    p_pin: state.organizerPin,
+    p_id: id,
+    p_code: code
+  });
+  if (error) throw new Error(friendly(error));
+  await refresh();
+  setState({ toast: { kind: "success", text: "Code remplacé" } });
+}
+
 export async function adminResetGame(confirmation) {
   const { data, error } = await sb.rpc("admin_reset_game", {
     p_pin: state.organizerPin,
@@ -804,6 +930,16 @@ function scheduleRefresh() {
   }, 900);
 }
 
+let postsTimer = null;
+
+function schedulePosts() {
+  if (postsTimer) return;
+  postsTimer = setTimeout(() => {
+    postsTimer = null;
+    refreshPosts();
+  }, 700);
+}
+
 function connectRealtime() {
   if (channel) return;
   channel = sb
@@ -815,6 +951,10 @@ function connectRealtime() {
       setTimeout(checkSilentSynergies, 1500);
     })
     .on("postgres_changes", { event: "*", schema: "public", table: "participants" }, scheduleRefresh)
+    .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, schedulePosts)
+    .on("postgres_changes", { event: "*", schema: "public", table: "post_kudos" }, schedulePosts)
+    .on("postgres_changes", { event: "*", schema: "public", table: "post_comments" }, schedulePosts)
+    .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, schedulePosts)
     .subscribe((status) => {
       setState({ realtime: status === "SUBSCRIBED" ? "en direct" : "reconnexion" });
     });
@@ -836,6 +976,9 @@ export async function boot() {
 
   await refreshPending();
   await refresh({ feed: true });
+  // Une fois au demarrage, pour que la pastille de notifications soit juste
+  // des la premiere seconde. Ensuite le temps reel s'en charge.
+  refreshPosts();
   connectRealtime();
   checkSilentSynergies();
   setState({ booted: true });

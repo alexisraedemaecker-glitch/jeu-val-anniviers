@@ -2,7 +2,7 @@
 // configuration de serveur necessaire sur GitHub Pages.
 const { html, render, useState, useEffect } = window.htmPreact;
 
-import { state, subscribe, setState, boot, clearToast, dismissSynergy } from "./store.js";
+import { state, subscribe, setState, boot, clearToast, dismissSynergy, unreadCount } from "./store.js";
 import { PILLAR_BY_ID } from "./data/pillars.js";
 import { Onboarding } from "./ui/onboarding.js";
 import { ChallengeList } from "./ui/challenges.js";
@@ -13,10 +13,12 @@ import { Gallery } from "./ui/gallery.js";
 import { Me, Pending } from "./ui/me.js";
 import { Organizer } from "./ui/organizer.js";
 import { Activites } from "./ui/activites.js";
+import { Fil } from "./ui/fil.js";
 import { Banner } from "./ui/bits.js";
 
 const TABS = [
   { href: "#/defis", icon: "🎯", label: "Défis" },
+  { href: "#/fil", icon: "📣", label: "Fil" },
   { href: "#/activites", icon: "🧭", label: "Activités" },
   { href: "#/progression", icon: "📊", label: "Piliers" },
   { href: "#/classement", icon: "🏅", label: "Score" },
@@ -116,6 +118,7 @@ function App() {
       ${route.name !== "moi" && state.pending.length ? html`<${Pending} />` : null}
 
       ${route.name === "defis" ? html`<${ChallengeList} go=${go} />` : null}
+      ${route.name === "fil" ? html`<${Fil} />` : null}
       ${route.name === "activites" ? html`<${Activites} go=${go} identifie=${true} />` : null}
       ${route.name === "defi" ? html`<${ChallengeDetail} id=${route.id} go=${go} />` : null}
       ${route.name === "progression" ? html`<${Progress} />` : null}
@@ -123,7 +126,7 @@ function App() {
       ${route.name === "album" ? html`<${Gallery} />` : null}
       ${route.name === "moi" ? html`<${Me} go=${go} />` : null}
       ${route.name === "organisateur" ? html`<${Organizer} go=${go} />` : null}
-      ${["defis", "defi", "activites", "progression", "classement", "album", "moi", "organisateur"].includes(route.name)
+      ${["defis", "defi", "fil", "activites", "progression", "classement", "album", "moi", "organisateur"].includes(route.name)
         ? null
         : html`<${ChallengeList} go=${go} />`}
     </main>
@@ -136,7 +139,12 @@ function App() {
             : t.href === "#/moi"
               ? route.name === "moi" || route.name === "organisateur"
               : t.href === "#/" + route.name;
-        const badge = t.href === "#/moi" && state.pending.length ? state.pending.length : 0;
+        const badge =
+          t.href === "#/moi"
+            ? state.pending.length
+            : t.href === "#/fil"
+              ? unreadCount()
+              : 0;
         return html`<a key=${t.href} href=${t.href} class=${on ? "on" : ""}>
           <span class="ic">${t.icon}</span>
           <span>${t.label}</span>
@@ -154,6 +162,7 @@ function titleFor(route) {
   const map = {
     defis: ["Les défis", "39 défis, 5 piliers"],
     defi: ["Un défi", "Validation"],
+    fil: ["Le fil", "La journée en direct"],
     activites: ["Activités", "Le week end dans la vallée"],
     progression: ["Les piliers", "Objectif collectif"],
     classement: ["Classement", "En direct"],

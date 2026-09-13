@@ -7,7 +7,7 @@
 // s'ouvrir en grand, et le defilement s'arrete alors sur celle qu'on regarde.
 const { html, useState, useMemo, useEffect, useRef } = window.htmPreact;
 
-import { state, signIn, chooseExisting, uploadPortrait, friendly } from "../store.js";
+import { state, signIn, uploadPortrait, friendly } from "../store.js";
 import { STYLES } from "../data/pillars.js";
 import { PALIERS_VALLEE } from "../data/vallee.js";
 import { Banner, Spinner, Avatar, PhotoZoom, Frag } from "./bits.js";
@@ -105,6 +105,21 @@ function Diaporama({ i, setI, pause, ouvrir }) {
       <span class="defiler">Faites défiler pour vous inscrire ↓</span>
     </span>
   </button>
+
+  <div class="diapo-commande">
+    <div class="points" role="tablist" aria-label="Les six états de la vallée">
+      ${PALIERS_VALLEE.map(
+        (pal, k) => html`<button type="button" key=${pal.seuil}
+          class=${"point" + (k === bas ? " on" : "")}
+          aria-label=${pal.legende} aria-selected=${k === bas}
+          onClick=${() => setI(k)}></button>`
+      )}
+    </div>
+    <button type="button" class="btn sm ghost sur-photo" onClick=${() => ouvrir(bas)}>
+      ⤢ Voir la vallée en grand
+    </button>
+    <span class="legende-large">${PALIERS_VALLEE[bas].legende}</span>
+  </div>
   <//>`;
 }
 
@@ -137,6 +152,32 @@ function ChampPortrait({ apercu, onFichier, obligatoire }) {
   </div>`;
 }
 
+/**
+ * Code personnel. Il empeche simplement de jouer sous le nom d'un autre depuis
+ * son propre telephone : une fois identifie, l'appareil se souvient et ne le
+ * redemande jamais.
+ */
+function ChampCode({ code, setCode, nouveau }) {
+  const [montrer, setMontrer] = useState(false);
+  return html`<label class="field">
+    <span>${nouveau ? "Choisissez votre code" : "Votre code"}</span>
+    <div class="row" style="gap:.4rem">
+      <input class="grow" type=${montrer ? "text" : "password"} value=${code}
+             inputmode="text" autocomplete=${nouveau ? "new-password" : "current-password"}
+             placeholder="Quatre caractères au moins"
+             onInput=${(e) => setCode(e.target.value)} />
+      <button type="button" class="btn sm quiet" onClick=${() => setMontrer(!montrer)}>
+        ${montrer ? "Cacher" : "Voir"}
+      </button>
+    </div>
+    <span class="tiny faint">
+      ${nouveau
+        ? "Notez le quelque part. Il ne vous sera plus demandé sur ce téléphone, seulement si vous jouez depuis un autre appareil."
+        : "Celui que vous avez choisi en vous inscrivant. En cas d'oubli, l'organisateur peut le remettre à zéro."}
+    </span>
+  </label>`;
+}
+
 export function Onboarding() {
   const [mode, setMode] = useState("liste");
   const [search, setSearch] = useState("");
@@ -149,6 +190,7 @@ export function Onboarding() {
   const [attente, setAttente] = useState(null);
   const [photo, setPhoto] = useState(null);
   const [apercu, setApercu] = useState(null);
+  const [code, setCode] = useState("");
   // Diaporama d'arriere plan et photo ouverte en grand.
   const [vue, setVue] = useState(0);
   const [plein, setPlein] = useState(null);
@@ -195,43 +237,32 @@ export function Onboarding() {
     return list.filter((p) => `${p.first_name} ${p.last_name}`.toLowerCase().includes(q));
   }, [search, state.scores]);
 
-  async function pick(p) {
-    // Un profil sans portrait passe d'abord par l'ajout de sa photo.
-    if (!p.photo_path) {
-      setError(null);
-      setPhoto(null);
-      setApercu(null);
-      setAttente(p);
-      return;
-    }
-    setBusy(true);
+  // Depuis un appareil qui ne connait pas encore la personne, on demande son
+  // code, et sa photo si elle date d'avant cette regle.
+  function pick(p) {
     setError(null);
-    try {
-      await chooseExisting({
-        id: p.id,
-        first_name: p.first_name,
-        last_name: p.last_name,
-        vibe: p.vibe,
-        photo_path: p.photo_path
-      });
-    } catch (err) {
-      setError(friendly(err));
-    } finally {
-      setBusy(false);
-    }
+    setPhoto(null);
+    setApercu(null);
+    setCode("");
+    setAttente(p);
   }
 
   async function completer(e) {
     e.preventDefault();
-    if (!photo) {
+    const besoinPhoto = !attente.photo_path;
+    if (besoinPhoto && !photo) {
       setError("Ajoutez votre photo de profil pour continuer");
+      return;
+    }
+    if (code.trim().length < 4) {
+      setError("Le code doit faire au moins quatre caractères");
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      const chemin = await uploadPortrait(photo);
-      await signIn(attente.first_name, attente.last_name, attente.vibe, chemin);
+      const chemin = besoinPhoto ? await uploadPortrait(photo) : null;
+      await signIn(attente.first_name, attente.last_name, attente.vibe, chemin, code);
     } catch (err) {
       setError(friendly(err));
     } finally {
@@ -249,11 +280,15 @@ export function Onboarding() {
       setError("Ajoutez votre photo de profil pour vous inscrire");
       return;
     }
+    if (code.trim().length < 4) {
+      setError("Choisissez un code d'au moins quatre caractères");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       const chemin = await uploadPortrait(photo);
-      await signIn(first, last, vibe, chemin);
+      await signIn(first, last, vibe, chemin, code);
     } catch (err) {
       setError(friendly(err));
     } finally {
@@ -303,14 +338,19 @@ export function Onboarding() {
 
     ${attente
       ? html`<form class="card" onSubmit=${completer}>
-          <div class="tiny faint">Presque prêt</div>
+          <div class="tiny faint">${attente.a_un_code ? "Bon retour" : "Presque prêt"}</div>
           <h2 style="margin:.1rem 0 .5rem">${attente.first_name} ${attente.last_name}</h2>
           <p class="small muted">
-            Il ne manque que votre photo de profil. Elle est demandée une seule fois.
+            ${attente.a_un_code
+              ? "Cet appareil ne vous connaît pas encore. Entrez votre code pour reprendre votre profil."
+              : "Choisissez votre code personnel. Il empêche que quelqu'un d'autre joue à votre place."}
           </p>
-          <${ChampPortrait} apercu=${apercu} onFichier=${choisirPhoto} obligatoire=${true} />
+          <${ChampCode} code=${code} setCode=${setCode} nouveau=${!attente.a_un_code} />
+          ${attente.photo_path
+            ? null
+            : html`<${ChampPortrait} apercu=${apercu} onFichier=${choisirPhoto} obligatoire=${true} />`}
           <div class="row" style="margin-top:.7rem;gap:.5rem">
-            <button class="btn grow" type="submit" disabled=${busy || !photo}>
+            <button class="btn grow" type="submit" disabled=${busy}>
               ${busy ? html`<${Spinner} />` : null} C'est parti
             </button>
             <button class="btn quiet" type="button" onClick=${() => setAttente(null)}>
@@ -367,7 +407,8 @@ export function Onboarding() {
                          onInput=${(e) => setLast(e.target.value)} />
                 </label>
                 <${ChampPortrait} apercu=${apercu} onFichier=${choisirPhoto} obligatoire=${true} />
-                <label class="field" style="margin-top:.7rem">
+                <div style="margin-top:.7rem"><${ChampCode} code=${code} setCode=${setCode} nouveau=${true} /></div>
+                <label class="field" style="margin-top:.2rem">
                   <span>Votre envie du moment, si vous en avez une</span>
                 </label>
                 <div class="filters" style="margin-top:-.4rem">

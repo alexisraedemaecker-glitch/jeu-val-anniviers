@@ -86,6 +86,58 @@ Changer de photo passe par `set_photo`. L'ancienne devient orpheline et
 `portrait_est_orphelin` autorise alors sa suppression depuis le navigateur,
 exactement comme pour les photos de défi.
 
+## Le code personnel
+
+S'inscrire demande un code d'au moins quatre caractères, en plus du prénom, du
+nom et de la photo. Il n'est demandé qu'une fois par appareil : l'application se
+souvient ensuite du profil, comme avant. Il sert uniquement à empêcher que
+quelqu'un reprenne le profil d'un autre depuis son propre téléphone.
+
+L'empreinte est calculée par `pgcrypto` en bcrypt, dans une table
+`participant_secrets` à part, avec RLS et aucune policy. Le navigateur a le
+droit de lire `participants`, il ne doit jamais pouvoir lire une empreinte, même
+chiffrée. La vérification se fait à l'intérieur de `ensure_participant`, qui ne
+renvoie le profil qu'au bon code ; `verifie_code` et `set_code` ne sont pas
+exposées au navigateur.
+
+pgcrypto vit dans le schéma `extensions` chez Supabase, les appels sont donc
+qualifiés plutôt que d'élargir le `search_path` des fonctions security definer.
+
+Un profil créé avant cette règle se voit demander de choisir son code la
+première fois qu'il revient. En cas d'oubli, la vue organisateur a un bouton
+`Code oublié` qui en pose un nouveau.
+
+## Le fil
+
+Chaque défi validé publie automatiquement sa carte dans le fil, avec sa photo :
+`submit_challenge` insère la publication dans la même transaction, et la
+suppression d'une soumission par un organisateur l'emporte en cascade. Chacun
+peut aussi publier un message, une photo, et nommer d'autres joueurs.
+
+Deux réactions : la corne de bouquetin, qui s'ajoute et se retire, et le
+commentaire, sous une marmotte qui crie. Les deux icônes sont des SVG écrits à
+la main dans `js/ui/fil.js`, pour rester dans l'esprit de la vallée sans aucune
+dépendance.
+
+Une notification part vers l'auteur d'une publication quand on l'applaudit ou
+qu'on la commente, vers toute personne nommée, et vers ceux qui ont déjà
+commenté quand une réponse arrive. `notifier()` ne prévient jamais quelqu'un de
+sa propre action et n'en pose qu'une seule par personne et par évènement : être
+nommé passe avant le fait d'être l'auteur, qui passe avant le fait d'avoir déjà
+commenté.
+
+`feed_state(participant)` renvoie tout en un appel, publications et
+notifications comprises. Il n'est pas rappelé à chaque sondage des jauges, ce
+serait lourd pour rien : une fois au démarrage pour la pastille, puis sur
+évènement temps réel, puis à l'ouverture du fil ou de l'album.
+
+## L'album
+
+L'album lit les mêmes publications. Les photos de défis sont classées par
+pilier, les photos libres dans une catégorie `Autre`. Ajouter une photo depuis
+l'album ou depuis le fil revient au même : c'est la même publication, et elle
+apparaît aux deux endroits.
+
 ## Le diaporama de l'écran d'identification
 
 Les six états de la vallée défilent en grand derrière le formulaire, environ
@@ -104,8 +156,12 @@ Les images sont en 16 sur 9 et un téléphone est en portrait : un cadrage plein
 photo est donc affichée entière et nette sur toute la largeur, et c'est la même
 image, floutée et agrandie derrière, qui remplit le reste de l'écran. Rien n'est
 coupé, l'écran reste plein, et une photo en 16 sur 9 sur toute la largeur est
-aussi grande qu'elle peut l'être sans perdre ses bords. Sur un écran en paysage,
-le cadrage plein écran reprend la main et la couche nette disparaît.
+aussi grande qu'elle peut l'être sans perdre ses bords. Sur un écran en paysage, ordinateur compris, la bande disparaît entièrement et
+on retrouve l'affichage d'origine : la photo en plein écran derrière les cartes,
+sans rien couper puisque le format de l'écran est celui de l'image.
+
+Six pastilles sous la photo montrent où l'on en est dans les six états, et un
+appui saute directement à l'un d'eux.
 
 Pour voir le détail, le plein écran garde son zoom par appui et son invitation à
 coucher le téléphone.
@@ -257,7 +313,7 @@ test, joue des défis, puis nettoie tout derrière lui.
 python3 tools/selftest.py
 ```
 
-Les 91 contrôles couvrent la création de profil et la déduplication des noms, le
+Les 110 contrôles couvrent la création de profil et la déduplication des noms, le
 rendement dégressif sur trois passages, le score personnel non dégressif, le non
 cumul d'un même défi par une même personne, l'idempotence après coupure réseau,
 le dépôt et la lecture des photos, le refus d'un chemin de photo malveillant, le
@@ -265,8 +321,11 @@ déclenchement d'une synergie pour tout le groupe du moment, le code
 organisateur, la suppression avec recalcul complet, le retassage des passages
 suivants, la pénalité après un quiz raté et sa portée sur toute l'équipe,
 le dépôt d'un portrait et son remplacement, le refus d'un chemin de portrait
-douteux, l'impossibilité de supprimer un portrait encore utilisé, et toutes les
-fonctions d'administration.
+douteux, l'impossibilité de supprimer un portrait encore utilisé, le code
+personnel et son refus quand il est faux ou trop court, le fait qu'aucune
+empreinte ne sorte de la base, la publication automatique à chaque défi validé,
+les cornes, les commentaires, les mentions, les notifications et leur lecture,
+et toutes les fonctions d'administration.
 
 Le test refuse de tourner quand de vrais joueurs sont enregistrés, pour ne pas
 décaler leur rendement dégressif. Ajouter `--force` pour passer outre : les

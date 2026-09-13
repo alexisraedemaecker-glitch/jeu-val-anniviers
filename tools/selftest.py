@@ -157,21 +157,33 @@ if reels and "--force" not in sys.argv:
 
 print("\n=== 1. Profils ===")
 people = {}
+CODE = "codetest"
 for first, last in (("Zztest", "Alpha"), ("Zztest", "Beta"), ("Zztest", "Gamma")):
-    st, d = rpc("ensure_participant", {"p_first": first, "p_last": last, "p_vibe": "chill"})
+    st, d = rpc("ensure_participant", {"p_first": first, "p_last": last, "p_vibe": "chill",
+                                       "p_code": CODE})
     ok = st == 200 and isinstance(d, dict) and d.get("id")
     people[last] = d.get("id") if ok else None
     check(f"création du profil {first} {last}", ok, str(d))
 
-st, d = rpc("ensure_participant", {"p_first": "  zZTEST ", "p_last": "alpha", "p_vibe": None})
+st, d = rpc("ensure_participant", {"p_first": "  zZTEST ", "p_last": "alpha", "p_vibe": None,
+                                   "p_code": CODE})
 check(
     "le même nom en casse et espaces différents retrouve le profil existant",
     st == 200 and d.get("id") == people["Alpha"],
     str(d),
 )
 
-st, d = rpc("ensure_participant", {"p_first": "   ", "p_last": "", "p_vibe": None})
+st, d = rpc("ensure_participant", {"p_first": "   ", "p_last": "", "p_vibe": None, "p_code": CODE})
 check("un nom vide est refusé", st >= 400, str(d))
+
+st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Alpha", "p_code": "pirate"})
+check("un mauvais code ne donne pas accès au profil", st >= 400, str(d))
+st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Alpha"})
+check("sans code non plus", st >= 400, str(d))
+st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Sanscode", "p_code": "abc"})
+check("un code trop court est refusé à l'inscription", st >= 400, str(d))
+st, d = call("/rest/v1/participant_secrets?select=*")
+check("le navigateur ne peut pas lire les empreintes de mot de passe", st >= 400 or d == [], f"{st} {str(d)[:80]}")
 
 A, B, G = people["Alpha"], people["Beta"], people["Gamma"]
 
@@ -513,7 +525,62 @@ check(
     str(feed),
 )
 
-print("\n=== 12. Photos de profil ===")
+print("\n=== 12. Fil social ===")
+_, posts = call("/rest/v1/v_posts?select=id,genre,submission_id&order=created_at.desc&limit=5")
+check("chaque défi validé a publié dans le fil", isinstance(posts, list) and posts and posts[0]["genre"] == "defi", str(posts)[:200])
+
+st, d = rpc("add_post", {"p_client_id": str(uuid.uuid4()), "p_author": A,
+                         "p_texte": "Message de test", "p_mentions": [B]})
+POST = d.get("post_id") if st == 200 else None
+check("publier un message libre", st == 200 and POST, str(d))
+
+st, d = rpc("add_post", {"p_client_id": str(uuid.uuid4()), "p_author": A, "p_texte": "   "})
+check("un message vide est refusé", st >= 400, str(d))
+
+st, d = rpc("toggle_kudo", {"p_participant": B, "p_post": POST})
+check("poser une corne de bouquetin", st == 200 and d.get("pose") is True and d.get("total") == 1, str(d))
+st, d = rpc("toggle_kudo", {"p_participant": B, "p_post": POST})
+check("la retirer en appuyant à nouveau", st == 200 and d.get("pose") is False and d.get("total") == 0, str(d))
+rpc("toggle_kudo", {"p_participant": B, "p_post": POST})
+
+st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Nommee", "p_code": CODE})
+N = d.get("id")
+st, d = rpc("add_comment", {"p_client_id": str(uuid.uuid4()), "p_author": B,
+                            "p_post": POST, "p_texte": "Bien vu", "p_mentions": [N]})
+COM = d.get("comment_id") if st == 200 else None
+check("commenter une publication", st == 200 and COM, str(d))
+
+st, d = rpc("feed_state", {"p_participant": A})
+mien = next((x for x in (d.get("posts") or []) if x["id"] == POST), None)
+check("la publication remonte avec sa corne et son commentaire",
+      mien and len(mien["kudos_ids"]) == 1 and mien["nb_commentaires"] == 1 and len(mien["commentaires"]) == 1,
+      str(mien)[:200])
+kinds = sorted(n["kind"] for n in (d.get("notifications") or []))
+check("l'auteur est prévenu de la corne et du commentaire",
+      "kudo" in kinds and "commentaire" in kinds, str(kinds))
+
+st, d = rpc("feed_state", {"p_participant": B})
+check("celui qui est nommé reçoit sa notification",
+      any(n["kind"] == "mention" for n in (d.get("notifications") or [])), str([n["kind"] for n in (d.get("notifications") or [])]))
+st, d = rpc("feed_state", {"p_participant": N})
+check("nommé dans un commentaire aussi",
+      any(n["kind"] == "mention" for n in (d.get("notifications") or [])), str([n["kind"] for n in (d.get("notifications") or [])]))
+
+st, d = rpc("mark_notifications_read", {"p_participant": A})
+check("marquer ses notifications comme lues", st == 200 and d >= 1, str(d))
+st, d = rpc("feed_state", {"p_participant": A})
+check("plus aucune notification non lue",
+      all(n["read_at"] for n in (d.get("notifications") or [])), "il en reste")
+
+st, d = rpc("delete_post", {"p_post": POST, "p_participant": G})
+check("un autre joueur ne peut pas retirer ma publication", st >= 400, str(d))
+st, d = rpc("delete_post", {"p_post": POST, "p_participant": A})
+check("son auteur le peut", st == 200 and d.get("deleted"), str(d))
+st, d = rpc("feed_state", {"p_participant": A})
+check("la publication et son commentaire ont disparu",
+      not any(x["id"] == POST for x in (d.get("posts") or [])), "encore là")
+
+print("\n=== 13. Photos de profil ===")
 portrait = f"{uuid.uuid4()}.png"
 st, d = call(
     f"/storage/v1/object/profils/{portrait}",
@@ -526,11 +593,12 @@ st, _ = call(f"/storage/v1/object/public/profils/{portrait}")
 check("le portrait est lisible par tout le monde", st == 200, f"code {st}")
 
 st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Delta",
-                                   "p_vibe": "sportif", "p_photo": portrait})
+                                   "p_vibe": "sportif", "p_photo": portrait, "p_code": CODE})
 D = d.get("id") if st == 200 else None
 check("un profil peut naître avec son portrait", st == 200 and d.get("photo_path") == portrait, str(d))
 
-st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Delta", "p_vibe": "chill"})
+st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Delta", "p_vibe": "chill",
+                                   "p_code": CODE})
 check(
     "revenir sans photo n'efface pas le portrait enregistré",
     st == 200 and d.get("photo_path") == portrait,
@@ -564,7 +632,7 @@ check("l'ancien portrait a bien disparu du stockage", st >= 400, f"code {st}")
 st, d = rpc("set_photo", {"p_participant": D, "p_photo": "../../etc/passwd"})
 check("un chemin de portrait douteux est refusé", st >= 400, str(d))
 st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Epsilon",
-                                   "p_photo": "a/../../b.png"})
+                                   "p_photo": "a/../../b.png", "p_code": CODE})
 check("un chemin douteux est aussi refusé à l'inscription", st >= 400, str(d))
 
 st, d = call(f"/rest/v1/participants?id=eq.{D}", data={"photo_path": "pirate.png"}, method="PATCH")
@@ -575,7 +643,7 @@ check("la suppression d'un profil renvoie son portrait à nettoyer", st == 200 a
 st, d = call("/storage/v1/object/profils", data={"prefixes": [portrait2]}, method="DELETE")
 check("le portrait du profil supprimé est retirable", st == 200, f"{st} {d}")
 
-print("\n=== 13. Cohérence des vues ===")
+print("\n=== 14. Cohérence des vues ===")
 st_now = state()
 check("les cinq jauges sont présentes", len(st_now["gauges"]) == 5, str(len(st_now["gauges"])))
 check(
@@ -596,7 +664,7 @@ check("un défi inconnu est refusé", st >= 400, str(d))
 
 # ---------------------------------------------------------------- nettoyage
 if "--keep" not in sys.argv:
-    print("\n=== 14. Nettoyage ===")
+    print("\n=== 15. Nettoyage ===")
     sys.path.insert(0, str(ROOT / "tools"))
     import apply_sql
 

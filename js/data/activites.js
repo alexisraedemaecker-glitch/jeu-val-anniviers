@@ -678,6 +678,149 @@ export const CULTURE = [
   }
 ];
 
+// ------------------------------------------------- lieux culturels
+
+// Les douze lieux culturels de la vallee, tels que listes par l'office du
+// tourisme. Chaque fiche renvoie vers sa page de detail, avec les horaires et
+// les conditions de visite a jour.
+export const LIEUX_CULTURELS = [
+  {
+    nom: "Espace Ella Maillart",
+    village: "Chandolin",
+    resume:
+      "L'exposition permanente consacrée à la voyageuse qui a vécu quarante ans au village, dans l'ancienne chapelle Sainte-Barbe.",
+    lien: "https://www.valdanniviers.ch/fr/P110856/destination/culture-et-patrimoine/espace-ella-maillart"
+  },
+  {
+    nom: "Musée de la Faune",
+    village: "Chandolin",
+    resume: "Les animaux de la vallée expliqués de près, à deux pas de votre camp de base.",
+    lien: "https://www.valdanniviers.ch/fr/P111019/destination/culture-et-patrimoine/musee-de-la-faune"
+  },
+  {
+    nom: "Le Petit Musée Lucquérand",
+    village: "Saint-Luc",
+    resume: "Outils et ustensiles d'autrefois, rassemblés dans une cave traditionnelle.",
+    lien: "https://www.valdanniviers.ch/fr/P111745/destination/culture-et-patrimoine/le-petit-musee-lucquerand"
+  },
+  {
+    nom: "Maison de Grand-Maman",
+    village: "Grimentz",
+    resume: "Un logement d'époque conservé tel quel, au cœur du vieux village.",
+    lien: "https://www.valdanniviers.ch/fr/P108624/destination/culture-et-patrimoine/maison-de-grand-maman"
+  },
+  {
+    nom: "Maison du Remuage",
+    village: "Zinal",
+    resume:
+      "Le quotidien des paysans au temps du remuage, quand on suivait ses bêtes d'un étage à l'autre de la vallée.",
+    lien: "https://www.valdanniviers.ch/fr/P114260/destination/culture-et-patrimoine/maison-du-remuage"
+  },
+  {
+    nom: "Chalet Madeleine",
+    village: "Ayer",
+    resume: "Une habitation typique visitable, qui montre la vie de tous les jours d'autrefois.",
+    lien: "https://www.valdanniviers.ch/fr/P114253/destination/culture-et-patrimoine/chalet-madeleine"
+  },
+  {
+    nom: "Maison des nourritures paysannes",
+    village: "Ayer",
+    resume: "L'ancienne laiterie et la boucherie du village, avec leur fonctionnement d'époque.",
+    lien: "https://www.valdanniviers.ch/fr/P114256/destination/culture-et-patrimoine/maison-des-nourritures-paysannes"
+  },
+  {
+    nom: "Cordonnerie Daniel",
+    village: "Ayer",
+    resume: "L'atelier d'un cordonnier d'autrefois, et toutes les étapes de fabrication d'une chaussure.",
+    lien: "https://www.valdanniviers.ch/fr/P114257/destination/culture-et-patrimoine/cordonnerie-daniel"
+  },
+  {
+    nom: "Musée des Outils Anciens de Pinsec",
+    village: "Pinsec",
+    resume:
+      "Cinq cents outils et objets anciens dans un raccard de 1733. Le village lui même vaut le détour.",
+    lien: "https://www.valdanniviers.ch/fr/P114454/destination/culture-et-patrimoine/musee-des-outils-anciens-de-pinsec-moap"
+  },
+  {
+    nom: "Tour d'Anniviers",
+    village: "Vissoie",
+    resume: "Expositions, théâtre et spectacles dans la tour médiévale qui domine le carrefour de la vallée.",
+    lien: "https://www.valdanniviers.ch/fr/P114519/destination/culture-et-patrimoine/tour-d-anniviers"
+  },
+  {
+    nom: "Chapelle du Château",
+    village: "Vissoie",
+    resume: "Une exposition différente chaque été, dans la chapelle du château.",
+    lien: "https://www.valdanniviers.ch/fr/P113149/destination/culture-et-patrimoine/chapelle-du-chateau"
+  },
+  {
+    nom: "Chemin d'images",
+    village: "Vissoie",
+    resume:
+      "Une exposition en plein air, gratuite et ouverte tout le temps, qui raconte la vallée en anecdotes.",
+    lien: "https://www.valdanniviers.ch/fr/P114518/destination/culture-et-patrimoine/chemin-d-images"
+  }
+];
+
+// ------------------------------------------- le reste de la destination
+
+// Les grandes portes d'entrée du site officiel, pour ceux qui veulent creuser
+// un sujet pendant le week end. Rien ici n'est inventé : ce sont les rubriques
+// telles qu'elles existent, avec leur lien.
+export const THEMES_DESTINATION = [
+  {
+    nom: "Les villages de la vallée",
+    resume: "Les six villages, leurs caractères et leurs accès, un par un.",
+    lien: "https://www.valdanniviers.ch/fr/Z15109/villages"
+  },
+  {
+    nom: "Produits du terroir",
+    resume:
+      "Le vin du Glacier, les fromages d'alpage, la viande séchée et où les trouver sur place.",
+    lien: "https://www.valdanniviers.ch/fr/Z15347/produits-du-terroir"
+  },
+  {
+    nom: "Patrimoine bâti",
+    resume: "Raccards, greniers, chapelles et bisses : comment lire un village anniviard.",
+    lien: "https://www.valdanniviers.ch/fr/Z15285/patrimoine-bati"
+  },
+  {
+    nom: "Astronomie à Saint-Luc",
+    resume: "L'observatoire, le Chemin des Planètes et les soirées d'observation.",
+    lien: "https://www.valdanniviers.ch/fr/Z15254/astronomie"
+  },
+  {
+    nom: "Traditions vivantes",
+    resume: "Combats de reines, processions, fêtes de village et vin du Glacier.",
+    lien: "https://www.valdanniviers.ch/fr/Z15370/traditions"
+  },
+  {
+    nom: "Sites naturels",
+    resume: "Les points de vue et les curiosités naturelles de la vallée, repérés et situés.",
+    lien: "https://www.valdanniviers.ch/fr/Z15368/sites-naturels"
+  },
+  {
+    nom: "Visites guidées des villages",
+    resume: "Des visites commentées de l'histoire des villages, sur inscription.",
+    lien: "https://www.valdanniviers.ch/fr/G3710/visites-guidees-des-villages"
+  },
+  {
+    nom: "En tête à tête avec",
+    resume: "Des portraits d'habitants qui racontent leur lien avec la vallée.",
+    lien: "https://www.valdanniviers.ch/fr/Z15455/en-tete-tete-avec"
+  },
+  {
+    nom: "Agenda du moment",
+    resume: "Ce qui se passe pendant votre week end, mis à jour par l'office du tourisme.",
+    lien: "https://www.valdanniviers.ch/fr/Z15382/agenda"
+  },
+  {
+    nom: "Info live et webcams",
+    resume: "L'état des remontées, la météo des sommets et les images en direct.",
+    lien: "https://www.valdanniviers.ch/fr/Z15114/infolive"
+  }
+];
+
 // ------------------------------------------------------------------ chill
 
 export const CHILL = [

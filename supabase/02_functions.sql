@@ -72,12 +72,18 @@ $$;
 -- casse ni des espaces autour. Remplace toute inscription par mot de passe.
 -- La signature a change avec l'ajout du portrait, on retire donc l'ancienne.
 drop function if exists public.ensure_participant(text, text, text);
+drop function if exists public.ensure_participant(text, text, text, text);
 
+-- Le code protege le profil des le premier jour : sans lui, n'importe qui
+-- pourrait jouer sous le nom d'un autre depuis son propre telephone. Un profil
+-- cree avant cette regle se voit demander son code la premiere fois qu'il
+-- revient, et c'est ce code la qui est pose.
 create or replace function public.ensure_participant(
   p_first text,
   p_last  text,
   p_vibe  text default null,
-  p_photo text default null
+  p_photo text default null,
+  p_code  text default null
 )
 returns public.participants
 language plpgsql
@@ -109,6 +115,14 @@ begin
      and lower(btrim(last_name))  = lower(l);
 
   if found then
+    if public.a_un_code(v.id) then
+      if not public.verifie_code(v.id, p_code) then
+        raise exception 'Code incorrect pour ce profil';
+      end if;
+    else
+      -- Profil existant sans code : on pose celui qui vient d'etre choisi.
+      perform public.set_code(v.id, p_code);
+    end if;
     -- On complete sans jamais ecraser un portrait deja en place par du vide.
     if (vb is not null and coalesce(v.vibe, '') <> vb)
        or (ph is not null and coalesce(v.photo_path, '') <> ph) then
@@ -121,9 +135,13 @@ begin
     return v;
   end if;
 
+  if not public.code_valide(p_code) then
+    raise exception 'Choisissez un code d''au moins quatre caractères';
+  end if;
   insert into public.participants (first_name, last_name, vibe, photo_path)
   values (f, l, vb, ph)
   returning * into v;
+  perform public.set_code(v.id, p_code);
   return v;
 end;
 $$;
@@ -297,6 +315,12 @@ begin
   insert into public.submission_members (submission_id, participant_id)
   select v_sub.id, x from unnest(v_members) as t(x)
   on conflict do nothing;
+
+  -- Le fil raconte la journee tout seul : chaque defi valide devient une
+  -- publication, que le groupe peut commenter et applaudir.
+  insert into public.posts (author_id, submission_id, created_at)
+  values (p_submitter, v_sub.id, v_sub.created_at)
+  on conflict (submission_id) do nothing;
 
   perform public.recompute_synergies();
 
@@ -600,7 +624,11 @@ begin
     raise exception 'Code organisateur incorrect';
   end if;
   select coalesce(array_agg(photo_path), array[]::text[]) into v_photos
-    from public.submissions where submitter_id = p_id and photo_path is not null;
+    from (select photo_path from public.submissions
+           where submitter_id = p_id and photo_path is not null
+          union all
+          select photo_path from public.posts
+           where author_id = p_id and photo_path is not null) t;
   select coalesce(photo_path, '') into v_portrait from public.participants where id = p_id;
   delete from public.participants where id = p_id;
   if not found then
@@ -634,7 +662,9 @@ begin
   end if;
 
   select coalesce(array_agg(photo_path), array[]::text[]) into v_photos
-    from public.submissions where photo_path is not null;
+    from (select photo_path from public.submissions where photo_path is not null
+          union all
+          select photo_path from public.posts where photo_path is not null) t;
   select coalesce(array_agg(photo_path), array[]::text[]) into v_portraits
     from public.participants where photo_path is not null;
   select count(*) into v_joueurs from public.participants;
@@ -669,4 +699,304 @@ begin
     on conflict (key) do update set value = excluded.value;
   return p_minutes;
 end;
+$$;
+
+-- =====================================================================
+-- Mot de passe des profils
+-- =====================================================================
+
+-- Le mot de passe n'est jamais stocke en clair. pgcrypto calcule une empreinte
+-- bcrypt avec un sel propre a chaque profil, et la verification recalcule
+-- l'empreinte du mot de passe presente avec le meme sel.
+create or replace function public.code_valide(p_code text) returns boolean
+language sql immutable as $$
+  select p_code is not null and length(btrim(p_code)) >= 4 and length(p_code) <= 72;
+$$;
+
+create or replace function public.a_un_code(p_participant uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.participant_secrets s where s.participant_id = p_participant);
+$$;
+
+-- Pose le code d'un profil qui n'en a pas encore. Ne remplace jamais un code
+-- existant : seul l'organisateur peut le faire, avec son propre code.
+create or replace function public.set_code(p_participant uuid, p_code text)
+returns boolean
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.code_valide(p_code) then
+    raise exception 'Le code doit faire au moins quatre caractères';
+  end if;
+  if exists (select 1 from public.participant_secrets where participant_id = p_participant) then
+    raise exception 'Ce profil a déjà un code';
+  end if;
+  insert into public.participant_secrets (participant_id, password_hash)
+  values (p_participant, extensions.crypt(p_code, extensions.gen_salt('bf')));
+  return true;
+end;
+$$;
+
+create or replace function public.verifie_code(p_participant uuid, p_code text)
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.participant_secrets s
+     where s.participant_id = p_participant
+       and s.password_hash = extensions.crypt(coalesce(p_code, ''), s.password_hash)
+  );
+$$;
+
+-- =====================================================================
+-- Fil social : publications, cornes, commentaires, notifications
+-- =====================================================================
+
+-- Ne previent jamais quelqu'un de sa propre action, et ne pose qu'une seule
+-- notification par personne et par evenement.
+create or replace function public.notifier(
+  p_destinataires uuid[], p_kind text, p_post uuid, p_comment uuid, p_actor uuid
+) returns int
+language plpgsql security definer set search_path = public as $$
+declare v_n int;
+begin
+  insert into public.notifications (participant_id, kind, post_id, comment_id, actor_id)
+  select distinct d, p_kind, p_post, p_comment, p_actor
+    from unnest(coalesce(p_destinataires, array[]::uuid[])) as t(d)
+   where d is not null
+     and d <> p_actor
+     and exists (select 1 from public.participants pa where pa.id = d)
+     and not exists (
+       select 1 from public.notifications n
+        where n.participant_id = d
+          and n.kind = p_kind
+          and n.actor_id = p_actor
+          and coalesce(n.post_id::text, '') = coalesce(p_post::text, '')
+          and coalesce(n.comment_id::text, '') = coalesce(p_comment::text, '')
+     );
+  get diagnostics v_n = row_count;
+  return v_n;
+end;
+$$;
+
+create or replace function public.add_post(
+  p_client_id text,
+  p_author    uuid,
+  p_texte     text default null,
+  p_photo     text default null,
+  p_mentions  uuid[] default '{}'
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_post   public.posts;
+  v_texte  text := left(nullif(btrim(coalesce(p_texte, '')), ''), 2000);
+  v_ment   uuid[] := coalesce(p_mentions, array[]::uuid[]);
+begin
+  if not exists (select 1 from public.participants where id = p_author) then
+    raise exception 'Profil inconnu';
+  end if;
+  if v_texte is null and p_photo is null then
+    raise exception 'Un message vide ne sert à rien';
+  end if;
+  if not public.chemin_valide(p_photo) then
+    raise exception 'Chemin de photo invalide';
+  end if;
+
+  -- Renvoi apres une coupure reseau : on ne publie pas deux fois.
+  select * into v_post from public.posts where client_id = p_client_id;
+  if found then
+    return jsonb_build_object('post_id', v_post.id, 'duplicate', true);
+  end if;
+
+  insert into public.posts (client_id, author_id, texte, photo_path, mentions)
+  values (p_client_id, p_author, v_texte, nullif(btrim(coalesce(p_photo, '')), ''), v_ment)
+  returning * into v_post;
+
+  perform public.notifier(v_ment, 'mention', v_post.id, null, p_author);
+  return jsonb_build_object('post_id', v_post.id, 'duplicate', false);
+end;
+$$;
+
+create or replace function public.add_comment(
+  p_client_id text,
+  p_author    uuid,
+  p_post      uuid,
+  p_texte     text,
+  p_mentions  uuid[] default '{}'
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_com    public.post_comments;
+  v_post   public.posts;
+  v_texte  text := left(nullif(btrim(coalesce(p_texte, '')), ''), 1000);
+  v_ment   uuid[] := coalesce(p_mentions, array[]::uuid[]);
+  v_autres uuid[];
+begin
+  if v_texte is null then
+    raise exception 'Le commentaire est vide';
+  end if;
+  select * into v_post from public.posts where id = p_post;
+  if not found then
+    raise exception 'Publication introuvable';
+  end if;
+
+  select * into v_com from public.post_comments where client_id = p_client_id;
+  if found then
+    return jsonb_build_object('comment_id', v_com.id, 'duplicate', true);
+  end if;
+
+  insert into public.post_comments (client_id, post_id, author_id, texte, mentions)
+  values (p_client_id, p_post, p_author, v_texte, v_ment)
+  returning * into v_com;
+
+  -- Une seule notification par personne et par commentaire, la plus parlante :
+  -- etre nomme passe avant le fait d'etre l'auteur, qui passe avant le simple
+  -- fait d'avoir deja commente.
+  perform public.notifier(v_ment, 'mention', p_post, v_com.id, p_author);
+  perform public.notifier(
+    (select coalesce(array_agg(x), array[]::uuid[]) from unnest(array[v_post.author_id]) as t(x)
+      where not (x = any (v_ment))),
+    'commentaire', p_post, v_com.id, p_author);
+  select coalesce(array_agg(distinct c.author_id), array[]::uuid[]) into v_autres
+    from public.post_comments c
+   where c.post_id = p_post
+     and c.id <> v_com.id
+     and c.author_id <> v_post.author_id
+     and not (c.author_id = any (v_ment));
+  perform public.notifier(v_autres, 'reponse', p_post, v_com.id, p_author);
+
+  return jsonb_build_object('comment_id', v_com.id, 'duplicate', false);
+end;
+$$;
+
+-- Une corne de bouquetin s'ajoute et se retire. On ne notifie qu'a la pose.
+create or replace function public.toggle_kudo(p_participant uuid, p_post uuid)
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_post public.posts;
+  v_pose boolean;
+begin
+  select * into v_post from public.posts where id = p_post;
+  if not found then
+    raise exception 'Publication introuvable';
+  end if;
+  if exists (select 1 from public.post_kudos where post_id = p_post and participant_id = p_participant) then
+    delete from public.post_kudos where post_id = p_post and participant_id = p_participant;
+    v_pose := false;
+  else
+    insert into public.post_kudos (post_id, participant_id) values (p_post, p_participant);
+    v_pose := true;
+    perform public.notifier(array[v_post.author_id], 'kudo', p_post, null, p_participant);
+  end if;
+  return jsonb_build_object(
+    'pose', v_pose,
+    'total', (select count(*) from public.post_kudos where post_id = p_post)
+  );
+end;
+$$;
+
+create or replace function public.mark_notifications_read(p_participant uuid)
+returns int
+language plpgsql security definer set search_path = public as $$
+declare v_n int;
+begin
+  update public.notifications set read_at = now()
+   where participant_id = p_participant and read_at is null;
+  get diagnostics v_n = row_count;
+  return v_n;
+end;
+$$;
+
+-- Une publication peut etre retiree par son auteur, ou par un organisateur
+-- muni du code. Les publications de defi suivent leur soumission et ne se
+-- suppriment pas ici.
+create or replace function public.delete_post(p_post uuid, p_participant uuid, p_pin text default null)
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare v_post public.posts;
+begin
+  select * into v_post from public.posts where id = p_post;
+  if not found then
+    return jsonb_build_object('deleted', false);
+  end if;
+  if v_post.submission_id is not null then
+    raise exception 'Cette publication suit un défi validé, elle se retire depuis la vue organisateur';
+  end if;
+  if v_post.author_id <> coalesce(p_participant, '00000000-0000-0000-0000-000000000000'::uuid)
+     and not public.check_organizer(p_pin) then
+    raise exception 'Seul son auteur peut retirer cette publication';
+  end if;
+  delete from public.posts where id = p_post;
+  return jsonb_build_object('deleted', true, 'photo_path', v_post.photo_path);
+end;
+$$;
+
+-- Tout ce qu'il faut au fil et a l'album, en un appel. Les commentaires sont
+-- rendus avec leur publication, et les notifications ne concernent que la
+-- personne qui demande.
+create or replace function public.feed_state(p_participant uuid default null)
+returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'posts', (
+      select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at desc), '[]'::jsonb)
+        from (
+          select v.*,
+                 coalesce((
+                   select jsonb_agg(jsonb_build_object(
+                            'id', c.id,
+                            'author_id', c.author_id,
+                            'author_name', (a.first_name || ' ' || a.last_name),
+                            'author_photo', a.photo_path,
+                            'texte', c.texte,
+                            'mentions', c.mentions,
+                            'created_at', c.created_at) order by c.created_at)
+                     from public.post_comments c
+                     join public.participants a on a.id = c.author_id
+                    where c.post_id = v.id), '[]'::jsonb) as commentaires
+            from public.v_posts v
+        ) x
+    ),
+    'notifications', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+               'id', n.id,
+               'kind', n.kind,
+               'post_id', n.post_id,
+               'comment_id', n.comment_id,
+               'actor_id', n.actor_id,
+               'actor_name', (a.first_name || ' ' || a.last_name),
+               'actor_photo', a.photo_path,
+               'created_at', n.created_at,
+               'read_at', n.read_at) order by n.created_at desc), '[]'::jsonb)
+        from public.notifications n
+        left join public.participants a on a.id = n.actor_id
+       where p_participant is not null and n.participant_id = p_participant
+         and n.created_at > now() - interval '3 days'
+    ),
+    'server_time', now()
+  );
+$$;
+
+create or replace function public.admin_reset_code(p_pin text, p_id uuid, p_code text)
+returns boolean
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.check_organizer(p_pin) then
+    raise exception 'Code organisateur incorrect';
+  end if;
+  if not public.code_valide(p_code) then
+    raise exception 'Le code doit faire au moins quatre caractères';
+  end if;
+  insert into public.participant_secrets (participant_id, password_hash)
+  values (p_id, extensions.crypt(p_code, extensions.gen_salt('bf')))
+  on conflict (participant_id) do update
+    set password_hash = excluded.password_hash, updated_at = now();
+  return true;
+end;
+$$;
+
+-- Une photo de publication libre se retire comme les autres : seulement quand
+-- plus aucune ligne ne la reclame.
+create or replace function public.photo_post_est_orpheline(p_name text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select not exists (select 1 from public.posts p where p.photo_path = p_name);
 $$;

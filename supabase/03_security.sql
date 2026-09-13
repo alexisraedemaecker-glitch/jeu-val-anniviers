@@ -17,13 +17,18 @@ alter table public.submission_members enable row level security;
 alter table public.synergy_unlocks    enable row level security;
 alter table public.quiz_lockouts      enable row level security;
 alter table public.app_settings       enable row level security;
+alter table public.participant_secrets enable row level security;
+alter table public.posts             enable row level security;
+alter table public.post_kudos        enable row level security;
+alter table public.post_comments     enable row level security;
+alter table public.notifications     enable row level security;
 
 do $$
 declare t text;
 begin
   foreach t in array array['pillars','challenges','synergies','participants',
                            'submissions','submission_members','synergy_unlocks',
-                           'quiz_lockouts']
+                           'quiz_lockouts','posts','post_kudos','post_comments']
   loop
     execute format('drop policy if exists %I on public.%I', 'lecture_publique_' || t, t);
     execute format(
@@ -33,8 +38,11 @@ begin
 end;
 $$;
 
--- app_settings : RLS activee et aucune policy, donc totalement inaccessible
--- depuis le navigateur. Seules les fonctions security definer y accedent.
+-- app_settings et participant_secrets : RLS activee et aucune policy, donc
+-- totalement inaccessibles depuis le navigateur. Seules les fonctions security
+-- definer y accedent. Une empreinte de mot de passe ne sort jamais de la base.
+-- notifications : pas de policy non plus, elles ne se lisent que par
+-- feed_state(), qui ne renvoie que les siennes.
 
 -- ---------------------------------------------------------------- droits
 
@@ -45,18 +53,32 @@ grant usage on schema public to anon, authenticated;
 grant select on
   public.pillars, public.challenges, public.synergies, public.participants,
   public.submissions, public.submission_members, public.synergy_unlocks,
-  public.quiz_lockouts
+  public.quiz_lockouts, public.posts, public.post_kudos, public.post_comments
 to anon, authenticated;
 
 grant select on
   public.v_submission_gauge, public.v_synergy_gauge, public.v_pillar_gauges,
   public.v_personal_scores, public.v_collective_status, public.v_challenge_stats,
-  public.v_feed, public.v_lockouts
+  public.v_feed, public.v_lockouts, public.v_posts
 to anon, authenticated;
 
 -- Fonctions appelables depuis l'application.
 revoke all on function public.recompute_synergies() from anon, authenticated;
-grant execute on function public.ensure_participant(text, text, text, text) to anon, authenticated;
+grant execute on function public.ensure_participant(text, text, text, text, text) to anon, authenticated;
+grant execute on function public.a_un_code(uuid)                      to anon, authenticated;
+grant execute on function public.code_valide(text)                    to anon, authenticated;
+-- verifie_code et set_code ne sont pas exposees : la verification se fait a
+-- l'interieur de ensure_participant, qui ne renvoie le profil qu'au bon code.
+revoke all on function public.verifie_code(uuid, text) from anon, authenticated;
+revoke all on function public.set_code(uuid, text)     from anon, authenticated;
+revoke all on function public.notifier(uuid[], text, uuid, uuid, uuid) from anon, authenticated;
+grant execute on function public.add_post(text, uuid, text, text, uuid[])       to anon, authenticated;
+grant execute on function public.add_comment(text, uuid, uuid, text, uuid[])    to anon, authenticated;
+grant execute on function public.toggle_kudo(uuid, uuid)                        to anon, authenticated;
+grant execute on function public.mark_notifications_read(uuid)                  to anon, authenticated;
+grant execute on function public.delete_post(uuid, uuid, text)                  to anon, authenticated;
+grant execute on function public.feed_state(uuid)                               to anon, authenticated;
+grant execute on function public.photo_post_est_orpheline(text)                 to anon, authenticated;
 grant execute on function public.set_photo(uuid, text)                to anon, authenticated;
 grant execute on function public.portrait_est_orphelin(text)          to anon, authenticated;
 grant execute on function public.chemin_valide(text)                  to anon, authenticated;
@@ -77,6 +99,7 @@ grant execute on function public.admin_rename_participant(text, uuid, text, text
 grant execute on function public.admin_delete_participant(text, uuid)          to anon, authenticated;
 grant execute on function public.admin_reset_game(text, text)                  to anon, authenticated;
 grant execute on function public.admin_set_lockout_minutes(text, int)          to anon, authenticated;
+grant execute on function public.admin_reset_code(text, uuid, text)            to anon, authenticated;
 
 -- -------------------------------------------------------------- stockage
 
@@ -133,7 +156,9 @@ create policy "preuves depot" on storage.objects
 -- code. Une photo rattachee a une soumission vivante reste intouchable.
 create policy "preuves menage" on storage.objects
   for delete to anon, authenticated
-  using (bucket_id = 'preuves' and public.photo_est_orpheline(name));
+  using (bucket_id = 'preuves'
+         and public.photo_est_orpheline(name)
+         and public.photo_post_est_orpheline(name));
 
 -- Pas de policy update : une photo deposee ne peut jamais etre ecrasee.
 
@@ -151,7 +176,8 @@ do $$
 declare t text;
 begin
   foreach t in array array['submissions','submission_members','synergy_unlocks',
-                           'participants','quiz_lockouts']
+                           'participants','quiz_lockouts','posts','post_kudos',
+                           'post_comments','notifications']
   loop
     if not exists (
       select 1 from pg_publication_tables

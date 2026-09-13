@@ -116,6 +116,77 @@ create table if not exists public.app_settings (
   value text not null
 );
 
+-- Mot de passe choisi a l'inscription. Volontairement dans sa propre table :
+-- le navigateur a le droit de lire public.participants, il ne doit jamais
+-- pouvoir lire une empreinte de mot de passe, meme chiffree. RLS activee sans
+-- aucune policy, comme app_settings, donc seules les fonctions security
+-- definer y accedent.
+create table if not exists public.participant_secrets (
+  participant_id uuid primary key references public.participants(id) on delete cascade,
+  password_hash  text not null,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+-- --------------------------------------------------------------- fil social
+
+-- Une publication du fil. Trois formes :
+--   - rattachee a une soumission : creee automatiquement quand un defi est
+--     valide, elle reprend sa photo et sa note ;
+--   - photo libre du week end, qui rejoint aussi l'album dans la categorie Autre ;
+--   - simple message.
+create table if not exists public.posts (
+  id            uuid primary key default gen_random_uuid(),
+  client_id     text unique,                 -- idempotence depuis l'appareil
+  author_id     uuid not null references public.participants(id) on delete cascade,
+  submission_id uuid unique references public.submissions(id) on delete cascade,
+  texte         text,
+  photo_path    text,
+  mentions      uuid[] not null default '{}',
+  created_at    timestamptz not null default now()
+);
+create index if not exists posts_created_idx on public.posts (created_at desc);
+
+create table if not exists public.post_kudos (
+  post_id        uuid not null references public.posts(id) on delete cascade,
+  participant_id uuid not null references public.participants(id) on delete cascade,
+  created_at     timestamptz not null default now(),
+  primary key (post_id, participant_id)
+);
+
+create table if not exists public.post_comments (
+  id         uuid primary key default gen_random_uuid(),
+  client_id  text unique,
+  post_id    uuid not null references public.posts(id) on delete cascade,
+  author_id  uuid not null references public.participants(id) on delete cascade,
+  texte      text not null,
+  mentions   uuid[] not null default '{}',
+  created_at timestamptz not null default now()
+);
+create index if not exists post_comments_post_idx on public.post_comments (post_id, created_at);
+
+-- Une ligne par personne a prevenir. On ne notifie jamais quelqu'un de sa
+-- propre action.
+create table if not exists public.notifications (
+  id             uuid primary key default gen_random_uuid(),
+  participant_id uuid not null references public.participants(id) on delete cascade,
+  kind           text not null check (kind in ('kudo','commentaire','mention','reponse')),
+  post_id        uuid references public.posts(id) on delete cascade,
+  comment_id     uuid references public.post_comments(id) on delete cascade,
+  actor_id       uuid references public.participants(id) on delete cascade,
+  created_at     timestamptz not null default now(),
+  read_at        timestamptz
+);
+create index if not exists notifications_pour_idx
+  on public.notifications (participant_id, read_at, created_at desc);
+
+-- Chaque defi deja valide avant l'arrivee du fil recoit sa publication, pour
+-- que le fil et l'album racontent la journee en entier.
+insert into public.posts (author_id, submission_id, created_at)
+select s.submitter_id, s.id, s.created_at
+  from public.submissions s
+ where not exists (select 1 from public.posts p where p.submission_id = s.id);
+
 -- ------------------------------------------------------------------ vues
 
 -- create or replace view ne sait qu'ajouter des colonnes a la fin. Des qu'une
@@ -123,6 +194,7 @@ create table if not exists public.app_settings (
 -- rien, tout est recalcule a la lecture, donc les supprimer ne coute rien et
 -- garde ce fichier rejouable apres n'importe quelle evolution.
 -- Les droits sont redonnes juste apres, dans 03_security.sql.
+drop view if exists public.v_posts;
 drop view if exists public.v_lockouts;
 drop view if exists public.v_feed;
 drop view if exists public.v_challenge_stats;
@@ -216,7 +288,8 @@ select p.id,
        coalesce(d.pts,0)                     as score_defis,
        coalesce(b.pts,0)                     as score_synergies,
        coalesce(d.nb,0)                      as defis_faits,
-       coalesce(b.nb,0)                      as synergies_debloquees
+       coalesce(b.nb,0)                      as synergies_debloquees,
+       exists (select 1 from public.participant_secrets ps where ps.participant_id = p.id) as a_un_code
 from public.participants p
 left join defis d on d.participant_id = p.id
 left join bonus b on b.participant_id = p.id;
@@ -292,3 +365,42 @@ from public.submissions s
 join public.challenges   c  on c.id = s.challenge_id
 join public.participants sp on sp.id = s.submitter_id
 left join public.v_submission_gauge g on g.submission_id = s.id;
+
+-- Le fil social. Une publication rattachee a une soumission emprunte sa photo,
+-- sa note et son defi ; une publication libre porte les siennes.
+create or replace view public.v_posts as
+select p.id,
+       p.created_at,
+       p.author_id,
+       (a.first_name || ' ' || a.last_name) as author_name,
+       a.photo_path                          as author_photo,
+       p.submission_id,
+       case when p.submission_id is null then 'libre' else 'defi' end as genre,
+       s.challenge_id,
+       c.name    as challenge_name,
+       c.pillar,
+       c.points,
+       coalesce(p.photo_path, s.photo_path)  as photo_path,
+       coalesce(nullif(btrim(coalesce(p.texte, '')), ''), s.note) as texte,
+       p.mentions,
+       coalesce(
+         (select array_agg(pa.first_name || ' ' || pa.last_name order by pa.first_name)
+            from public.submission_members m
+            join public.participants pa on pa.id = m.participant_id
+           where m.submission_id = p.submission_id),
+         array[]::text[]
+       ) as member_names,
+       coalesce(
+         (select array_agg(m.participant_id::text) from public.submission_members m
+           where m.submission_id = p.submission_id),
+         array[]::text[]
+       ) as member_ids,
+       coalesce(
+         (select array_agg(k.participant_id::text) from public.post_kudos k where k.post_id = p.id),
+         array[]::text[]
+       ) as kudos_ids,
+       (select count(*) from public.post_comments pc where pc.post_id = p.id)::int as nb_commentaires
+from public.posts p
+join public.participants a on a.id = p.author_id
+left join public.submissions s on s.id = p.submission_id
+left join public.challenges  c on c.id = s.challenge_id;
