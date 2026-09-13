@@ -163,6 +163,90 @@ for js in sorted((Path(__file__).resolve().parent.parent / "js").rglob("*.js")):
         if _re.search(r"<//>\s*</[a-zA-Z]", ligne):
             err(f"{js.name} ligne {num} : <//> suivi d'une balise fermante, gabarit htm cassé")
 
+# Un gabarit htm dont les balises ne se referment pas produit un arbre bancal :
+# le premier rendu passe, puis toute mise a jour echoue et l'ecran se fige.
+# Dans htm, <//> ferme la balise courante quelle qu'elle soit, composant ou non.
+
+
+def _solde_balises(gab):
+    """Ouvertures moins fermetures dans un gabarit htm. Zero si tout va bien."""
+    solde = 0
+    i = 0
+    n = len(gab)
+    while i < n:
+        if gab.startswith("<//>", i):
+            solde -= 1
+            i += 4
+            continue
+        if gab.startswith("</", i):
+            j = gab.find(">", i)
+            if j < 0:
+                break
+            solde -= 1
+            i = j + 1
+            continue
+        suite = gab[i + 1 : i + 2]
+        if gab[i] == "<" and (suite.isalpha() or suite == "$"):
+            j = i + 1
+            prof = 0
+            while j < n:
+                c = gab[j]
+                if c == "{":
+                    prof += 1
+                elif c == "}":
+                    prof -= 1
+                elif c == ">" and prof == 0:
+                    break
+                j += 1
+            if gab[j - 1 : j] != "/":
+                solde += 1
+            i = j + 1
+            continue
+        i += 1
+    return solde
+
+
+def _gabarits(texte):
+    """(ligne, contenu) de chaque html`...` du fichier."""
+    out = []
+    depart = 0
+    while True:
+        d = texte.find("html`", depart)
+        if d < 0:
+            return out
+        j = d + 5
+        prof = 0
+        while j < len(texte):
+            c = texte[j]
+            if c == "\\":
+                j += 2
+                continue
+            if c == "$" and texte[j + 1 : j + 2] == "{":
+                prof += 1
+                j += 2
+                continue
+            if c == "{" and prof:
+                prof += 1
+            elif c == "}" and prof:
+                prof -= 1
+            elif c == "`" and not prof:
+                break
+            j += 1
+        out.append((texte[:d].count("\n") + 1, texte[d + 5 : j]))
+        depart = j + 1
+
+
+for js in sorted((Path(__file__).resolve().parent.parent / "js").rglob("*.js")):
+    if "vendor" in js.parts:
+        continue
+    texte = js.read_text(encoding="utf-8")
+    for num, gab in _gabarits(texte):
+        solde = _solde_balises(gab)
+        if solde > 0:
+            err(f"{js.name} ligne {num} : gabarit htm non refermé, il manque {solde} fois <//>")
+        elif solde < 0:
+            err(f"{js.name} ligne {num} : gabarit htm avec {-solde} fermeture(s) en trop")
+
 # --- rapport ----------------------------------------------------------------
 print(f"{len(pillars)} piliers, {len(challenges)} défis, {len(synergies)} synergies")
 total = sum(c["points"] for c in challenges)

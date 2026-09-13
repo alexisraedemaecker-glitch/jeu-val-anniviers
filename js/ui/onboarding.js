@@ -67,8 +67,11 @@ function Diaporama({ i, setI, pause, ouvrir }) {
 
   const jeu = (p) => `${p.src_small} 760w, ${p.src} 1376w`;
 
-  return html`<div class="diapo">
-    <button type="button" class="diapo-zone" onClick=${ouvrir}
+  // La legende decrit l'image du dessous, celle que l'on voit vraiment : pendant
+  // le fondu, la nouvelle n'est encore qu'a moitie la.
+  return html`<${Frag}>
+  <div class="diapo">
+    <button type="button" class="diapo-zone" onClick=${() => ouvrir(bas)}
             aria-label="Voir l'état de la vallée en grand">
       <img src=${PALIERS_VALLEE[bas].src_small} srcset=${jeu(PALIERS_VALLEE[bas])} sizes="100vw"
            alt=${"Le Val d'Anniviers en 2056 : " + PALIERS_VALLEE[bas].legende} />
@@ -80,7 +83,20 @@ function Diaporama({ i, setI, pause, ouvrir }) {
         : null}
     </button>
     <div class="diapo-voile" aria-hidden="true"></div>
-  </div>`;
+  </div>
+
+  <button type="button" class="diapo-espace" onClick=${() => ouvrir(bas)}
+          aria-label=${"Voir en grand : " + PALIERS_VALLEE[bas].legende}>
+    <span class="loupe" aria-hidden="true">⤢</span>
+    <span class="txt">
+      <span class="ligne">
+        <span class="grow">${PALIERS_VALLEE[bas].legende}</span>
+        <span class="aide">Appuyez pour voir en grand</span>
+      </span>
+      <span class="defiler">Faites défiler pour vous inscrire ↓</span>
+    </span>
+  </button>
+  <//>`;
 }
 
 /** Champ photo de profil : une pastille ronde qui ouvre l'appareil ou la galerie. */
@@ -238,16 +254,7 @@ export function Onboarding() {
 
   return html`<div class="stack ident">
     <${Diaporama} i=${vue} setI=${setVue} pause=${plein !== null}
-      ouvrir=${() => setPlein(vue)} />
-
-    <button type="button" class="diapo-espace" onClick=${() => setPlein(vue)}
-            aria-label=${"Voir en grand : " + PALIERS_VALLEE[vue].legende}>
-      <span class="loupe" aria-hidden="true">⤢</span>
-      <span class="txt">
-        <span class="grow">${PALIERS_VALLEE[vue].legende}</span>
-        <span class="aide">Appuyez pour voir en grand</span>
-      </span>
-    </button>
+      ouvrir=${(idx) => setPlein(idx)} />
 
     <div class="card">
       <h1>Le Val d'Anniviers en 2056</h1>

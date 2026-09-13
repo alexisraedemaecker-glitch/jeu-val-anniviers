@@ -40,7 +40,9 @@ def gabarits(src):
                 profondeur += 1
                 j += 2
                 continue
-            if c == "}" and profondeur:
+            if c == "{" and profondeur:
+                profondeur += 1
+            elif c == "}" and profondeur:
                 profondeur -= 1
             elif c == "`" and not profondeur:
                 break

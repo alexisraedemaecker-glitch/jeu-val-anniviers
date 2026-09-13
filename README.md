@@ -94,10 +94,14 @@ trentaine de secondes : le temps d'une inscription. Le but du jeu se lit ainsi
 sans une ligne d'explication.
 
 Sur un téléphone, les cartes occupent toute la largeur et masqueraient
-complètement le fond. Une bande d'environ un tiers de la hauteur est donc
-réservée en haut de l'écran : le contenu commence dessous et vient glisser par
-dessus au défilement. Le récit long est replié derrière `Lire l'histoire en
-entier`, pour la même raison.
+complètement le fond. La photo garde donc tout le premier écran, moins de quoi
+laisser dépasser le haut de la première carte : on voit qu'il y a du contenu
+dessous, il vient glisser par dessus l'image au défilement. Le récit long est
+replié derrière `Lire l'histoire en entier`, pour la même raison.
+
+La légende est rendue par le composant qui possède l'image, à partir de la
+couche du dessous. Une légende calculée à côté, sur la valeur visée par le
+diaporama, annoncerait la photo suivante pendant toute la seconde du fondu.
 
 Un appui sur la bande, ou sur le fond partout où il se voit, ouvre la photo en
 plein écran. Le défilement s'arrête alors, et il reprend à la fermeture sur la
@@ -115,6 +119,11 @@ expression. `Il reste\n  ${n} points` affiche `Il reste700 points`. Écrire
 
 `tools/check_espaces.py` détecte ce motif dans tous les gabarits et fait échouer
 la publication le cas échéant.
+
+Deuxième piège de la même famille : une balise laissée ouverte, par exemple un
+`<${Frag}>` sans son `<//>`. Le premier rendu passe, puis toute mise à jour
+échoue et l'écran se fige, sans la moindre erreur en console. `tools/check.py`
+compte maintenant les ouvertures et les fermetures de chaque gabarit.
 
 ## L'onglet Activités
 

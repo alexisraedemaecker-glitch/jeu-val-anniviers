@@ -467,12 +467,21 @@ input[type=file] { display: none; }
 .ident > .diapo-espace { box-shadow: none; }
 
 /* Sur un telephone, les cartes occupent toute la largeur : sans cette bande
-   reservee, l'image de fond ne se verrait plus du tout. Le contenu vient
-   glisser par dessus au defilement. */
+   reservee, l'image de fond ne se verrait plus du tout. On lui laisse donc tout
+   le premier ecran, moins de quoi laisser depasser le haut de la carte, ce qui
+   montre qu'il y a du contenu dessous. Il vient glisser par dessus l'image au
+   defilement. */
 .diapo-espace {
   display: block; width: 100%; border: 0; background: transparent; padding: 0;
-  height: clamp(140px, 32vh, 300px);
+  --depasse: 168px;
+  height: calc(100vh - var(--depasse));
+  min-height: 220px; max-height: 820px;
   cursor: zoom-in; text-align: left; color: #fff;
+}
+/* svh vaut la hauteur visible quand la barre d'adresse est affichee, donc la
+   bande ne deborde jamais sous le bandeau du navigateur sur iPhone. */
+@supports (height: 1svh) {
+  .diapo-espace { height: calc(100svh - var(--depasse)); }
 }
 .diapo-espace .loupe {
   position: absolute; top: .1rem; right: .1rem;
@@ -482,15 +491,19 @@ input[type=file] { display: none; }
 }
 .diapo-espace .txt {
   position: absolute; left: 0; right: 0; bottom: 0;
-  padding: 2.4rem .3rem .5rem;
-  display: flex; align-items: flex-end; gap: .5rem;
-  background: linear-gradient(to top, rgba(12, 18, 24, .6), rgba(12, 18, 24, 0));
+  padding: 2.6rem .3rem .5rem;
+  display: flex; flex-direction: column;
+  background: linear-gradient(to top, rgba(12, 18, 24, .68), rgba(12, 18, 24, 0));
   border-radius: 0 0 var(--radius) var(--radius);
   font-weight: 650; font-size: .94rem; line-height: 1.25;
 }
+.diapo-espace .ligne { display: flex; align-items: flex-end; gap: .5rem; }
 .diapo-espace .aide { font-size: .72rem; font-weight: 500; opacity: .85; white-space: nowrap; }
+.diapo-espace .defiler {
+  text-align: center; font-size: .78rem; font-weight: 600; opacity: .9; margin-top: .45rem;
+}
 @media (min-width: 620px) {
-  .diapo-espace { height: clamp(160px, 26vh, 300px); }
+  .diapo-espace { --depasse: 250px; max-height: 680px; }
 }
 
 .diapo { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
