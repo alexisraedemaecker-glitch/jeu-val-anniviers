@@ -287,7 +287,7 @@ input[type=file] { display: none; }
 .album img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .lightbox {
-  position: fixed; inset: 0; z-index: 90; background: rgba(12,18,24,.94);
+  position: fixed; inset: 0; z-index: 90; background: #0b1117;
   display: flex; flex-direction: column; color: #fff;
   padding: calc(.6rem + env(safe-area-inset-top)) .6rem calc(.6rem + env(safe-area-inset-bottom));
 }
@@ -422,4 +422,103 @@ input[type=file] { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .vallee img.entrante { transition: none; }
+}
+
+/* ------------------------------------------------- galerie photo d'une fiche */
+
+/* La bande déborde volontairement du rembourrage de la carte, pour que chaque
+   photo occupe toute la largeur disponible. Défilement par à coups, une photo
+   à la fois. */
+.photos-piste {
+  display: flex;
+  gap: .5rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  /* Bord a bord dans la carte : la photo gagne tout le rembourrage. */
+  margin: 0 -.9rem;
+  padding: 0 0 .4rem;
+  scrollbar-width: none;
+}
+.photos-piste::-webkit-scrollbar { display: none; }
+
+.photos-vue {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: #e8e3d8;
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  cursor: zoom-in;
+}
+.photos-vue img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.photos-vue .legende {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 1.4rem .7rem .55rem;
+  background: linear-gradient(to top, rgba(12, 18, 24, .8), rgba(12, 18, 24, 0));
+  color: #fff;
+  font-size: .84rem;
+  font-weight: 650;
+  text-align: left;
+  line-height: 1.25;
+}
+.photos-vue .loupe {
+  position: absolute; top: .5rem; right: .5rem;
+  background: rgba(12, 18, 24, .55); color: #fff;
+  width: 30px; height: 30px; border-radius: 9px;
+  display: grid; place-items: center; font-size: .95rem;
+}
+
+.photos-barre {
+  display: flex; align-items: center; gap: .5rem;
+  margin-top: .1rem;
+}
+.photos-piste + .photos-barre { padding: 0 .1rem; }
+.photos-points { display: flex; gap: .3rem; flex: 1; }
+.photos-points i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--line-strong); display: block; transition: background .2s;
+}
+.photos-points i.on { background: var(--accent); }
+
+@media (min-width: 620px) {
+  .photos-vue { flex-basis: calc(50% - .25rem); }
+}
+
+/* Plein écran : la photo prend toute la largeur, sans rembourrage perdu. */
+.lightbox { padding-left: 0; padding-right: 0; }
+.lightbox .close { align-self: flex-end; margin-right: .6rem; }
+/* Positionnement absolu plutot qu'une grille : dans une grille dimensionnee
+   par son contenu, le max-height en pourcentage ne se resout pas et la photo
+   debordait de l'ecran en mode paysage. */
+.lightbox .frame {
+  flex: 1 1 auto; min-height: 0; margin: .5rem 0;
+  display: block; position: relative;
+}
+.lightbox .frame img {
+  position: absolute; inset: 0; margin: auto;
+  max-width: 100%; max-height: 100%; width: auto; height: auto;
+  border-radius: 0;
+  transition: transform .25s ease;
+  transform-origin: center center;
+}
+/* Un appui agrandit la photo pour en examiner le détail, un second la remet. */
+.lightbox .frame.zoom { overflow: auto; }
+.lightbox .frame.zoom img { position: static; display: block; margin: 0 auto; }
+.lightbox .frame.zoom img { transform: scale(2.2); cursor: zoom-out; }
+.lightbox .frame img { cursor: zoom-in; }
+.lightbox .info { flex: 0 0 auto; padding: .3rem .7rem 0; }
+
+/* Écran couché : la photo occupe presque tout, c'est le meilleur affichage
+   pour ces images de paysage. */
+@media (orientation: landscape) {
+  .lightbox .close { position: absolute; top: .6rem; right: .6rem; z-index: 2; }
+  .lightbox .frame { margin: 0; }
+  .lightbox .info { background: linear-gradient(to top, rgba(12,18,24,.85), transparent);
+                    position: absolute; left: 0; right: 0; bottom: 0; padding: 1.6rem .8rem .5rem; }
 }

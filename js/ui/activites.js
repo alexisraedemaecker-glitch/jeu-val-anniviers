@@ -6,7 +6,7 @@
 // tracé dessinés depuis les données, fichier téléchargeable pour Komoot.
 // Les horaires de transport sont interrogés en direct auprès de l'horaire
 // officiel suisse, avec repli sur un lien si le réseau manque.
-const { html, useState, useEffect, useMemo } = window.htmPreact;
+const { html, useState, useEffect, useMemo, useRef } = window.htmPreact;
 
 import {
   CATEGORIES,
@@ -93,34 +93,62 @@ export function Activites({ go, identifie }) {
 
 // -------------------------------------------------------------- photos
 
-/** Photos en bande défilante, avec agrandissement au clic. */
+/**
+ * Photos d'une fiche, en bande défilante pleine largeur.
+ *
+ * Une photo occupe toute la largeur disponible et le defilement s'arrete sur
+ * chacune. Un appui ouvre la photo en plein ecran, avec navigation.
+ */
 function Photos({ photos }) {
   const [zoom, setZoom] = useState(null);
+  const [index, setIndex] = useState(0);
+  const piste = useRef(null);
+
+  function surDefilement() {
+    const el = piste.current;
+    if (!el) return;
+    const largeur = el.clientWidth || 1;
+    setIndex(Math.max(0, Math.min(photos.length - 1, Math.round(el.scrollLeft / largeur))));
+  }
+
   if (!photos || !photos.length) return null;
-  return html`<div>
-    <div style="display:flex;gap:.5rem;overflow-x:auto;padding:.1rem 0 .5rem;-webkit-overflow-scrolling:touch">
+
+  return html`<div style="margin-bottom:.8rem">
+    <div class="photos-piste" ref=${piste} onScroll=${surDefilement}>
       ${photos.map(
-        (p, i) => html`<button key=${p.src} onClick=${() => setZoom(i)}
-            style="flex:0 0 auto;padding:0;border:1px solid var(--line);background:#e8e3d8;border-radius:10px;overflow:hidden;width:190px">
-          <img src=${p.src} alt=${p.legende} loading="lazy"
-               style="width:190px;height:130px;object-fit:cover;display:block" />
-          <span class="tiny faint" style="display:block;padding:.28rem .4rem;text-align:left;line-height:1.2">
-            ${p.legende}
-          </span>
+        (p, i) => html`<button key=${p.src} type="button" class="photos-vue"
+            onClick=${() => setZoom(i)} aria-label=${"Agrandir : " + p.legende}>
+          <img src=${p.src} alt=${p.legende} loading="lazy" />
+          <span class="loupe" aria-hidden="true">⤢</span>
+          <span class="legende">${p.legende}</span>
         </button>`
       )}
     </div>
+    ${photos.length > 1
+      ? html`<div class="photos-barre">
+          <span class="photos-points" aria-hidden="true">
+            ${photos.map((p, i) => html`<i key=${p.src} class=${i === index ? "on" : ""}></i>`)}
+          </span>
+          <span class="tiny faint nowrap">
+            ${index + 1} sur ${photos.length} · faites défiler
+          </span>
+        </div>`
+      : html`<p class="tiny faint" style="margin:.1rem 0 0">Appuyez pour agrandir</p>`}
     ${zoom !== null ? html`<${PhotoZoom} photos=${photos} i=${zoom} setI=${setZoom} />` : null}
   </div>`;
 }
 
 function PhotoZoom({ photos, i, setI }) {
   const p = photos[i];
+  const [zoom, setZoom] = useState(false);
+  const suivante = () => { setZoom(false); setI((i + 1) % photos.length); };
+  const precedente = () => { setZoom(false); setI((i - 1 + photos.length) % photos.length); };
+
   useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape") setI(null);
-      if (e.key === "ArrowRight") setI((i + 1) % photos.length);
-      if (e.key === "ArrowLeft") setI((i - 1 + photos.length) % photos.length);
+      if (e.key === "ArrowRight") suivante();
+      if (e.key === "ArrowLeft") precedente();
     }
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -129,20 +157,23 @@ function PhotoZoom({ photos, i, setI }) {
       document.body.style.overflow = "";
     };
   }, [i]);
+
   return html`<div class="lightbox" onClick=${(e) => { if (e.target === e.currentTarget) setI(null); }}>
     <button class="close" onClick=${() => setI(null)}>Fermer</button>
-    <div class="frame"><img src=${p.src} alt=${p.legende} /></div>
+    <div class=${"frame" + (zoom ? " zoom" : "")}
+         onClick=${(e) => { if (e.target === e.currentTarget) setI(null); }}>
+      <img src=${p.src} alt=${p.legende} onClick=${() => setZoom(!zoom)} />
+    </div>
     <div class="info">
       <strong>${p.legende}</strong>
+      <div class="tiny" style="opacity:.7;margin-top:.15rem">
+        ${zoom ? "Appuyez sur la photo pour revenir" : "Appuyez sur la photo pour zoomer, ou couchez le téléphone"}
+      </div>
       ${photos.length > 1
         ? html`<div class="row" style="margin-top:.5rem;gap:.5rem">
-            <button class="btn sm quiet grow" onClick=${() => setI((i - 1 + photos.length) % photos.length)}>
-              Précédente
-            </button>
-            <span class="tiny" style="opacity:.7">${i + 1} sur ${photos.length}</span>
-            <button class="btn sm quiet grow" onClick=${() => setI((i + 1) % photos.length)}>
-              Suivante
-            </button>
+            <button class="btn sm quiet grow" onClick=${precedente}>Précédente</button>
+            <span class="tiny nowrap" style="opacity:.75">${i + 1} sur ${photos.length}</span>
+            <button class="btn sm quiet grow" onClick=${suivante}>Suivante</button>
           </div>`
         : null}
     </div>
