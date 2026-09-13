@@ -7,6 +7,7 @@ import {
   myDoneChallenges,
   myUnlocks,
   updateVibe,
+  setPortrait,
   signOut,
   flushQueue,
   dropPending,
@@ -15,7 +16,7 @@ import {
 import { STYLES } from "../data/pillars.js";
 import { CHALLENGE_BY_ID, CHALLENGES } from "../data/challenges.js";
 import { SYNERGIES } from "../data/synergies.js";
-import { Banner, Spinner, dateTimeShort } from "./bits.js";
+import { Banner, Spinner, Avatar, dateTimeShort } from "./bits.js";
 
 export function Me({ go }) {
   const me = state.me;
@@ -24,6 +25,23 @@ export function Me({ go }) {
   const unlocked = myUnlocks();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  // Le portrait peut avoir ete ajoute depuis un autre appareil : la ligne de
+  // score est toujours la source la plus fraiche.
+  const portrait = { ...me, photo_path: (score && score.photo_path) || me.photo_path };
+
+  async function changerPhoto(f) {
+    if (!f) return;
+    setPhotoBusy(true);
+    setError(null);
+    try {
+      await setPortrait(f);
+    } catch (err) {
+      setError(friendly(err));
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   async function pickVibe(v) {
     setBusy(true);
@@ -39,8 +57,19 @@ export function Me({ go }) {
 
   return html`<div class="stack">
     <div class="card">
-      <div class="tiny faint">Votre profil</div>
-      <h1 style="margin:.1rem 0 .5rem">${me.first_name} ${me.last_name}</h1>
+      <div class="row" style="gap:.8rem;align-items:center;margin-bottom:.6rem">
+        <${Avatar} p=${portrait} taille="lg" />
+        <div class="grow">
+          <div class="tiny faint">Votre profil</div>
+          <h1 style="margin:.1rem 0 .2rem">${me.first_name} ${me.last_name}</h1>
+          <label class="btn sm quiet" style="display:inline-flex">
+            ${photoBusy ? html`<${Spinner} dark=${true} />` : null}
+            ${portrait.photo_path ? "Changer ma photo" : "Ajouter ma photo"}
+            <input type="file" accept="image/*" style="display:none" disabled=${photoBusy}
+                   onChange=${(e) => changerPhoto(e.target.files && e.target.files[0])} />
+          </label>
+        </div>
+      </div>
       <div class="spread">
         <div class="center grow">
           <div class="tiny faint">Score</div>

@@ -252,7 +252,11 @@ input[type=file] { display: none; }
 
 /* ----------------------------------------------------------------- groupe */
 
-.people { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .4rem; }
+/* Avec le portrait et la case a cocher, une pastille a besoin de place : sur
+   un telephone on passe donc a une personne par ligne, nom entier visible. */
+.people { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .4rem; }
+.people > * { min-width: 0; }
+.person .grow { min-width: 0; overflow-wrap: break-word; }
 .person {
   display: flex; align-items: center; gap: .5rem; text-align: left;
   min-height: 46px; padding: .4rem .6rem; border-radius: 11px;
@@ -299,7 +303,7 @@ input[type=file] { display: none; }
 
 /* ------------------------------------------------------------- classement */
 
-.rank { display: grid; gap: .35rem; }
+.rank { display: grid; grid-template-columns: minmax(0, 1fr); gap: .35rem; }
 .rank-row {
   display: flex; align-items: center; gap: .6rem;
   background: var(--card); border: 1px solid var(--line); border-radius: 11px; padding: .5rem .7rem;
@@ -308,6 +312,10 @@ input[type=file] { display: none; }
 .rank-pos { width: 28px; text-align: right; font-weight: 750; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 .rank-row.me .rank-pos { color: var(--accent); }
 .rank-name { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Le detail passe sous le nom : sur un telephone, une seule ligne ne peut pas
+   porter le nom entier, le nombre de defis et le score sans tout tronquer. */
+.rank-name small { display: block; font-weight: 500; font-size: .74rem; color: var(--ink-faint); }
+.rank-row.me .rank-name small { color: var(--accent); }
 .rank-pts { font-weight: 750; font-variant-numeric: tabular-nums; }
 
 /* -------------------------------------------------------------- synergies */
@@ -440,6 +448,72 @@ input[type=file] { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .vallee img.entrante { transition: none; }
 }
+
+/* ------------------------------------------- diaporama de la page d'identification */
+
+/* Les six etats de la vallee defilent en grand derriere le formulaire. La
+   couche est fixe et couvre tout l'ecran, y compris sous la barre du haut.
+   Un voile clair garde les textes lisibles en plein soleil. */
+/* Surtout pas de z-index ici : cela creerait un contexte d'empilement, et la
+   photo en plein ecran se retrouverait coincee sous la barre du haut. */
+.ident { position: relative; }
+.accueil > .btn { position: relative; z-index: 1; }
+.ident > .card, .ident > form.card, .ident > .filters, .ident > .banner, .ident > .btn {
+  position: relative; z-index: 1;
+  box-shadow: 0 2px 10px rgba(22, 33, 44, .14), 0 10px 30px rgba(22, 33, 44, .10);
+}
+.ident > .card, .ident > form.card { background: rgba(255, 255, 255, .95); backdrop-filter: blur(4px); }
+
+.diapo { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+.diapo-zone {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  border: 0; padding: 0; margin: 0; background: #16212c; cursor: zoom-in;
+  display: block;
+}
+.diapo-zone img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.diapo-zone img.entrante { opacity: 0; transition: opacity 1.1s ease-in-out; }
+.diapo-zone img.entrante.visible { opacity: 1; }
+/* Le voile ne doit pas intercepter les appuis : l'image reste cliquable. */
+.diapo-voile {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(22, 33, 44, .18), rgba(244, 241, 234, .16) 40%, rgba(244, 241, 234, .52));
+}
+@media (prefers-reduced-motion: reduce) {
+  .diapo-zone img.entrante { transition: none; }
+}
+
+/* ------------------------------------------------------- portrait de profil */
+
+.avatar {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%;
+  overflow: hidden; background: var(--accent-soft); border: 1px solid var(--line);
+  display: grid; place-items: center; padding: 0;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar.vide { color: var(--accent); font-weight: 750; font-size: .74rem; letter-spacing: .02em; }
+.avatar.sm { width: 28px; height: 28px; }
+.avatar.sm.vide { font-size: .64rem; }
+.avatar.lg { width: 64px; height: 64px; }
+.avatar.lg.vide { font-size: 1.2rem; }
+.avatar.xl { width: 92px; height: 92px; }
+.avatar.xl.vide { font-size: 1.7rem; }
+button.avatar { cursor: zoom-in; }
+
+.portrait-champ { display: flex; align-items: center; gap: .8rem; margin-top: .5rem; }
+.portrait-cible {
+  flex: 0 0 auto; width: 84px; height: 84px; border-radius: 50%;
+  border: 2px dashed var(--line-strong); background: #fcfbf8;
+  display: grid; place-items: center; overflow: hidden; cursor: pointer;
+  position: relative; color: var(--ink-soft); text-align: center;
+}
+.portrait-cible.rempli { border-style: solid; border-color: var(--ok); }
+.portrait-cible img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.portrait-cible input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.portrait-vide { display: grid; gap: .1rem; line-height: 1.1; }
+.portrait-vide .ic { font-size: 1.5rem; }
 
 /* ------------------------------------------------- galerie photo d'une fiche */
 

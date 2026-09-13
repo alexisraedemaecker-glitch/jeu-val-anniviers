@@ -76,7 +76,7 @@ function App() {
       <main>
         ${surActivites
           ? html`<${Activites} go=${go} identifie=${false} />`
-          : html`<div class="stack">
+          : html`<div class="stack accueil">
               <${Onboarding} />
               <button class="btn quiet block" onClick=${() => go("#/activites")}>
                 🧭 Voir les activités du week end sans m'identifier

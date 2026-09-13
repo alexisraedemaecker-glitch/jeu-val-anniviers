@@ -5,11 +5,12 @@ import {
   SUPABASE_URL,
   SUPABASE_KEY,
   PHOTO_BUCKET,
+  PORTRAIT_BUCKET,
   SYNC_INTERVAL_MS,
   POLL_INTERVAL_MS
 } from "./config.js";
 import * as queue from "./queue.js";
-import { compress } from "./image.js";
+import { compress, compressPortrait } from "./image.js";
 import { CHALLENGE_BY_ID } from "./data/challenges.js";
 import { SYNERGY_BY_ID } from "./data/synergies.js";
 
@@ -108,11 +109,48 @@ function writeMe(me) {
   }
 }
 
-export async function signIn(firstName, lastName, vibe) {
+/** Envoie un portrait dans le bucket des profils et renvoie son chemin. */
+export async function uploadPortrait(file) {
+  const out = await compressPortrait(file);
+  const blob = out.blob;
+  const ext = blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg";
+  const name = `${uuid()}.${ext}`;
+  const { error } = await sb.storage.from(PORTRAIT_BUCKET).upload(name, blob, {
+    contentType: blob.type || "image/jpeg",
+    cacheControl: "31536000",
+    upsert: false
+  });
+  if (error) throw new Error(friendly(error));
+  return name;
+}
+
+export function portraitUrl(path) {
+  if (!path) return null;
+  const { data } = sb.storage.from(PORTRAIT_BUCKET).getPublicUrl(path);
+  return data ? data.publicUrl : null;
+}
+
+export async function setPortrait(file) {
+  if (!state.me) throw new Error("Aucun profil actif");
+  const chemin = await uploadPortrait(file);
+  const { data, error } = await sb.rpc("set_photo", {
+    p_participant: state.me.id,
+    p_photo: chemin
+  });
+  if (error) throw new Error(friendly(error));
+  const me = Array.isArray(data) ? data[0] : data;
+  writeMe(me);
+  setState({ me, toast: { kind: "success", text: "Photo enregistrée" } });
+  refresh();
+  return me;
+}
+
+export async function signIn(firstName, lastName, vibe, photoPath) {
   const { data, error } = await sb.rpc("ensure_participant", {
     p_first: firstName,
     p_last: lastName,
-    p_vibe: vibe || null
+    p_vibe: vibe || null,
+    p_photo: photoPath || null
   });
   if (error) throw new Error(friendly(error));
   const me = Array.isArray(data) ? data[0] : data;
@@ -171,12 +209,18 @@ export async function refresh({ feed = false } = {}) {
     // Garde le profil local a jour si le prenom ou l'envie a change ailleurs.
     if (state.me) {
       const fresh = (data.scores || []).find((s) => s.id === state.me.id);
-      if (fresh && (fresh.vibe !== state.me.vibe || fresh.first_name !== state.me.first_name)) {
+      if (
+        fresh &&
+        (fresh.vibe !== state.me.vibe ||
+          fresh.first_name !== state.me.first_name ||
+          fresh.photo_path !== state.me.photo_path)
+      ) {
         const me = {
           id: fresh.id,
           first_name: fresh.first_name,
           last_name: fresh.last_name,
-          vibe: fresh.vibe
+          vibe: fresh.vibe,
+          photo_path: fresh.photo_path
         };
         writeMe(me);
         setState({ me });
@@ -644,6 +688,13 @@ export async function adminDeleteParticipant(id) {
   });
   if (error) throw new Error(friendly(error));
   await purgePhotos(data && data.photos);
+  if (data && data.portrait) {
+    try {
+      await sb.storage.from(PORTRAIT_BUCKET).remove([data.portrait]);
+    } catch (err) {
+      console.warn("Portrait non retiré", err);
+    }
+  }
   await refresh({ feed: true });
   setState({ toast: { kind: "success", text: "Profil supprimé" } });
 }
@@ -655,6 +706,14 @@ export async function adminResetGame(confirmation) {
   });
   if (error) throw new Error(friendly(error));
   await purgePhotos(data && data.photos);
+  const portraits = (data && data.portraits) || [];
+  if (portraits.length) {
+    try {
+      await sb.storage.from(PORTRAIT_BUCKET).remove(portraits);
+    } catch (err) {
+      console.warn("Portraits non retirés", err);
+    }
+  }
   try {
     localStorage.removeItem("anniviers2056.seenSynergies");
     localStorage.removeItem("anniviers2056.lockouts");

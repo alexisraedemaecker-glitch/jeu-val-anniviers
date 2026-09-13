@@ -9,6 +9,11 @@ export const SUPABASE_URL = "https://bdqbrdoorqcxutfojgze.supabase.co";
 export const SUPABASE_KEY = "sb_publishable_4LtKdowLhCiBJIbBfpuhqg_fgFU-2nQ";
 
 export const PHOTO_BUCKET = "preuves";
+export const PORTRAIT_BUCKET = "profils";
+
+// Un portrait s'affiche petit : inutile de faire monter une photo pleine taille.
+export const PORTRAIT_MAX_SIDE = 480;
+export const PORTRAIT_QUALITY = 0.7;
 
 // Compression des photos avant envoi, pour rester rapide avec un reseau faible.
 export const PHOTO_MAX_SIDE = 1600;

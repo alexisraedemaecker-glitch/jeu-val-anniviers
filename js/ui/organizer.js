@@ -24,7 +24,7 @@ import {
 import { PILLARS, PILLAR_BY_ID, VICTORY } from "../data/pillars.js";
 import { CHALLENGES, CHALLENGE_BY_ID } from "../data/challenges.js";
 import { SYNERGIES } from "../data/synergies.js";
-import { Banner, Spinner, Empty, Gauge, dateTimeShort, pillarColor } from "./bits.js";
+import { Banner, Spinner, Empty, Gauge, dateTimeShort, pillarColor, Avatar } from "./bits.js";
 
 const ONGLETS = [
   { id: "bord", label: "Tableau de bord" },
@@ -453,11 +453,16 @@ function Joueurs({ onError }) {
                 </div>
               </div>`
             : html`<div key=${p.id} class="card">
-                <h3 style="margin:0">${p.first_name} ${p.last_name}</h3>
+                <div class="row" style="gap:.6rem;align-items:center">
+                  <${Avatar} p=${p} />
+                  <div class="grow">
+                    <h3 style="margin:0">${p.first_name} ${p.last_name}</h3>
                 <div class="tiny faint">
                   ${p.score} points · ${p.defis_faits} ${p.defis_faits === 1 ? "défi" : "défis"}
                   ${p.synergies_debloquees ? ` · ${p.synergies_debloquees} découverte(s)` : ""}
                   ${p.vibe ? ` · envie ${p.vibe}` : ""}
+                    </div>
+                  </div>
                 </div>
                 <div class="row" style="margin-top:.5rem">
                   <button class="btn sm quiet grow" onClick=${() => {

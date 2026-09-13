@@ -5,7 +5,8 @@
 // recompresse dans le navigateur pour viser quelques centaines de kilooctets,
 // ce qui reste largement suffisant pour un album souvenir.
 
-import { PHOTO_MAX_SIDE, PHOTO_QUALITY, PHOTO_TARGET_BYTES } from "./config.js";
+import { PHOTO_MAX_SIDE, PHOTO_QUALITY, PHOTO_TARGET_BYTES,
+         PORTRAIT_MAX_SIDE, PORTRAIT_QUALITY } from "./config.js";
 
 async function decode(file) {
   // createImageBitmap applique l'orientation EXIF, donc les photos prises en
@@ -48,6 +49,42 @@ function toBlob(canvas, quality) {
       resolve(new Blob([buf], { type: "image/jpeg" }));
     }
   });
+}
+
+/**
+ * Portrait carre pour la photo de profil. On recadre au centre plutot que de
+ * deformer, puis on reduit fortement : ces images s'affichent dans une pastille
+ * de quelques dizaines de pixels.
+ */
+export async function compressPortrait(file) {
+  if (!file) return null;
+  if (!/^image\//.test(file.type || "")) {
+    throw new Error("Ce fichier n'est pas une image");
+  }
+  let source;
+  try {
+    source = await decode(file);
+  } catch (err) {
+    return { blob: file, original: file.size };
+  }
+  const w0 = source.width || source.naturalWidth;
+  const h0 = source.height || source.naturalHeight;
+  const cote = Math.min(w0, h0);
+  const sx = Math.round((w0 - cote) / 2);
+  const sy = Math.round((h0 - cote) / 2);
+  const taille = Math.min(PORTRAIT_MAX_SIDE, cote);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = taille;
+  canvas.height = taille;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, taille, taille);
+  ctx.drawImage(source, sx, sy, cote, cote, 0, 0, taille, taille);
+  if (source.close) source.close();
+
+  const blob = await toBlob(canvas, PORTRAIT_QUALITY);
+  return { blob: blob || file, original: file.size };
 }
 
 export async function compress(file) {

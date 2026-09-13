@@ -56,7 +56,10 @@ to anon, authenticated;
 
 -- Fonctions appelables depuis l'application.
 revoke all on function public.recompute_synergies() from anon, authenticated;
-grant execute on function public.ensure_participant(text, text, text) to anon, authenticated;
+grant execute on function public.ensure_participant(text, text, text, text) to anon, authenticated;
+grant execute on function public.set_photo(uuid, text)                to anon, authenticated;
+grant execute on function public.portrait_est_orphelin(text)          to anon, authenticated;
+grant execute on function public.chemin_valide(text)                  to anon, authenticated;
 grant execute on function public.set_vibe(uuid, text)                 to anon, authenticated;
 grant execute on function public.submit_challenge(text, text, uuid, uuid[], text, text, int, int) to anon, authenticated;
 grant execute on function public.check_organizer(text)                to anon, authenticated;
@@ -84,6 +87,32 @@ on conflict (id) do update
   set public = true,
       file_size_limit = 5242880,
       allowed_mime_types = array['image/jpeg','image/png','image/webp'];
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('profils', 'profils', true, 2097152,
+        array['image/jpeg','image/png','image/webp'])
+on conflict (id) do update
+  set public = true,
+      file_size_limit = 2097152,
+      allowed_mime_types = array['image/jpeg','image/png','image/webp'];
+
+drop policy if exists "profils lecture" on storage.objects;
+drop policy if exists "profils depot"   on storage.objects;
+drop policy if exists "profils menage"  on storage.objects;
+
+create policy "profils lecture" on storage.objects
+  for select to anon, authenticated
+  using (bucket_id = 'profils');
+
+create policy "profils depot" on storage.objects
+  for insert to anon, authenticated
+  with check (bucket_id = 'profils');
+
+-- Comme pour les preuves : on ne peut retirer qu'un portrait devenu orphelin,
+-- donc apres suppression du profil correspondant.
+create policy "profils menage" on storage.objects
+  for delete to anon, authenticated
+  using (bucket_id = 'profils' and public.portrait_est_orphelin(name));
 
 drop policy if exists "preuves lecture"   on storage.objects;
 drop policy if exists "preuves depot"     on storage.objects;

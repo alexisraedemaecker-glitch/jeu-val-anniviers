@@ -58,12 +58,26 @@ begin
 end;
 $$;
 
+-- Chemin de fichier accepte : lettres, chiffres et separateurs simples.
+create or replace function public.chemin_valide(p text)
+returns boolean
+language sql
+immutable
+as $$
+  select p is null
+      or (p ~ '^[0-9a-zA-Z][0-9a-zA-Z/_.-]{0,200}$' and p not like '%..%');
+$$;
+
 -- Cree le profil ou retrouve celui qui existe deja, sans tenir compte de la
 -- casse ni des espaces autour. Remplace toute inscription par mot de passe.
+-- La signature a change avec l'ajout du portrait, on retire donc l'ancienne.
+drop function if exists public.ensure_participant(text, text, text);
+
 create or replace function public.ensure_participant(
   p_first text,
   p_last  text,
-  p_vibe  text default null
+  p_vibe  text default null,
+  p_photo text default null
 )
 returns public.participants
 language plpgsql
@@ -75,7 +89,11 @@ declare
   f  text := btrim(coalesce(p_first, ''));
   l  text := btrim(coalesce(p_last, ''));
   vb text := nullif(btrim(coalesce(p_vibe, '')), '');
+  ph text := nullif(btrim(coalesce(p_photo, '')), '');
 begin
+  if not public.chemin_valide(ph) then
+    raise exception 'Chemin de portrait invalide';
+  end if;
   if f = '' or l = '' then
     raise exception 'Le prénom et le nom sont obligatoires';
   end if;
@@ -91,17 +109,60 @@ begin
      and lower(btrim(last_name))  = lower(l);
 
   if found then
-    if vb is not null and coalesce(v.vibe, '') <> vb then
-      update public.participants set vibe = vb where id = v.id returning * into v;
+    -- On complete sans jamais ecraser un portrait deja en place par du vide.
+    if (vb is not null and coalesce(v.vibe, '') <> vb)
+       or (ph is not null and coalesce(v.photo_path, '') <> ph) then
+      update public.participants
+         set vibe = coalesce(vb, vibe),
+             photo_path = coalesce(ph, photo_path)
+       where id = v.id
+      returning * into v;
     end if;
     return v;
   end if;
 
-  insert into public.participants (first_name, last_name, vibe)
-  values (f, l, vb)
+  insert into public.participants (first_name, last_name, vibe, photo_path)
+  values (f, l, vb, ph)
   returning * into v;
   return v;
 end;
+$$;
+
+-- Remplace le portrait d'un profil existant.
+create or replace function public.set_photo(p_participant uuid, p_photo text)
+returns public.participants
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v  public.participants;
+  ph text := nullif(btrim(coalesce(p_photo, '')), '');
+begin
+  if ph is null then
+    raise exception 'Portrait manquant';
+  end if;
+  if not public.chemin_valide(ph) then
+    raise exception 'Chemin de portrait invalide';
+  end if;
+  update public.participants set photo_path = ph where id = p_participant returning * into v;
+  if not found then
+    raise exception 'Profil introuvable';
+  end if;
+  return v;
+end;
+$$;
+
+-- Vrai si aucun profil ne se sert de ce portrait. Sert de garde a la policy
+-- de menage du bucket des portraits.
+create or replace function public.portrait_est_orphelin(p_name text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select not exists (select 1 from public.participants where photo_path = p_name);
 $$;
 
 -- Met a jour l'envie dominante du moment. Purement informatif.
@@ -531,19 +592,23 @@ language plpgsql
 security definer
 set search_path = public
 as $$
-declare v_photos text[];
+declare
+  v_photos text[];
+  v_portrait text;
 begin
   if not public.check_organizer(p_pin) then
     raise exception 'Code organisateur incorrect';
   end if;
   select coalesce(array_agg(photo_path), array[]::text[]) into v_photos
     from public.submissions where submitter_id = p_id and photo_path is not null;
+  select coalesce(photo_path, '') into v_portrait from public.participants where id = p_id;
   delete from public.participants where id = p_id;
   if not found then
     raise exception 'Profil introuvable';
   end if;
   perform public.recompute_synergies();
-  return jsonb_build_object('deleted', true, 'photos', to_jsonb(v_photos));
+  return jsonb_build_object('deleted', true, 'photos', to_jsonb(v_photos),
+                            'portrait', nullif(v_portrait, ''));
 end;
 $$;
 
@@ -557,6 +622,7 @@ set search_path = public
 as $$
 declare
   v_photos text[];
+  v_portraits text[];
   v_joueurs int;
   v_soumissions int;
 begin
@@ -569,6 +635,8 @@ begin
 
   select coalesce(array_agg(photo_path), array[]::text[]) into v_photos
     from public.submissions where photo_path is not null;
+  select coalesce(array_agg(photo_path), array[]::text[]) into v_portraits
+    from public.participants where photo_path is not null;
   select count(*) into v_joueurs from public.participants;
   select count(*) into v_soumissions from public.submissions;
 
@@ -578,7 +646,8 @@ begin
   return jsonb_build_object(
     'joueurs_supprimes',     v_joueurs,
     'soumissions_supprimees', v_soumissions,
-    'photos',                to_jsonb(v_photos)
+    'photos',                to_jsonb(v_photos),
+    'portraits',             to_jsonb(v_portraits)
   );
 end;
 $$;

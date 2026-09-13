@@ -26,3 +26,6 @@ __pycache__/
 
 # Mémo local contenant le code organisateur
 MEMO-JOUR-J.local.md
+
+# Outils locaux de l atelier
+.claude/

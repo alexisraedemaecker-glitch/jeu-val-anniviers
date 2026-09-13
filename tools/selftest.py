@@ -178,7 +178,14 @@ A, B, G = people["Alpha"], people["Beta"], people["Gamma"]
 print("\n=== 2. Rendement dégressif sur la jauge ===")
 before = gauge(state(), "eau")["points"]
 subs = []
-expected = [10, 5, 2.5]
+# Avec --force, de vrais joueurs ont peut etre deja fait ce defi. Le rendement
+# degressif est alors deja entame : on decale les attentes d'autant plutot que
+# d'annoncer un echec qui n'en est pas un.
+_, deja = call("/rest/v1/v_submission_gauge?challenge_id=eq.ou-va-leau&select=repeat_index")
+n0 = len(deja) if isinstance(deja, list) else 0
+if n0:
+    print(f"  ({n0} passage(s) déjà joué(s) par de vrais joueurs, attentes décalées d'autant)")
+expected = [10 / (2 ** (n0 + i)) for i in range(3)]
 for i, (who, others) in enumerate([(A, [B]), (G, []), (B, [])]):
     cid = str(uuid.uuid4())
     st, d = rpc(
@@ -194,16 +201,17 @@ for i, (who, others) in enumerate([(A, [B]), (G, []), (B, [])]):
     ok = st == 200 and abs(float(d.get("gauge_points", -1)) - expected[i]) < 0.01
     subs.append(d.get("submission_id"))
     check(
-        f"passage {i + 1} du même défi : {expected[i]} points de jauge",
+        f"passage {n0 + i + 1} du même défi : {expected[i]:g} points de jauge",
         ok,
         f"reçu {d.get('gauge_points')} (attendu {expected[i]}) {d}",
     )
 
 after = gauge(state(), "eau")["points"]
+monte = sum(expected)
 check(
-    "la jauge Eau a monté de 17,5 arrondi à 18",
-    after - before == 18,
-    f"avant {before}, après {after}",
+    f"la jauge Eau a monté de {monte:g}, à l'arrondi d'affichage près",
+    abs((after - before) - monte) <= 0.5 + 1e-9,
+    f"avant {before}, après {after}, attendu {monte:g}",
 )
 
 print("\n=== 3. Score personnel jamais dégressif ===")
@@ -265,6 +273,9 @@ check("un chemin de photo malveillant est refusé", st >= 400, str(d))
 print("\n=== 6. Synergie cachée ===")
 # Alpha a déjà fait ou-va-leau (déclencheur A de la mémoire de la glace).
 eau_avant_syn = gauge(state(), "eau")["points"]
+# La synergie a peut etre deja ete trouvee par un vrai joueur : le bonus de
+# jauge est alors deja verse, et ne doit surtout pas l'etre une seconde fois.
+syn_deja = gauge(state(), "eau")["points_synergies"] >= 5
 cid = str(uuid.uuid4())
 st, d = rpc(
     "submit_challenge",
@@ -303,8 +314,11 @@ check(
 # et pourtant la jauge ne doit recevoir que 5 points, une seule fois.
 check(
     "deux personnes débloquent la même synergie mais la jauge ne reçoit 5 points qu'une fois",
-    gauge(state(), "eau")["points"] - eau_avant_syn == 5,
-    f"la jauge Eau est passée de {eau_avant_syn} à {gauge(state(), 'eau')['points']}, écart attendu 5",
+    gauge(state(), "eau")["points_synergies"] == 5
+    and gauge(state(), "eau")["points"] - eau_avant_syn == (0 if syn_deja else 5),
+    f"la jauge Eau est passée de {eau_avant_syn} à {gauge(state(), 'eau')['points']}, "
+    f"bonus de synergie {gauge(state(), 'eau')['points_synergies']}, "
+    f"écart attendu {0 if syn_deja else 5}",
 )
 check(
     "chacune des deux personnes garde bien ses 10 points personnels",
@@ -336,8 +350,10 @@ check(
     str(score(st_now, A)),
 )
 check(
-    "le bonus de jauge de la synergie disparaît, soit 5 points",
-    gauge(st_now, "eau")["points"] == eau_before - 5,
+    "le bonus de jauge de la synergie disparaît, soit 5 points"
+    if not syn_deja
+    else "le bonus de jauge reste, la synergie est encore détenue par un vrai joueur",
+    gauge(st_now, "eau")["points"] == eau_before - (0 if syn_deja else 5),
     f"avant {eau_before}, après {gauge(st_now, 'eau')['points']}",
 )
 
@@ -346,10 +362,13 @@ check(
 eau_before = gauge(state(), "eau")["points"]
 st, d = rpc("delete_submission", {"p_submission": subs[0], "p_pin": PIN})
 eau_after = gauge(state(), "eau")["points"]
+# Les passages suivants reprennent chacun la valeur du precedent : la jauge ne
+# perd donc que la valeur du dernier passage, pas celle du passage supprime.
+cout = expected[-1]
 check(
-    "supprimer le 1er passage ne coûte que 2,5 à la jauge, les suivants remontent",
-    st == 200 and eau_before - eau_after == 3,
-    f"avant {eau_before}, après {eau_after}, écart {eau_before - eau_after} (attendu 3)",
+    f"supprimer un passage ne coûte que {cout:g} à la jauge, les suivants remontent",
+    st == 200 and abs((eau_before - eau_after) - cout) <= 0.5 + 1e-9,
+    f"avant {eau_before}, après {eau_after}, écart {eau_before - eau_after} (attendu {cout:g})",
 )
 import apply_sql as _a
 ok, rows = _a.run(
@@ -357,10 +376,12 @@ ok, rows = _a.run(
     "where challenge_id = 'ou-va-leau' order by repeat_index;"
 )
 vals = [(r["repeat_index"], float(r["gauge_points"])) for r in rows] if ok else []
+attendu = [(i + 1, 10 / (2 ** i)) for i in range(n0 + 2)]
 check(
-    "les passages restants sont bien renumérotés en 10 puis 5",
-    vals == [(1, 10.0), (2, 5.0)],
-    str(vals),
+    "les passages restants sont renumérotés sans trou, " 
+    + " puis ".join(f"{v:g}" for _, v in attendu),
+    vals == attendu,
+    f"{vals} (attendu {attendu})",
 )
 
 # Tant que la soumission existe, sa photo doit etre intouchable.
@@ -492,7 +513,69 @@ check(
     str(feed),
 )
 
-print("\n=== 12. Cohérence des vues ===")
+print("\n=== 12. Photos de profil ===")
+portrait = f"{uuid.uuid4()}.png"
+st, d = call(
+    f"/storage/v1/object/profils/{portrait}",
+    raw=tiny_png((0x1D, 0x3B, 0x57)),
+    ctype="image/png",
+    method="POST",
+)
+check("l'application peut déposer un portrait", st in (200, 201), f"{st} {d}")
+st, _ = call(f"/storage/v1/object/public/profils/{portrait}")
+check("le portrait est lisible par tout le monde", st == 200, f"code {st}")
+
+st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Delta",
+                                   "p_vibe": "sportif", "p_photo": portrait})
+D = d.get("id") if st == 200 else None
+check("un profil peut naître avec son portrait", st == 200 and d.get("photo_path") == portrait, str(d))
+
+st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Delta", "p_vibe": "chill"})
+check(
+    "revenir sans photo n'efface pas le portrait enregistré",
+    st == 200 and d.get("photo_path") == portrait,
+    str(d),
+)
+
+st_now = state()
+check(
+    "le portrait est visible par l'application dans les scores",
+    (score(st_now, D) or {}).get("photo_path") == portrait,
+    str(score(st_now, D)),
+)
+
+# Une photo encore portee par un profil ne doit pas pouvoir partir.
+call("/storage/v1/object/profils", data={"prefixes": [portrait]}, method="DELETE")
+st, _ = call(f"/storage/v1/object/profils/{portrait}", method="GET")
+check("un portrait encore utilisé ne peut pas être supprimé", st == 200, f"code {st}")
+
+portrait2 = f"{uuid.uuid4()}.png"
+call(f"/storage/v1/object/profils/{portrait2}", raw=tiny_png((0x6F, 0x9E, 0x4A)),
+     ctype="image/png", method="POST")
+st, d = rpc("set_photo", {"p_participant": D, "p_photo": portrait2})
+check("changer de portrait est possible", st == 200 and d.get("photo_path") == portrait2, str(d))
+
+# L'ancien devient orphelin : l'application a le droit de le retirer.
+st, d = call("/storage/v1/object/profils", data={"prefixes": [portrait]}, method="DELETE")
+check("l'ancien portrait devenu orphelin est supprimable", st == 200, f"{st} {d}")
+st, _ = call(f"/storage/v1/object/profils/{portrait}", method="GET")
+check("l'ancien portrait a bien disparu du stockage", st >= 400, f"code {st}")
+
+st, d = rpc("set_photo", {"p_participant": D, "p_photo": "../../etc/passwd"})
+check("un chemin de portrait douteux est refusé", st >= 400, str(d))
+st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Epsilon",
+                                   "p_photo": "a/../../b.png"})
+check("un chemin douteux est aussi refusé à l'inscription", st >= 400, str(d))
+
+st, d = call(f"/rest/v1/participants?id=eq.{D}", data={"photo_path": "pirate.png"}, method="PATCH")
+check("le navigateur ne peut pas écrire directement un portrait", st >= 400, f"{st} {d}")
+
+st, d = rpc("admin_delete_participant", {"p_pin": PIN, "p_id": D})
+check("la suppression d'un profil renvoie son portrait à nettoyer", st == 200 and d.get("portrait") == portrait2, str(d))
+st, d = call("/storage/v1/object/profils", data={"prefixes": [portrait2]}, method="DELETE")
+check("le portrait du profil supprimé est retirable", st == 200, f"{st} {d}")
+
+print("\n=== 13. Cohérence des vues ===")
 st_now = state()
 check("les cinq jauges sont présentes", len(st_now["gauges"]) == 5, str(len(st_now["gauges"])))
 check(
@@ -513,7 +596,7 @@ check("un défi inconnu est refusé", st >= 400, str(d))
 
 # ---------------------------------------------------------------- nettoyage
 if "--keep" not in sys.argv:
-    print("\n=== 13. Nettoyage ===")
+    print("\n=== 14. Nettoyage ===")
     sys.path.insert(0, str(ROOT / "tools"))
     import apply_sql
 

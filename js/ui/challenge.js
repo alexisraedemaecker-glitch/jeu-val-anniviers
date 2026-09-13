@@ -17,7 +17,13 @@ import {
   myDoneChallenges,
   friendly
 } from "../store.js";
-import { Banner, Spinner, Empty, pillarColor } from "./bits.js";
+import {
+  Banner,
+  Spinner,
+  Empty,
+  pillarColor,
+  Avatar
+} from "./bits.js";
 import { locIcon, locLabel } from "./challenges.js";
 
 export function ChallengeDetail({ id, go }) {
@@ -276,6 +282,7 @@ function Form({ c, go }) {
       <div class="people" style="margin-bottom:.5rem">
         <span class="person me">
           <span class="bx">✓</span>
+          <${Avatar} p=${state.me} taille="sm" />
           <span class="grow">${state.me ? state.me.first_name + " " + state.me.last_name : "Vous"} (vous)</span>
         </span>
       </div>
@@ -305,6 +312,7 @@ function Form({ c, go }) {
                       class=${"person" + (members.includes(p.id) ? " on" : "")}
                       onClick=${() => toggleMember(p.id)}>
                       <span class="bx">${members.includes(p.id) ? "✓" : ""}</span>
+                      <${Avatar} p=${p} taille="sm" />
                       <span class="grow">
                         ${p.first_name} ${p.last_name}
                         ${lock

@@ -5,7 +5,7 @@ import { state, myUnlocks, myDoneChallenges } from "../store.js";
 import { SYNERGIES } from "../data/synergies.js";
 import { CHALLENGE_BY_ID } from "../data/challenges.js";
 import { PILLAR_BY_ID } from "../data/pillars.js";
-import { Empty, Spinner, pillarColor } from "./bits.js";
+import { Empty, Spinner, pillarColor, Avatar } from "./bits.js";
 
 export function Ranking() {
   const [tab, setTab] = useState("classement");
@@ -79,11 +79,15 @@ function Board() {
       ${ranked.map(
         (r) => html`<div key=${r.id} class=${"rank-row" + (state.me && r.id === state.me.id ? " me" : "")}>
           <span class="rank-pos">${r.place}</span>
-          <span class="rank-name">${r.first_name} ${r.last_name}</span>
-          ${r.synergies_debloquees > 0
-            ? html`<span class="chip ok tiny">✦ ${r.synergies_debloquees}</span>`
-            : null}
-          <span class="tiny faint nowrap">${r.defis_faits} ${r.defis_faits === 1 ? "défi" : "défis"}</span>
+          <${Avatar} p=${r} taille="sm" />
+          <span class="rank-name">
+            ${r.first_name} ${r.last_name}
+            <small>
+              ${r.defis_faits} ${r.defis_faits === 1 ? "défi" : "défis"}${r.synergies_debloquees > 0
+                ? ` · ✦ ${r.synergies_debloquees}`
+                : ""}
+            </small>
+          </span>
           <span class="rank-pts">${r.score}</span>
         </div>`
       )}

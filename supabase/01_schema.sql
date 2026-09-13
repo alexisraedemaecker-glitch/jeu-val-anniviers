@@ -48,8 +48,11 @@ create table if not exists public.participants (
   first_name text not null,
   last_name  text not null,
   vibe       text check (vibe in ('chill','culturel','culinaire','sportif')),
+  -- Portrait choisi a l'inscription, dans le bucket profils.
+  photo_path text,
   created_at timestamptz not null default now()
 );
+alter table public.participants add column if not exists photo_path text;
 create unique index if not exists participants_name_uniq
   on public.participants (lower(btrim(first_name)), lower(btrim(last_name)));
 
@@ -207,6 +210,7 @@ select p.id,
        p.first_name,
        p.last_name,
        p.vibe,
+       p.photo_path,
        p.created_at,
        coalesce(d.pts,0) + coalesce(b.pts,0) as score,
        coalesce(d.pts,0)                     as score_defis,

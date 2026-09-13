@@ -2,6 +2,7 @@
 const { html, useState, useEffect } = window.htmPreact;
 
 import { PILLAR_BY_ID, STYLE_BY_ID, TIERS, VICTORY } from "../data/pillars.js";
+import { portraitUrl } from "../store.js";
 
 export { html };
 export const Frag = (props) => props.children;
@@ -25,6 +26,33 @@ export function Banner({ kind, children }) {
 
 export function Empty({ icon, children }) {
   return html`<div class="empty"><span class="big">${icon || "🏔"}</span>${children}</div>`;
+}
+
+export function initiales(p) {
+  if (!p) return "";
+  const a = (p.first_name || "").trim().charAt(0);
+  const b = (p.last_name || "").trim().charAt(0);
+  return (a + b).toUpperCase();
+}
+
+/**
+ * Pastille de portrait. Quand la personne n'a pas encore de photo, par exemple
+ * un profil cree avant cette version, on affiche ses initiales plutot qu'un
+ * trou dans la mise en page.
+ */
+export function Avatar({ p, taille, onClick }) {
+  if (!p) return null;
+  const url = portraitUrl(p.photo_path);
+  const nom = `${p.first_name || ""} ${p.last_name || ""}`.trim();
+  const cls = `avatar${taille ? " " + taille : ""}${url ? "" : " vide"}`;
+  const dedans = url
+    ? html`<img src=${url} alt=${nom ? "Portrait de " + nom : "Portrait"} loading="lazy" />`
+    : html`<span aria-hidden="true">${initiales(p) || "·"}</span>`;
+  if (onClick) {
+    return html`<button type="button" class=${cls} onClick=${onClick}
+      aria-label=${nom ? "Voir le portrait de " + nom : "Voir le portrait"}>${dedans}</button>`;
+  }
+  return html`<span class=${cls}>${dedans}</span>`;
 }
 
 export function StyleChip({ style }) {

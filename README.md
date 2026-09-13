@@ -69,6 +69,38 @@ préchargée avant que le fondu commence, et l'ancienne n'est retirée qu'à la
 fin, ce qui évite tout clignotement. Les six images sont préchargées par le
 service worker, donc l'illustration reste visible sans réseau.
 
+## La photo de profil
+
+S'inscrire demande une photo de profil, en plus du prénom et du nom. Elle est
+recadrée au carré, réduite à 480 pixels et recompressée dans le navigateur,
+donc elle pèse quelques kilooctets. Elle part dans le bucket `profils` sous un
+nom aléatoire, et son chemin est transmis à `ensure_participant`.
+
+Cette pastille apparaît ensuite partout où une personne est nommée : la liste
+d'identification, le choix du groupe du moment, le classement, l'écran du profil
+et la vue organisateur. Quand une personne n'a pas encore de portrait, un profil
+créé avant cette version par exemple, ses initiales prennent la place et la
+photo lui est demandée la première fois qu'elle se reconnecte.
+
+Changer de photo passe par `set_photo`. L'ancienne devient orpheline et
+`portrait_est_orphelin` autorise alors sa suppression depuis le navigateur,
+exactement comme pour les photos de défi.
+
+## Le diaporama de l'écran d'identification
+
+Les six états de la vallée défilent en grand derrière le formulaire, environ
+quatre secondes chacun avec un fondu d'une seconde, donc un tour complet en une
+trentaine de secondes : le temps d'une inscription. Le but du jeu se lit ainsi
+sans une ligne d'explication.
+
+Un appui sur le fond, ou le bouton `Voir la vallée en grand`, ouvre la photo en
+plein écran. Le défilement s'arrête alors, et il reprend à la fermeture sur la
+photo que la personne vient de regarder.
+
+Attention au contexte d'empilement : la couche de fond est fixe et se place
+derrière le contenu, mais donner un `z-index` au conteneur `ident` enfermerait
+la vue plein écran sous la barre du haut.
+
 ## Un piège de htm à connaître
 
 htm supprime complètement l'espace quand un saut de ligne sépare du texte d'une
@@ -199,18 +231,22 @@ test, joue des défis, puis nettoie tout derrière lui.
 python3 tools/selftest.py
 ```
 
-Les 77 contrôles couvrent la création de profil et la déduplication des noms, le
+Les 91 contrôles couvrent la création de profil et la déduplication des noms, le
 rendement dégressif sur trois passages, le score personnel non dégressif, le non
 cumul d'un même défi par une même personne, l'idempotence après coupure réseau,
 le dépôt et la lecture des photos, le refus d'un chemin de photo malveillant, le
 déclenchement d'une synergie pour tout le groupe du moment, le code
 organisateur, la suppression avec recalcul complet, le retassage des passages
-suivants, la pénalité après un quiz raté et sa portée sur toute l'équipe, et
-toutes les fonctions d'administration.
+suivants, la pénalité après un quiz raté et sa portée sur toute l'équipe,
+le dépôt d'un portrait et son remplacement, le refus d'un chemin de portrait
+douteux, l'impossibilité de supprimer un portrait encore utilisé, et toutes les
+fonctions d'administration.
 
 Le test refuse de tourner quand de vrais joueurs sont enregistrés, pour ne pas
-décaler leur rendement dégressif. Ajouter `--force` pour passer outre. Il ne
-nettoie jamais que ses propres données.
+décaler leur rendement dégressif. Ajouter `--force` pour passer outre : les
+attentes s'ajustent alors à ce que les vrais joueurs ont déjà fait, par exemple
+un défi déjà joué une fois fait démarrer le rendement dégressif à cinq points.
+Il ne nettoie jamais que ses propres données.
 
 ## Une décision à connaître
 
