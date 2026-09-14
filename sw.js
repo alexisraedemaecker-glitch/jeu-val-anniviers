@@ -7,7 +7,7 @@
 //   - photos du stockage Supabase : le cache d'abord, elles ne changent jamais.
 //   - appels a la base : jamais de cache, les scores doivent etre justes.
 
-const CACHE = "anniviers2056-v7";
+const CACHE = "anniviers2056-v8";
 const NET_TIMEOUT = 4000;
 
 const SHELL = [
@@ -51,6 +51,10 @@ const SHELL = [
   "assets/vallee/vallee-100-small.jpg",
   "js/vendor/htm-preact.js",
   "js/vendor/supabase.js",
+  "assets/icones/corne-48.png",
+  "assets/icones/corne-96.png",
+  "assets/icones/marmotte-48.png",
+  "assets/icones/marmotte-96.png",
   "assets/icon-192.png",
   "assets/icon-512.png"
 ];

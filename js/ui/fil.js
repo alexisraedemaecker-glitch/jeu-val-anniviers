@@ -4,7 +4,7 @@
 // ajouter ses propres messages et ses propres photos, applaudir d'une corne de
 // bouquetin, commenter, et nommer quelqu'un dans un message. Tout ce qui vous
 // concerne remonte dans les notifications.
-const { html, useState, useEffect, useMemo } = window.htmPreact;
+const { html, useState, useEffect, useMemo, useRef } = window.htmPreact;
 
 import {
   state,
@@ -23,55 +23,151 @@ import { Avatar, Banner, Empty, Spinner, PhotoZoom, dateTimeShort, pillarColor }
 
 /** Corne de bouquetin, l'applaudissement de la vallée. */
 export function Corne({ pleine }) {
-  return html`<svg class="ic-corne" viewBox="0 0 24 24" aria-hidden="true"
-    fill=${pleine ? "currentColor" : "none"} stroke="currentColor" stroke-width="1.7"
-    stroke-linecap="round" stroke-linejoin="round">
-    <path d="M19.5 3.2c-3.6.6 -6.6 2.6 -8.6 5.6 -1.9 2.9 -2.7 6.3 -2.4 9.7
-             .1 1.2 -.5 2 -1.7 2.3 -1 .2 -1.9 -.2 -2.3 -1" />
-    <path d="M18.8 7c-2.3.7 -4.2 2.1 -5.5 4.1" />
-    <path d="M17.9 10.9c-1.6.6 -2.9 1.6 -3.8 3" />
-  </svg>`;
+  return html`<img class=${"ic-fil" + (pleine ? " on" : "")} src="assets/icones/corne-96.png"
+    srcset="assets/icones/corne-48.png 48w, assets/icones/corne-96.png 96w" sizes="26px"
+    alt="" aria-hidden="true" />`;
 }
 
 /** Marmotte qui crie, l'icône des commentaires. */
 export function Marmotte() {
-  return html`<svg class="ic-marmotte" viewBox="0 0 24 24" aria-hidden="true"
-    fill="none" stroke="currentColor" stroke-width="1.7"
-    stroke-linecap="round" stroke-linejoin="round">
-    <path d="M7.5 6.2c-.6 -1.5 .1 -2.6 1.3 -2.6 1 0 1.7.7 1.9 1.7" />
-    <path d="M16.5 6.2c.6 -1.5 -.1 -2.6 -1.3 -2.6 -1 0 -1.7.7 -1.9 1.7" />
-    <path d="M12 4.8c-3.6 0 -6.2 2.6 -6.2 6 0 2 .8 3.4 2 4.6 1 1 1.4 1.9 1.4 3.2h5.6
-             c0 -1.3 .4 -2.2 1.4 -3.2 1.2 -1.2 2 -2.6 2 -4.6 0 -3.4 -2.6 -6 -6.2 -6z" />
-    <path d="M10 10.4h.01M14 10.4h.01" />
-    <ellipse cx="12" cy="15.4" rx="1.7" ry="2.1" />
-  </svg>`;
+  return html`<img class="ic-fil" src="assets/icones/marmotte-96.png"
+    srcset="assets/icones/marmotte-48.png 48w, assets/icones/marmotte-96.png 96w" sizes="26px"
+    alt="" aria-hidden="true" />`;
 }
 
 function heure(iso) {
   return dateTimeShort(iso);
 }
 
-/** Sélecteur de personnes à nommer dans un message. */
-function ChoixMentions({ choisis, setChoisis }) {
-  const [ouvert, setOuvert] = useState(false);
-  const autres = state.scores.filter((p) => !state.me || p.id !== state.me.id);
-  if (!autres.length) return null;
-  const bascule = (id) =>
-    setChoisis(choisis.includes(id) ? choisis.filter((x) => x !== id) : choisis.concat(id));
+// ------------------------------------------------------------- mentions
 
-  return html`<div>
-    <button type="button" class="btn sm quiet" onClick=${() => setOuvert(!ouvert)}>
-      ${choisis.length ? `Avec ${choisis.length} personne${choisis.length > 1 ? "s" : ""}` : "Nommer quelqu'un"}
-    </button>
-    ${ouvert
-      ? html`<div class="people" style="margin-top:.4rem">
-          ${autres.map(
-            (p) => html`<button type="button" key=${p.id}
-              class=${"person" + (choisis.includes(p.id) ? " on" : "")}
-              onClick=${() => bascule(p.id)}>
-              <span class="bx">${choisis.includes(p.id) ? "✓" : ""}</span>
-              <${Avatar} p=${p} taille="sm" />
-              <span class="grow">${p.first_name} ${p.last_name}</span>
+// On nomme quelqu'un en tapant une arobase suivie de son prénom. Le texte
+// garde l'arobase, ce qui se lit naturellement, et la liste des personnes
+// nommées en est déduite au moment de l'envoi.
+//
+// Le motif ne prend qu'un mot, plus éventuellement le suivant : ce deuxième
+// mot n'est retenu que s'il forme un vrai prénom plus nom. Sans cela, dans
+// "@Alexis et Ambeurre", le "et" serait avalé dans la mention.
+const MOTIF_MENTION = "@([\\p{L}][\\p{L}\\-']*)(\\s+([\\p{L}][\\p{L}\\-']*))?";
+
+/** Les mentions d'un texte, avec leur position exacte. */
+function analyser(texte, gens) {
+  const trouvees = [];
+  if (!texte) return trouvees;
+  const liste = gens || state.scores || [];
+  const re = new RegExp(MOTIF_MENTION, "gu");
+  let m;
+  while ((m = re.exec(texte))) {
+    const prenom = m[1].trim().toLowerCase();
+    const suivant = (m[3] || "").trim().toLowerCase();
+    // Fin de la mention si l'on ne retient que le prénom.
+    let fin = m.index + 1 + m[1].length;
+    let p = null;
+    if (suivant) {
+      p = liste.find(
+        (g) =>
+          g.first_name.trim().toLowerCase() === prenom &&
+          g.last_name.trim().toLowerCase() === suivant
+      );
+      if (p) fin = m.index + m[0].length;
+    }
+    if (!p) {
+      const memes = liste.filter((g) => g.first_name.trim().toLowerCase() === prenom);
+      if (memes.length === 1) p = memes[0];
+    }
+    if (p) trouvees.push({ debut: m.index, fin, id: p.id });
+    // On repart juste après le prénom lu, jamais en arrière : la boucle
+    // avance donc toujours, même quand rien ne correspond.
+    re.lastIndex = fin;
+  }
+  return trouvees;
+}
+
+/** Les identifiants des personnes nommées dans un texte. */
+export function extraireMentions(texte, gens) {
+  const ids = [];
+  analyser(texte, gens).forEach((x) => {
+    if (!ids.includes(x.id)) ids.push(x.id);
+  });
+  return ids;
+}
+
+/** Deux personnes peuvent partager un prénom : on précise alors le nom. */
+function etiquette(p, gens) {
+  const memes = (gens || []).filter(
+    (g) => g.first_name.trim().toLowerCase() === p.first_name.trim().toLowerCase()
+  );
+  return memes.length > 1 ? `${p.first_name} ${p.last_name}` : p.first_name;
+}
+
+/**
+ * Champ de saisie qui propose les prénoms dès qu'on tape une arobase.
+ * Sert aussi bien au message qu'au commentaire, sur une ou plusieurs lignes.
+ */
+function SaisieMention({ valeur, setValeur, placeholder, multiligne, onEntree }) {
+  const [suggestions, setSuggestions] = useState([]);
+  const champ = useRef(null);
+
+  const gens = state.scores || [];
+
+  function analyser(el) {
+    const pos = el.selectionStart == null ? el.value.length : el.selectionStart;
+    const avant = el.value.slice(0, pos);
+    const m = /@([\p{L}\-']*)$/u.exec(avant);
+    if (!m) {
+      setSuggestions([]);
+      return;
+    }
+    const debut = m[1].toLowerCase();
+    const trouves = gens
+      .filter((g) => !state.me || g.id !== state.me.id)
+      .filter((g) => !debut || g.first_name.toLowerCase().startsWith(debut)
+        || `${g.first_name} ${g.last_name}`.toLowerCase().startsWith(debut))
+      .slice(0, 5);
+    setSuggestions(trouves.map((g) => ({ p: g, debut: m[1].length })));
+  }
+
+  function choisir(s) {
+    const el = champ.current;
+    const pos = el.selectionStart == null ? el.value.length : el.selectionStart;
+    const avant = el.value.slice(0, pos - s.debut);
+    const apres = el.value.slice(pos);
+    const texte = `${avant}${etiquette(s.p, gens)} ${apres}`.replace(/\s+$/, " ");
+    setValeur(texte);
+    setSuggestions([]);
+    // On rend la main au clavier, curseur juste apres le prénom inséré.
+    setTimeout(() => {
+      if (!champ.current) return;
+      champ.current.focus();
+      const p = avant.length + etiquette(s.p, gens).length + 1;
+      champ.current.setSelectionRange(p, p);
+    }, 0);
+  }
+
+  const commun = {
+    ref: champ,
+    value: valeur,
+    placeholder: placeholder,
+    onInput: (e) => {
+      setValeur(e.target.value);
+      analyser(e.target);
+    },
+    onKeyUp: (e) => analyser(e.target),
+    onBlur: () => setTimeout(() => setSuggestions([]), 180)
+  };
+
+  return html`<div class="saisie">
+    ${multiligne
+      ? html`<textarea class="grow" rows="2" ...${commun}></textarea>`
+      : html`<input class="grow" type="text" ...${commun}
+          onKeyDown=${(e) => { if (e.key === "Enter" && onEntree) onEntree(e); }} />`}
+    ${suggestions.length
+      ? html`<div class="suggestions">
+          ${suggestions.map(
+            (s) => html`<button type="button" key=${s.p.id} class="suggestion"
+              onMouseDown=${(e) => e.preventDefault()} onClick=${() => choisir(s)}>
+              <${Avatar} p=${s.p} taille="sm" />
+              <span class="grow">${s.p.first_name} ${s.p.last_name}</span>
             </button>`
           )}
         </div>`
@@ -79,21 +175,22 @@ function ChoixMentions({ choisis, setChoisis }) {
   </div>`;
 }
 
-function nomDe(id) {
-  const p = state.scores.find((s) => s.id === id);
-  return p ? `${p.first_name} ${p.last_name}` : "quelqu'un";
-}
-
-function Mentions({ ids }) {
-  if (!ids || !ids.length) return null;
-  return html`<div class="tiny" style="margin-top:.2rem;color:var(--accent);font-weight:600">
-    avec ${ids.map(nomDe).join(", ")}
-  </div>`;
+/** Affiche un texte en mettant en valeur les personnes nommées. */
+function Texte({ texte, classe }) {
+  if (!texte) return null;
+  const bouts = [];
+  let i = 0;
+  analyser(texte, state.scores).forEach((x) => {
+    if (x.debut > i) bouts.push(texte.slice(i, x.debut));
+    bouts.push(html`<span class="mention">${texte.slice(x.debut, x.fin)}</span>`);
+    i = x.fin;
+  });
+  if (i < texte.length) bouts.push(texte.slice(i));
+  return html`<p class=${classe}>${bouts.length ? bouts : texte}</p>`;
 }
 
 function Commentaires({ post }) {
   const [texte, setTexte] = useState("");
-  const [mentions, setMentions] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const liste = post.commentaires || [];
@@ -104,9 +201,8 @@ function Commentaires({ post }) {
     setBusy(true);
     setError(null);
     try {
-      await addComment(post.id, texte, mentions);
+      await addComment(post.id, texte, extraireMentions(texte, state.scores));
       setTexte("");
-      setMentions([]);
     } catch (err) {
       setError(friendly(err));
     } finally {
@@ -120,23 +216,19 @@ function Commentaires({ post }) {
         <${Avatar} p=${{ first_name: c.author_name.split(" ")[0], last_name: c.author_name.split(" ").slice(1).join(" "), photo_path: c.author_photo }} taille="sm" />
         <div class="grow">
           <div class="tiny faint">${c.author_name} · ${heure(c.created_at)}</div>
-          <div class="small">${c.texte}</div>
-          <${Mentions} ids=${c.mentions} />
+          <${Texte} texte=${c.texte} classe="small com-texte" />
         </div>
       </div>`
     )}
     ${state.me
       ? html`<form onSubmit=${envoyer} style="margin-top:.4rem">
           ${error ? html`<${Banner} kind="bad">${error}<//>` : null}
-          <div class="row" style="gap:.4rem">
-            <input class="grow" type="text" value=${texte} placeholder="Écrire un commentaire"
-                   onInput=${(e) => setTexte(e.target.value)} />
+          <div class="row" style="gap:.4rem;align-items:flex-start">
+            <${SaisieMention} valeur=${texte} setValeur=${setTexte}
+              placeholder="Commenter, @ pour nommer quelqu'un" />
             <button class="btn sm" type="submit" disabled=${busy || !texte.trim()}>
               ${busy ? html`<${Spinner} />` : "Envoyer"}
             </button>
-          </div>
-          <div style="margin-top:.35rem">
-            <${ChoixMentions} choisis=${mentions} setChoisis=${setMentions} />
           </div>
         </form>`
       : null}
@@ -201,8 +293,7 @@ function Publication({ post, ouvrirPhoto }) {
         </p>`
       : null}
 
-    ${post.texte ? html`<p class="post-texte">${post.texte}</p>` : null}
-    <${Mentions} ids=${post.mentions} />
+    <${Texte} texte=${post.texte} classe="post-texte" />
 
     ${post.photo_path
       ? html`<button class="post-photo" onClick=${() => ouvrirPhoto(post)}>
@@ -234,7 +325,6 @@ function Composer() {
   const [texte, setTexte] = useState("");
   const [file, setFile] = useState(null);
   const [apercu, setApercu] = useState(null);
-  const [mentions, setMentions] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -255,11 +345,10 @@ function Composer() {
     setBusy(true);
     setError(null);
     try {
-      await addPost({ texte, file, mentions });
+      await addPost({ texte, file, mentions: extraireMentions(texte, state.scores) });
       setTexte("");
       setFile(null);
       setApercu(null);
-      setMentions([]);
     } catch (err) {
       setError(friendly(err));
     } finally {
@@ -271,8 +360,8 @@ function Composer() {
     ${error ? html`<${Banner} kind="bad">${error}<//>` : null}
     <div class="row" style="gap:.6rem;align-items:flex-start">
       <${Avatar} p=${state.me} />
-      <textarea class="grow" rows="2" value=${texte} placeholder="Raconter quelque chose au groupe"
-                onInput=${(e) => setTexte(e.target.value)}></textarea>
+      <${SaisieMention} valeur=${texte} setValeur=${setTexte} multiligne=${true}
+        placeholder="Raconter quelque chose. Tapez @ pour nommer quelqu'un" />
     </div>
     ${apercu
       ? html`<div class="post-apercu">
@@ -288,7 +377,6 @@ function Composer() {
         <input type="file" accept="image/*" style="display:none"
                onChange=${(e) => choisir(e.target.files && e.target.files[0])} />
       </label>
-      <${ChoixMentions} choisis=${mentions} setChoisis=${setMentions} />
       <span class="grow"></span>
       <button class="btn sm" type="submit" disabled=${busy}>
         ${busy ? html`<${Spinner} />` : null} Publier

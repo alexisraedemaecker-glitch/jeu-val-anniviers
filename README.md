@@ -115,9 +115,27 @@ suppression d'une soumission par un organisateur l'emporte en cascade. Chacun
 peut aussi publier un message, une photo, et nommer d'autres joueurs.
 
 Deux réactions : la corne de bouquetin, qui s'ajoute et se retire, et le
-commentaire, sous une marmotte qui crie. Les deux icônes sont des SVG écrits à
-la main dans `js/ui/fil.js`, pour rester dans l'esprit de la vallée sans aucune
-dépendance.
+commentaire, sous une marmotte qui crie. Les deux illustrations viennent du
+dossier `Icones`. `tools/gen_icones_fil.py` les réduit avec `sips`, puis rend
+leur fond blanc transparent et les recadre sur le dessin, en Python pur : le
+PNG est décodé, une couche alpha est calculée à partir de la clarté, le tout
+est réencodé. Les originales restent dans le dépôt mais ne sont pas publiées.
+
+On nomme quelqu'un en tapant une arobase suivie de son prénom, et la liste des
+prénoms se propose dès la première lettre. Le motif ne prend qu'un mot, plus
+éventuellement le suivant, et ce deuxième mot n'est retenu que s'il forme un
+vrai prénom plus nom : sans cette règle, dans `@Alexis et Ambeurre`, le `et`
+serait avalé dans la mention. Deux personnes qui partagent un prénom obligent à
+préciser le nom, sinon la mention n'est attribuée à personne.
+
+Piège rencontré : une expression régulière globale porte son propre curseur.
+Partagée entre l'analyse et l'affichage, dont l'un appelait l'autre, ce curseur
+était remis à zéro au milieu d'une boucle, qui repartait indéfiniment sur la
+même occurrence et figeait l'écran. Chaque lecture fabrique donc la sienne.
+
+Autre piège, dans l'ajout d'une photo à l'album : une balise `label` est en
+ligne par défaut, donc son rembourrage ne pousse pas ce qui suit, et le champ
+suivant venait se superposer. `.photo-zone` est désormais `display: block`.
 
 Une notification part vers l'auteur d'une publication quand on l'applaudit ou
 qu'on la commente, vers toute personne nommée, et vers ceux qui ont déjà

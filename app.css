@@ -274,6 +274,7 @@ input[type=file] { display: none; }
 /* ------------------------------------------------------------------ photo */
 
 .photo-zone {
+  display: block; width: 100%; cursor: pointer;
   border: 2px dashed var(--line-strong); border-radius: 12px; padding: 1rem;
   text-align: center; color: var(--ink-soft); background: #fcfbf8;
 }
@@ -336,6 +337,7 @@ input[type=file] { display: none; }
 .post-actions { display: flex; align-items: center; gap: .3rem; margin-top: .5rem; }
 .post-btn {
   display: inline-flex; align-items: center; gap: .35rem;
+  font-variant-numeric: tabular-nums;
   border: 1px solid var(--line); background: #fff; color: var(--ink-soft);
   border-radius: 999px; padding: .35rem .7rem; min-height: 38px;
   font-size: .85rem; font-weight: 650;
@@ -343,7 +345,26 @@ input[type=file] { display: none; }
 .post-btn.on { border-color: var(--warn); background: var(--warn-soft); color: var(--warn); }
 .post-btn.faible { border: 0; color: var(--ink-faint); font-weight: 500; }
 .post-btn:disabled { opacity: .55; }
-.ic-corne, .ic-marmotte { width: 22px; height: 22px; flex: 0 0 auto; }
+/* Les illustrations du dossier Icones, détourées en PNG transparent. */
+.ic-fil { width: 26px; height: 26px; flex: 0 0 auto; display: block; object-fit: contain; }
+.post-btn .ic-fil { filter: grayscale(.2) opacity(.85); transition: filter .2s ease; }
+.post-btn.on .ic-fil, .post-btn:hover .ic-fil { filter: none; }
+
+/* Saisie avec mentions : la liste des prénoms se pose sous le champ. */
+.saisie { position: relative; flex: 1; min-width: 0; }
+.saisie textarea, .saisie input { width: 100%; }
+.suggestions {
+  position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 4px);
+  background: var(--card); border: 1px solid var(--line-strong); border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(22, 33, 44, .18); overflow: hidden;
+}
+.suggestion {
+  display: flex; align-items: center; gap: .5rem; width: 100%; text-align: left;
+  padding: .45rem .6rem; border: 0; background: none; font-size: .9rem; min-height: 44px;
+}
+.suggestion + .suggestion { border-top: 1px solid var(--line); }
+.mention { color: var(--accent); font-weight: 650; }
+.com-texte { margin: 0; overflow-wrap: break-word; }
 .post-apercu { margin-top: .5rem; display: flex; align-items: center; gap: .6rem; }
 .post-apercu img { width: 88px; height: 88px; object-fit: cover; border-radius: 10px; }
 
