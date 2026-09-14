@@ -725,7 +725,34 @@ check("celui qui valide ne se notifie pas lui même",
       str([n["kind"] for n in (d.get("notifications") or [])]))
 rpc("delete_submission", {"p_submission": sub_salaisons, "p_pin": PIN})
 
-print("\n=== 16. Cohérence des vues ===")
+print("\n=== 16. Description et ouverture ===")
+st, d = rpc("set_bio", {"p_participant": A, "p_bio": "  Trois mots sur moi  "})
+check("une description s'enregistre et se nettoie",
+      st == 200 and d.get("bio") == "Trois mots sur moi", str(d)[:120])
+st_now = state()
+check("la description voyage avec les scores",
+      (score(st_now, A) or {}).get("bio") == "Trois mots sur moi", str(score(st_now, A))[:120])
+st, d = rpc("set_bio", {"p_participant": A, "p_bio": "x" * 400})
+check("une description trop longue est coupée à 280 signes",
+      st == 200 and len(d.get("bio") or "") == 280, str(len(d.get("bio") or "")))
+st, d = rpc("set_bio", {"p_participant": A, "p_bio": "   "})
+check("une description vide efface la précédente", st == 200 and d.get("bio") is None, str(d)[:80])
+
+st, d = rpc("ouverture_du_jeu", {})
+check("le jeu a une heure d'ouverture", st == 200 and d, str(d))
+ouverture_avant = d
+st, d = rpc("admin_set_ouverture", {"p_pin": "0000", "p_quand": "2026-09-19T10:00:00+02:00"})
+check("changer l'ouverture sans le bon code est refusé", st >= 400, str(d)[:80])
+st, d = rpc("admin_set_ouverture", {"p_pin": PIN, "p_quand": "2026-09-19T11:30:00+02:00"})
+check("l'organisateur peut déplacer l'ouverture", st == 200 and "09:30" in str(d), str(d))
+st, d = rpc("game_state", {})
+check("l'heure d'ouverture voyage avec l'état du jeu",
+      d["settings"].get("ouverture") is not None, str(d["settings"]))
+rpc("admin_set_ouverture", {"p_pin": PIN, "p_quand": ouverture_avant})
+st, d = rpc("ouverture_du_jeu", {})
+check("l'heure d'origine est rétablie", d == ouverture_avant, f"{d} contre {ouverture_avant}")
+
+print("\n=== 17. Cohérence des vues ===")
 st_now = state()
 check("les cinq jauges sont présentes", len(st_now["gauges"]) == 5, str(len(st_now["gauges"])))
 check(
@@ -746,7 +773,7 @@ check("un défi inconnu est refusé", st >= 400, str(d))
 
 # ---------------------------------------------------------------- nettoyage
 if "--keep" not in sys.argv:
-    print("\n=== 17. Nettoyage ===")
+    print("\n=== 18. Nettoyage ===")
     sys.path.insert(0, str(ROOT / "tools"))
     import apply_sql
 

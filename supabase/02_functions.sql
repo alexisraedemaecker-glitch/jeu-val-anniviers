@@ -513,6 +513,50 @@ $$;
 
 -- Etat complet du jeu en un seul appel reseau. Utile en montagne : une requete
 -- plutot que six, et tout ce dont l'app a besoin pour se redessiner.
+-- =====================================================================
+-- Description du profil et ouverture du jeu
+-- =====================================================================
+
+create or replace function public.set_bio(p_participant uuid, p_bio text)
+returns public.participants
+language plpgsql security definer set search_path = public as $$
+declare v public.participants;
+begin
+  update public.participants
+     set bio = nullif(btrim(left(coalesce(p_bio, ''), 280)), '')
+   where id = p_participant
+  returning * into v;
+  if not found then
+    raise exception 'Profil introuvable';
+  end if;
+  return v;
+end;
+$$;
+
+-- Le jeu s'ouvre a une heure precise. Avant, les joueurs n'ont acces qu'au fil
+-- et a leur profil. L'organisateur peut avancer cette heure a tout moment.
+create or replace function public.ouverture_du_jeu()
+returns timestamptz
+language sql stable security definer set search_path = public as $$
+  select coalesce(
+    (select value::timestamptz from public.app_settings where key = 'ouverture'),
+    '2026-09-19 10:00:00+02'::timestamptz
+  );
+$$;
+
+create or replace function public.admin_set_ouverture(p_pin text, p_quand timestamptz)
+returns timestamptz
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.check_organizer(p_pin) then
+    raise exception 'Code organisateur incorrect';
+  end if;
+  insert into public.app_settings (key, value) values ('ouverture', p_quand::text)
+  on conflict (key) do update set value = excluded.value;
+  return public.ouverture_du_jeu();
+end;
+$$;
+
 create or replace function public.game_state()
 returns jsonb
 language sql
@@ -547,7 +591,9 @@ as $$
                               'challenge_id',   l.challenge_id,
                               'until',          l.until)), '[]'::jsonb)
                       from public.quiz_lockouts l where l.until > now()),
-    'settings',    jsonb_build_object('lockout_minutes', public.lockout_minutes()),
+    'settings',    jsonb_build_object(
+                     'lockout_minutes', public.lockout_minutes(),
+                     'ouverture',       public.ouverture_du_jeu()),
     'server_time', now()
   );
 $$;

@@ -7,7 +7,7 @@ import { CHALLENGE_BY_ID } from "../data/challenges.js";
 import { PILLAR_BY_ID } from "../data/pillars.js";
 import { Empty, Spinner, pillarColor, Avatar } from "./bits.js";
 
-export function Ranking() {
+export function Ranking({ go }) {
   const [tab, setTab] = useState("classement");
   return html`<div>
     <div class="filters">
@@ -77,7 +77,8 @@ function Board() {
 
     <div class="rank">
       ${ranked.map(
-        (r) => html`<div key=${r.id} class=${"rank-row" + (state.me && r.id === state.me.id ? " me" : "")}>
+        (r) => html`<button key=${r.id} class=${"rank-row" + (state.me && r.id === state.me.id ? " me" : "")}
+          onClick=${() => go && go("#/profil/" + r.id)}>
           <span class="rank-pos">${r.place}</span>
           <${Avatar} p=${r} taille="sm" />
           <span class="rank-name">
@@ -89,7 +90,7 @@ function Board() {
             </small>
           </span>
           <span class="rank-pts">${r.score}</span>
-        </div>`
+        </button>`
       )}
     </div>
     <p class="tiny faint center" style="margin-top:.7rem">

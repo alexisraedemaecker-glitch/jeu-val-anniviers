@@ -2,7 +2,17 @@
 // configuration de serveur necessaire sur GitHub Pages.
 const { html, render, useState, useEffect } = window.htmPreact;
 
-import { state, subscribe, setState, boot, clearToast, dismissSynergy, unreadCount } from "./store.js";
+import {
+  state,
+  subscribe,
+  setState,
+  boot,
+  clearToast,
+  dismissSynergy,
+  unreadCount,
+  jeuOuvert,
+  avantOuverture
+} from "./store.js";
 import { PILLAR_BY_ID, PILLARS } from "./data/pillars.js";
 import { CHALLENGES } from "./data/challenges.js";
 import { Onboarding } from "./ui/onboarding.js";
@@ -15,23 +25,82 @@ import { Me, Pending } from "./ui/me.js";
 import { Organizer } from "./ui/organizer.js";
 import { Activites } from "./ui/activites.js";
 import { Fil } from "./ui/fil.js";
+import { Profil } from "./ui/profil.js";
 import { Banner } from "./ui/bits.js";
 
+// Avant l'ouverture, seuls le fil et le profil sont accessibles : tout le monde
+// peut s'inscrire et discuter, le jeu lui meme attend samedi matin.
 const TABS = [
-  { href: "#/defis", icon: "🎯", label: "Défis" },
+  { href: "#/defis", icon: "🎯", label: "Défis", ferme: true },
   { href: "#/fil", icon: "📣", label: "Fil" },
-  { href: "#/activites", icon: "🧭", label: "Activités" },
-  { href: "#/progression", icon: "📊", label: "Piliers" },
-  { href: "#/classement", icon: "🏅", label: "Score" },
-  { href: "#/album", icon: "📷", label: "Album" },
+  { href: "#/activites", icon: "🧭", label: "Activités", ferme: true },
+  { href: "#/progression", icon: "📊", label: "Piliers", ferme: true },
+  { href: "#/classement", icon: "🏅", label: "Score", ferme: true },
+  { href: "#/album", icon: "📷", label: "Album", ferme: true },
   { href: "#/moi", icon: "🙋", label: "Moi" }
 ];
+
+const ECRANS_FERMES = ["defis", "defi", "activites", "progression", "classement", "album"];
+
+/** Compte a rebours jusqu'a l'ouverture, en jours, heures, minutes, secondes. */
+function decompte(ms) {
+  const t = Math.max(0, Math.floor(ms / 1000));
+  return {
+    jours: Math.floor(t / 86400),
+    heures: Math.floor((t % 86400) / 3600),
+    minutes: Math.floor((t % 3600) / 60),
+    secondes: t % 60
+  };
+}
+
+function Attente({ go }) {
+  const [, setTic] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTic((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const reste = avantOuverture();
+  const d = decompte(reste);
+  const quand = state.ouverture
+    ? new Date(state.ouverture).toLocaleString("fr-CH", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Zurich"
+      })
+    : "samedi matin";
+
+  return html`<div class="stack">
+    <div class="card attente">
+      <div class="tiny faint">Le jeu n'est pas encore ouvert</div>
+      <h1 style="margin:.2rem 0 .6rem">Rendez vous ${quand}</h1>
+      <div class="compteur">
+        <div><strong>${d.jours}</strong><span>${d.jours === 1 ? "jour" : "jours"}</span></div>
+        <div><strong>${String(d.heures).padStart(2, "0")}</strong><span>heures</span></div>
+        <div><strong>${String(d.minutes).padStart(2, "0")}</strong><span>minutes</span></div>
+        <div><strong>${String(d.secondes).padStart(2, "0")}</strong><span>secondes</span></div>
+      </div>
+      <p class="small muted" style="margin-top:.9rem">
+        Les défis, les piliers, le classement et l'album s'ouvrent tous en même temps, à l'heure
+        dite. D'ici là, le fil est à vous : présentez vous, dites qui vient, mettez une photo.
+      </p>
+      <div class="row" style="gap:.5rem">
+        <button class="btn grow" onClick=${() => go("#/fil")}>Aller au fil</button>
+        <button class="btn quiet" onClick=${() => go("#/moi")}>Mon profil</button>
+      </div>
+    </div>
+  </div>`;
+}
 
 function parseRoute() {
   const h = (location.hash || "").replace(/^#\/?/, "");
   const parts = h.split("/").filter(Boolean);
   if (!parts.length) return { name: "defis" };
   if (parts[0] === "defi" && parts[1]) return { name: "defi", id: decodeURIComponent(parts[1]) };
+  if (parts[0] === "profil" && parts[1]) return { name: "profil", id: decodeURIComponent(parts[1]) };
   return { name: parts[0] };
 }
 
@@ -91,12 +160,15 @@ function App() {
   }
 
   const title = titleFor(route);
+  // Un écran fermé se remplace par le compte à rebours, sans jamais empêcher
+  // de naviguer : on peut toujours redescendre vers le fil ou son profil.
+  const ferme = !jeuOuvert() && ECRANS_FERMES.includes(route.name);
 
   return html`<div class="shell">
     <header class="topbar">
-      ${route.name === "defi" || route.name === "organisateur"
+      ${route.name === "defi" || route.name === "organisateur" || route.name === "profil"
         ? html`<button class="topbar-back" aria-label="Retour"
-                 onClick=${() => go(route.name === "defi" ? "#/defis" : "#/moi")}>‹</button>`
+                 onClick=${() => go(route.name === "defi" ? "#/defis" : route.name === "profil" ? "#/fil" : "#/moi")}>‹</button>`
         : null}
       <div class="topbar-title">
         ${title.main}<small>${title.sub}</small>
@@ -118,16 +190,18 @@ function App() {
 
       ${route.name !== "moi" && state.pending.length ? html`<${Pending} />` : null}
 
-      ${route.name === "defis" ? html`<${ChallengeList} go=${go} />` : null}
-      ${route.name === "fil" ? html`<${Fil} />` : null}
-      ${route.name === "activites" ? html`<${Activites} go=${go} identifie=${true} />` : null}
-      ${route.name === "defi" ? html`<${ChallengeDetail} id=${route.id} go=${go} />` : null}
-      ${route.name === "progression" ? html`<${Progress} />` : null}
-      ${route.name === "classement" ? html`<${Ranking} />` : null}
-      ${route.name === "album" ? html`<${Gallery} />` : null}
+      ${ferme ? html`<${Attente} go=${go} />` : null}
+      ${!ferme && route.name === "defis" ? html`<${ChallengeList} go=${go} />` : null}
+      ${route.name === "fil" ? html`<${Fil} go=${go} />` : null}
+      ${route.name === "profil" ? html`<${Profil} id=${route.id} go=${go} />` : null}
+      ${!ferme && route.name === "activites" ? html`<${Activites} go=${go} identifie=${true} />` : null}
+      ${!ferme && route.name === "defi" ? html`<${ChallengeDetail} id=${route.id} go=${go} />` : null}
+      ${!ferme && route.name === "progression" ? html`<${Progress} />` : null}
+      ${!ferme && route.name === "classement" ? html`<${Ranking} go=${go} />` : null}
+      ${!ferme && route.name === "album" ? html`<${Gallery} />` : null}
       ${route.name === "moi" ? html`<${Me} go=${go} />` : null}
       ${route.name === "organisateur" ? html`<${Organizer} go=${go} />` : null}
-      ${["defis", "defi", "fil", "activites", "progression", "classement", "album", "moi", "organisateur"].includes(route.name)
+      ${["defis", "defi", "fil", "profil", "activites", "progression", "classement", "album", "moi", "organisateur"].includes(route.name)
         ? null
         : html`<${ChallengeList} go=${go} />`}
     </main>
@@ -146,9 +220,13 @@ function App() {
             : t.href === "#/fil"
               ? unreadCount()
               : 0;
-        return html`<a key=${t.href} href=${t.href} class=${on ? "on" : ""}>
+        const bloque = t.ferme && !jeuOuvert();
+        return html`<a key=${t.href} href=${t.href}
+          class=${(on ? "on" : "") + (bloque ? " bloque" : "")}
+          aria-disabled=${bloque ? "true" : "false"}>
           <span class="ic">${t.icon}</span>
           <span>${t.label}</span>
+          ${bloque ? html`<span class="cadenas" aria-hidden="true">🔒</span>` : null}
           ${badge ? html`<span class="badge">${badge}</span>` : null}
         </a>`;
       })}
@@ -164,6 +242,7 @@ function titleFor(route) {
     defis: ["Les défis", `${CHALLENGES.length} défis, ${PILLARS.length} piliers`],
     defi: ["Un défi", "Validation"],
     fil: ["Le fil", "La journée en direct"],
+    profil: ["Un profil", "Qui joue avec vous"],
     activites: ["Activités", "Le week end dans la vallée"],
     progression: ["Les piliers", "Objectif collectif"],
     classement: ["Classement", "En direct"],

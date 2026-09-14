@@ -238,7 +238,7 @@ function Commentaires({ post }) {
   </div>`;
 }
 
-function Publication({ post, ouvrirPhoto }) {
+function Publication({ post, ouvrirPhoto, go }) {
   const [ouvert, setOuvert] = useState(false);
   const [busy, setBusy] = useState(false);
   const pil = post.pillar ? PILLAR_BY_ID[post.pillar] : null;
@@ -272,9 +272,11 @@ function Publication({ post, ouvrirPhoto }) {
 
   return html`<article class="post">
     <header class="post-tete">
-      <${Avatar} p=${auteur} />
+      <${Avatar} p=${auteur} onClick=${() => go && go("#/profil/" + post.author_id)} />
       <div class="grow">
-        <div class="post-nom">${post.author_name}</div>
+        <button class="post-nom lien" onClick=${() => go && go("#/profil/" + post.author_id)}>
+          ${post.author_name}
+        </button>
         <div class="tiny faint">${heure(post.created_at)}</div>
       </div>
       ${pil
@@ -477,7 +479,7 @@ function InviteNotifications() {
   </div>`;
 }
 
-export function Fil() {
+export function Fil({ go }) {
   const [photo, setPhoto] = useState(null);
   const [filtre, setFiltre] = useState("tout");
 
@@ -536,7 +538,8 @@ export function Fil() {
         ? html`<${Empty} icon="📣">
             Rien pour le moment. Le premier défi validé ouvrira le fil.
           <//>`
-        : posts.map((p) => html`<${Publication} key=${p.id} post=${p} ouvrirPhoto=${(x) => setPhoto(indexPhoto(x))} />`)}
+        : posts.map((p) => html`<${Publication} key=${p.id} post=${p} go=${go}
+            ouvrirPhoto=${(x) => setPhoto(indexPhoto(x))} />`)}
 
     ${photo !== null && photos[photo]
       ? html`<${PhotoZoom} photos=${photos} i=${photo} setI=${setPhoto} />`

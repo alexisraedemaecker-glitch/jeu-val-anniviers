@@ -20,6 +20,9 @@ import {
   adminDeleteParticipant,
   adminResetGame,
   adminSetLockoutMinutes,
+  adminSetOuverture,
+  jeuOuvert,
+  avantOuverture,
   friendly
 } from "../store.js";
 import { PILLARS, PILLAR_BY_ID, VICTORY } from "../data/pillars.js";
@@ -595,6 +598,7 @@ function Attentes({ onError }) {
 
 function Reglages({ onError }) {
   const [minutes, setMinutes] = useState(String(state.lockoutMinutes));
+  const [quand, setQuand] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(null);
   const [fait, setFait] = useState(null);
@@ -605,6 +609,51 @@ function Reglages({ onError }) {
     onError(null);
     try {
       await adminSetLockoutMinutes(parseInt(minutes, 10));
+    } catch (err) {
+      onError(friendly(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  // L'heure d'ouverture se lit et s'ecrit dans le fuseau suisse, sans passer
+  // par le reglage du telephone de l'organisateur.
+  function versChampLocal(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const p = new Intl.DateTimeFormat("fr-CH", {
+      timeZone: "Europe/Zurich",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hour12: false
+    }).formatToParts(d).reduce((o, x) => ({ ...o, [x.type]: x.value }), {});
+    return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+  }
+
+  // Le Valais est a UTC+2 en septembre, heure d'ete.
+  function depuisChampLocal(v) {
+    return new Date(`${v}:00+02:00`);
+  }
+
+  async function enregistrerOuverture(e) {
+    e.preventDefault();
+    if (!quand) return;
+    setBusy("ouverture");
+    onError(null);
+    try {
+      await adminSetOuverture(depuisChampLocal(quand));
+    } catch (err) {
+      onError(friendly(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function ouvrirMaintenant() {
+    if (!confirm("Ouvrir le jeu pour tout le monde, tout de suite ?")) return;
+    setBusy("ouverture");
+    onError(null);
+    try {
+      await adminSetOuverture(new Date(Date.now() - 60000));
     } catch (err) {
       onError(friendly(err));
     } finally {
@@ -630,7 +679,47 @@ function Reglages({ onError }) {
     }
   }
 
+  const ouvert = jeuOuvert();
+  const reste = avantOuverture();
+  const heures = Math.floor(reste / 3600000);
+
   return html`<div class="stack">
+    <div class="card">
+      <div class="card-head">
+        <h2>Ouverture du jeu</h2>
+        ${reste === 0
+          ? html`<span class="chip ok">Ouvert</span>`
+          : html`<span class="chip warn">Dans ${heures} h</span>`}
+      </div>
+      <p class="small muted">
+        Avant cette heure, les joueurs n'ont que le fil et leur profil. Les défis, les piliers,
+        le classement et l'album sont grisés, avec un compte à rebours. Vous, vous voyez tout
+        depuis que vous avez saisi votre code sur cet appareil${ouvert && reste > 0 ? ", c'est pour cela que vos onglets sont ouverts" : ""}.
+      </p>
+      <form onSubmit=${enregistrerOuverture}>
+        <label class="field">
+          <span>Heure d'ouverture, heure suisse</span>
+          <input type="datetime-local" value=${quand || versChampLocal(state.ouverture)}
+                 onInput=${(e) => setQuand(e.target.value)} />
+        </label>
+        <div class="row" style="gap:.5rem">
+          <button class="btn grow" type="submit" disabled=${busy === "ouverture"}>
+            ${busy === "ouverture" ? html`<${Spinner} />` : null} Enregistrer
+          </button>
+          <button class="btn quiet" type="button" disabled=${busy === "ouverture" || reste === 0}
+                  onClick=${ouvrirMaintenant}>Ouvrir maintenant</button>
+        </div>
+      </form>
+      <p class="tiny faint" style="margin-top:.5rem">
+        Réglage actuel : ${state.ouverture
+          ? new Date(state.ouverture).toLocaleString("fr-CH", {
+              weekday: "long", day: "numeric", month: "long",
+              hour: "2-digit", minute: "2-digit", timeZone: "Europe/Zurich"
+            })
+          : "aucun"}, heure suisse.
+      </p>
+    </div>
+
     <form class="card" onSubmit=${enregistrerDuree}>
       <h2>Durée de l'attente après un quiz raté</h2>
       <p class="small muted">

@@ -113,6 +113,8 @@ grant execute on function public.delete_post(uuid, uuid, text)                  
 grant execute on function public.feed_state(uuid)                               to anon, authenticated;
 grant execute on function public.photo_post_est_orpheline(text)                 to anon, authenticated;
 grant execute on function public.set_photo(uuid, text)                to anon, authenticated;
+grant execute on function public.set_bio(uuid, text)                  to anon, authenticated;
+grant execute on function public.ouverture_du_jeu()                   to anon, authenticated;
 grant execute on function public.portrait_est_orphelin(text)          to anon, authenticated;
 grant execute on function public.chemin_valide(text)                  to anon, authenticated;
 grant execute on function public.set_vibe(uuid, text)                 to anon, authenticated;
@@ -133,6 +135,7 @@ grant execute on function public.admin_delete_participant(text, uuid)          t
 grant execute on function public.admin_reset_game(text, text)                  to anon, authenticated;
 grant execute on function public.admin_set_lockout_minutes(text, int)          to anon, authenticated;
 grant execute on function public.admin_reset_code(text, uuid, text)            to anon, authenticated;
+grant execute on function public.admin_set_ouverture(text, timestamptz)        to anon, authenticated;
 
 -- -------------------------------------------------------------- stockage
 

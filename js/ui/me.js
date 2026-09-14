@@ -8,6 +8,7 @@ import {
   myUnlocks,
   updateVibe,
   setPortrait,
+  setBio,
   activerPush,
   desactiverPush,
   rafraichirEtatPush,
@@ -97,6 +98,9 @@ export function Me({ go }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [bio, setBioTexte] = useState((score && score.bio) || me.bio || "");
+  const [bioBusy, setBioBusy] = useState(false);
+  const bioEnregistree = (score && score.bio) || me.bio || "";
   // Le portrait peut avoir ete ajoute depuis un autre appareil : la ligne de
   // score est toujours la source la plus fraiche.
   const portrait = { ...me, photo_path: (score && score.photo_path) || me.photo_path };
@@ -111,6 +115,19 @@ export function Me({ go }) {
       setError(friendly(err));
     } finally {
       setPhotoBusy(false);
+    }
+  }
+
+  async function enregistrerBio(e) {
+    e.preventDefault();
+    setBioBusy(true);
+    setError(null);
+    try {
+      await setBio(bio);
+    } catch (err) {
+      setError(friendly(err));
+    } finally {
+      setBioBusy(false);
     }
   }
 
@@ -195,6 +212,28 @@ export function Me({ go }) {
               )}
           </div>`}
     </div>
+
+    <form class="card" onSubmit=${enregistrerBio}>
+      <h2>Votre description</h2>
+      <p class="small muted">
+        Deux lignes sur vous, visibles par les autres joueurs quand ils ouvrent votre profil.
+        Ce que vous voulez : votre lien avec la vallée, ce que vous cherchez ce week end, une
+        bêtise.
+      </p>
+      <textarea rows="3" maxlength="280" value=${bio}
+                placeholder="Par exemple : je viens pour les fromages et les histoires de mineurs"
+                onInput=${(e) => setBioTexte(e.target.value)}></textarea>
+      <div class="row" style="gap:.5rem;margin-top:.5rem;align-items:center">
+        <button class="btn sm" type="submit" disabled=${bioBusy || bio === bioEnregistree}>
+          ${bioBusy ? html`<${Spinner} />` : null} Enregistrer
+        </button>
+        <span class="tiny faint">${280 - bio.length} caractères restants</span>
+        <span class="grow"></span>
+        <button class="btn sm quiet" type="button" onClick=${() => go("#/profil/" + me.id)}>
+          Voir mon profil
+        </button>
+      </div>
+    </form>
 
     <${Notifications} />
 

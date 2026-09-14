@@ -22,7 +22,8 @@ import {
   Spinner,
   Empty,
   pillarColor,
-  Avatar
+  Avatar,
+  ChoixPersonnes
 } from "./bits.js";
 import { locIcon, locLabel } from "./challenges.js";
 
@@ -67,7 +68,6 @@ function Form({ c, go }) {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [members, setMembers] = useState([]);
-  const [peopleSearch, setPeopleSearch] = useState("");
   const [note, setNote] = useState("");
   const [answers, setAnswers] = useState(() => quiz.map(() => ({ solved: false, wrong: [] })));
   const [attempts, setAttempts] = useState(0);
@@ -107,17 +107,16 @@ function Form({ c, go }) {
     }
   }, [compte === null]);
 
-  const people = useMemo(() => {
-    const q = peopleSearch.trim().toLowerCase();
-    const list = state.scores
-      .filter((p) => !state.me || p.id !== state.me.id)
-      .slice()
-      .sort((a, b) =>
-        `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, "fr")
-      );
-    if (!q) return list;
-    return list.filter((p) => `${p.first_name} ${p.last_name}`.toLowerCase().includes(q));
-  }, [peopleSearch, state.scores]);
+  const people = useMemo(
+    () =>
+      state.scores
+        .filter((p) => !state.me || p.id !== state.me.id)
+        .slice()
+        .sort((a, b) =>
+          `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, "fr")
+        ),
+    [state.scores, state.me && state.me.id]
+  );
 
   async function answer(qi, oi) {
     if (compte || answers[qi].solved) return;
@@ -150,10 +149,6 @@ function Form({ c, go }) {
     setAnswers(quiz.map(() => ({ solved: false, wrong: [] })));
   }
 
-  function toggleMember(pid) {
-    if (started && needsQuiz) return;
-    setMembers((prev) => (prev.includes(pid) ? prev.filter((x) => x !== pid) : [...prev, pid]));
-  }
 
   // Membres encore en attente sur ce défi : ils ne seront pas crédités.
   const bloques = (lockedGroup || members)
@@ -283,7 +278,7 @@ function Form({ c, go }) {
       <p class="small muted">
         ${groupeFige
           ? "Ce groupe joue ce défi. Il ne change plus jusqu'au bout."
-          : `Cochez les personnes présentes avec vous, avant de commencer. Chacune reçoit les ${c.points} points du défi, et chacune subit l'attente si le quiz est raté.`}
+          : `Tapez @ puis le prénom des personnes présentes avec vous, avant de commencer. Chacune reçoit les ${c.points} points du défi, et chacune subit l'attente si le quiz est raté.`}
       </p>
       <div class="people" style="margin-bottom:.5rem">
         <span class="person me">
@@ -305,35 +300,12 @@ function Form({ c, go }) {
                   .join(", ")}
           </p>`
         : html`<div>
-            ${state.scores.length > 8
-              ? html`<input type="search" placeholder="Chercher quelqu'un" value=${peopleSearch}
-                       onInput=${(e) => setPeopleSearch(e.target.value)} style="margin-bottom:.5rem" />`
-              : null}
             ${people.length === 0
               ? html`<p class="tiny faint">Personne d'autre n'est enregistré pour le moment.</p>`
-              : html`<div class="people">
-                  ${people.map((p) => {
-                    const lock = lockedUntil(p.id, c.id);
-                    return html`<button type="button" key=${p.id}
-                      class=${"person" + (members.includes(p.id) ? " on" : "")}
-                      onClick=${() => toggleMember(p.id)}>
-                      <span class="bx">${members.includes(p.id) ? "✓" : ""}</span>
-                      <${Avatar} p=${p} taille="sm" />
-                      <span class="grow">
-                        ${p.first_name} ${p.last_name}
-                        ${lock
-                          ? html`<span class="tiny" style="display:block;color:var(--bad)">
-                              en attente jusqu'à ${heure(lock)}
-                            </span>`
-                          : null}
-                      </span>
-                    </button>`;
-                  })}
-                </div>`}
-            <p class="tiny faint" style="margin-top:.5rem">
-              ${members.length + 1} ${members.length + 1 === 1 ? "personne" : "personnes"} dans le
-              groupe. Vous êtes seul ? Laissez simplement tout décoché.
-            </p>
+              : html`<${ChoixPersonnes} choisis=${members} setChoisis=${setMembers}
+                  gens=${people} exclure=${state.me ? [state.me.id] : []}
+                  placeholder="Tapez @ puis un prénom"
+                  note=${`${members.length + 1} ${members.length + 1 === 1 ? "personne" : "personnes"} dans le groupe. Vous êtes seul ? Laissez le champ vide.`} />`}
           </div>`}
       ${bloques.length
         ? html`<${Banner} kind="warn">

@@ -1,5 +1,5 @@
 // Petits composants partages.
-const { html, useState, useEffect } = window.htmPreact;
+const { html, useState, useEffect, useRef } = window.htmPreact;
 
 import { PILLAR_BY_ID, STYLE_BY_ID, TIERS, VICTORY } from "../data/pillars.js";
 import { portraitUrl } from "../store.js";
@@ -53,6 +53,80 @@ export function Avatar({ p, taille, onClick }) {
       aria-label=${nom ? "Voir le portrait de " + nom : "Voir le portrait"}>${dedans}</button>`;
   }
   return html`<span class=${cls}>${dedans}</span>`;
+}
+
+/**
+ * Choix de personnes a l'arobase. On tape @ puis les premieres lettres d'un
+ * prenom, on touche la proposition, et la personne rejoint la liste sous forme
+ * de pastille. Pense pour une vallee pleine de monde : rien ne s'affiche tant
+ * qu'on n'a pas commence a taper, contrairement a une liste complete qui
+ * deviendrait interminable a trente personnes.
+ */
+export function ChoixPersonnes({
+  choisis,
+  setChoisis,
+  gens,
+  placeholder,
+  note,
+  exclure
+}) {
+  const [texte, setTexte] = useState("");
+  const champ = useRef(null);
+  const liste = (gens || []).filter((g) => !(exclure || []).includes(g.id));
+
+  const recherche = texte.replace(/^@/, "").trim().toLowerCase();
+  const propositions = recherche
+    ? liste
+        .filter((g) => !choisis.includes(g.id))
+        .filter((g) => `${g.first_name} ${g.last_name}`.toLowerCase().includes(recherche))
+        .slice(0, 6)
+    : [];
+
+  const ajouter = (p) => {
+    setChoisis(choisis.concat(p.id));
+    setTexte("");
+    if (champ.current) champ.current.focus();
+  };
+  const retirer = (id) => setChoisis(choisis.filter((x) => x !== id));
+
+  return html`<div class="choix-personnes">
+    ${choisis.length
+      ? html`<div class="pastilles">
+          ${choisis.map((id) => {
+            const p = liste.find((g) => g.id === id) || (gens || []).find((g) => g.id === id);
+            if (!p) return null;
+            return html`<span key=${id} class="pastille">
+              <${Avatar} p=${p} taille="sm" />
+              <span>${p.first_name} ${p.last_name}</span>
+              <button type="button" class="ret" aria-label=${"Retirer " + p.first_name}
+                      onClick=${() => retirer(id)}>×</button>
+            </span>`;
+          })}
+        </div>`
+      : null}
+    <div class="saisie">
+      <input ref=${champ} type="text" value=${texte} class="grow"
+             placeholder=${placeholder || "Tapez @ puis un prénom"}
+             autocomplete="off" autocorrect="off" autocapitalize="off"
+             onInput=${(e) => setTexte(e.target.value)} />
+      ${propositions.length
+        ? html`<div class="suggestions">
+            ${propositions.map(
+              (p) => html`<button type="button" key=${p.id} class="suggestion"
+                onMouseDown=${(e) => e.preventDefault()} onClick=${() => ajouter(p)}>
+                <${Avatar} p=${p} taille="sm" />
+                <span class="grow">${p.first_name} ${p.last_name}</span>
+              </button>`
+            )}
+          </div>`
+        : null}
+    </div>
+    ${recherche && !propositions.length
+      ? html`<p class="tiny faint" style="margin:.35rem 0 0">Personne ne correspond à « ${recherche} ».</p>`
+      : note
+        ? html`<p class="tiny faint" style="margin:.35rem 0 0">${note}</p>`
+        : null}
+  </div>`;
 }
 
 export function StyleChip({ style }) {

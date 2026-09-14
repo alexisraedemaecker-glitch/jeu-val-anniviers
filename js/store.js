@@ -46,6 +46,10 @@ export const state = {
   lockouts: [],
   localLockouts: readLocalLockouts(),
   lockoutMinutes: 30,
+  // Heure d'ouverture du jeu, et decalage entre l'horloge du serveur et celle
+  // de l'appareil : un telephone mal regle ne doit pas ouvrir le jeu en avance.
+  ouverture: null,
+  decalageServeur: 0,
   pending: [],
   syncing: false,
   online: typeof navigator === "undefined" ? true : navigator.onLine !== false,
@@ -136,6 +140,42 @@ export function portraitUrl(path) {
   return data ? data.publicUrl : null;
 }
 
+/** L'heure du serveur, vue depuis cet appareil. */
+export function maintenant() {
+  return Date.now() + (state.decalageServeur || 0);
+}
+
+/**
+ * Le jeu est ouvert a partir de l'heure dite. L'organisateur, lui, voit tout
+ * des qu'il a saisi son code sur cet appareil : c'est ainsi qu'il prepare et
+ * verifie la journee avant l'ouverture.
+ */
+export function jeuOuvert() {
+  if (state.organizerPin) return true;
+  if (!state.ouverture) return true;
+  return maintenant() >= new Date(state.ouverture).getTime();
+}
+
+/** Millisecondes restantes avant l'ouverture, zero si c'est ouvert. */
+export function avantOuverture() {
+  if (!state.ouverture) return 0;
+  return Math.max(0, new Date(state.ouverture).getTime() - maintenant());
+}
+
+export async function setBio(texte) {
+  if (!state.me) throw new Error("Aucun profil actif");
+  const { data, error } = await sb.rpc("set_bio", {
+    p_participant: state.me.id,
+    p_bio: texte || null
+  });
+  if (error) throw new Error(friendly(error));
+  const me = Array.isArray(data) ? data[0] : data;
+  writeMe(me);
+  setState({ me, toast: { kind: "success", text: "Description enregistrée" } });
+  refresh();
+  return me;
+}
+
 export async function setPortrait(file) {
   if (!state.me) throw new Error("Aucun profil actif");
   const chemin = await uploadPortrait(file);
@@ -208,6 +248,8 @@ export async function refresh({ feed = false } = {}) {
       done: data.done || {},
       lockouts: data.lockouts || [],
       lockoutMinutes: (data.settings && data.settings.lockout_minutes) || 30,
+      ouverture: (data.settings && data.settings.ouverture) || null,
+      decalageServeur: data.server_time ? new Date(data.server_time).getTime() - Date.now() : state.decalageServeur,
       loading: false,
       loadError: null,
       lastSync: new Date(),
@@ -914,6 +956,18 @@ export async function adminResetCode(id, code) {
   if (error) throw new Error(friendly(error));
   await refresh();
   setState({ toast: { kind: "success", text: "Code remplacé" } });
+}
+
+/** Avance ou recule l'heure d'ouverture du jeu. */
+export async function adminSetOuverture(quand) {
+  const { data, error } = await sb.rpc("admin_set_ouverture", {
+    p_pin: state.organizerPin,
+    p_quand: new Date(quand).toISOString()
+  });
+  if (error) throw new Error(friendly(error));
+  setState({ ouverture: data, toast: { kind: "success", text: "Heure d'ouverture enregistrée" } });
+  await refresh();
+  return data;
 }
 
 export async function adminResetGame(confirmation) {

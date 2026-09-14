@@ -86,6 +86,23 @@ Changer de photo passe par `set_photo`. L'ancienne devient orpheline et
 `portrait_est_orphelin` autorise alors sa suppression depuis le navigateur,
 exactement comme pour les photos de défi.
 
+## L'ouverture du jeu
+
+Le jeu s'ouvre à une heure précise, gardée en base par `ouverture_du_jeu` et
+réglable par l'organisateur. Avant cette heure, les joueurs n'ont que le fil et
+leur profil : les autres onglets sont grisés et affichent un compte à rebours.
+
+Deux choix à connaître. L'organisateur voit tout dès qu'il a saisi son code sur
+son appareil, c'est ainsi qu'il prépare la journée. Et le décompte se fonde sur
+l'heure du serveur, pas sur celle du téléphone : `game_state` renvoie son
+horloge, l'application en déduit un décalage, et un téléphone mal réglé
+n'ouvre donc pas le jeu en avance.
+
+Le verrou est côté écran, pas côté base : il range l'application avant le jour
+J, il n'empêche pas quelqu'un de très déterminé d'appeler l'API à la main. Ce
+choix est volontaire, un verrou serveur aurait aussi bloqué les essais de
+l'organisateur et les tests de bout en bout.
+
 ## Les notifications poussées
 
 Être prévenu sur l'écran verrouillé demande une vraie chaîne, montée ici de
@@ -408,7 +425,7 @@ test, joue des défis, puis nettoie tout derrière lui.
 python3 tools/selftest.py
 ```
 
-Les 133 contrôles couvrent la création de profil et la déduplication des noms, le
+Les 142 contrôles couvrent la création de profil et la déduplication des noms, le
 rendement dégressif sur trois passages, le score personnel non dégressif, le non
 cumul d'un même défi par une même personne, l'idempotence après coupure réseau,
 le dépôt et la lecture des photos, le refus d'un chemin de photo malveillant, le

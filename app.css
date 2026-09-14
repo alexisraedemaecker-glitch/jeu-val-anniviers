@@ -107,6 +107,24 @@ main { flex: 1; padding: .9rem .9rem calc(var(--tab-h) + 1.4rem + env(safe-area-
 .tabbar a .ic { font-size: 1.15rem; line-height: 1; }
 .tabbar a span:not(.ic):not(.badge) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .tabbar a.on { color: var(--accent); }
+/* Onglet fermé jusqu'à l'ouverture : visible, mais visiblement en sommeil. */
+.tabbar a.bloque { opacity: .42; }
+.tabbar a .cadenas { position: absolute; top: 4px; right: 50%; margin-right: -18px; font-size: .58rem; }
+
+/* ------------------------------------------------------- compte à rebours */
+
+.card.attente { text-align: center; }
+.compteur {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: .4rem; margin-top: .6rem;
+}
+.compteur div {
+  background: var(--accent); color: #fff; border-radius: 12px; padding: .6rem .2rem;
+}
+.compteur strong {
+  display: block; font-size: 1.6rem; font-weight: 800; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.compteur span { display: block; font-size: .62rem; opacity: .85; margin-top: .2rem; }
 .tabbar a.on::before {
   content: ""; position: absolute; top: 0; left: 22%; right: 22%; height: 3px;
   background: var(--accent); border-radius: 0 0 3px 3px;
@@ -330,6 +348,21 @@ input[type=file] { display: none; }
 .lieu strong { font-size: .95rem; font-weight: 650; }
 .lieu .fleche { color: var(--accent); font-size: 1.05rem; flex: 0 0 auto; }
 
+/* --------------------------------------------- choix de personnes à l'arobase */
+
+.choix-personnes .saisie { position: relative; }
+.pastilles { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .45rem; }
+.pastille {
+  display: inline-flex; align-items: center; gap: .35rem;
+  background: var(--accent-soft); border: 1px solid var(--accent);
+  border-radius: 999px; padding: .2rem .25rem .2rem .2rem;
+  font-size: .85rem; font-weight: 600; color: var(--accent);
+}
+.pastille .ret {
+  border: 0; background: var(--accent); color: #fff; border-radius: 50%;
+  width: 22px; height: 22px; line-height: 1; font-size: 1rem; padding: 0;
+}
+
 /* ------------------------------------------------------------------- fil */
 
 .post {
@@ -414,6 +447,21 @@ textarea {
 .rank-name small { display: block; font-weight: 500; font-size: .74rem; color: var(--ink-faint); }
 .rank-row.me .rank-name small { color: var(--accent); }
 .rank-pts { font-weight: 750; font-variant-numeric: tabular-nums; }
+button.rank-row { width: 100%; text-align: left; cursor: pointer; }
+
+/* Un nom qui mène au profil de la personne, sans ressembler à un bouton. */
+.post-nom.lien {
+  border: 0; background: none; padding: 0; color: inherit;
+  font-weight: 700; font-size: .95rem; text-align: left; cursor: pointer;
+}
+.post-nom.lien:hover { text-decoration: underline; }
+
+.mini-posts { display: grid; gap: .4rem; }
+.mini-post {
+  display: flex; align-items: center; gap: .6rem;
+  border: 1px solid var(--line); border-radius: 11px; padding: .4rem .5rem;
+}
+.mini-post img { width: 46px; height: 46px; object-fit: cover; border-radius: 8px; flex: 0 0 auto; }
 
 /* -------------------------------------------------------------- synergies */
 
