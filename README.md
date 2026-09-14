@@ -86,6 +86,23 @@ Changer de photo passe par `set_photo`. L'ancienne devient orpheline et
 `portrait_est_orphelin` autorise alors sa suppression depuis le navigateur,
 exactement comme pour les photos de défi.
 
+## L'icône de l'application
+
+La photo posée dans `Icones/` sous un nom commençant par `logo` devient l'icône
+de l'écran d'accueil. `tools/gen_icone_app.py` en dérive six fichiers dans
+`assets/` : 180 pixels pour iPhone, 192 et 512 pour Android et les navigateurs,
+deux versions `maskable` et une favicon.
+
+Android recadre l'icône adaptative en rond, en goutte ou en carré arrondi selon
+le téléphone, et seul le centre est garanti visible. Les versions `maskable`
+reculent donc l'image à 78 pourcent dans son cadre, sur du blanc, qui se
+raccorde sans couture au fond du collage. iPhone, lui, n'applique que ses coins
+arrondis : les versions normales restent pleine image.
+
+Les deux fichiers de 512 pixels ne sont pas préchargés par le service worker.
+Ils ne servent qu'au moment de l'ajout à l'écran d'accueil et pèsent à eux
+seuls près d'un mégaoctet.
+
 ## Le code personnel
 
 S'inscrire demande un code d'au moins quatre caractères, en plus du prénom, du

@@ -1,7 +1,7 @@
 {
   "name": "Le Val d'Anniviers en 2056",
   "short_name": "Anniviers 2056",
-  "description": "Jeu collectif d'une journée dans le Val d'Anniviers. Cinq piliers à faire remonter, trente neuf défis, et une vallée à sauver.",
+  "description": "Jeu collectif d'une journée dans le Val d'Anniviers. Cinq piliers à faire remonter, quarante huit défis, et une vallée à sauver.",
   "lang": "fr",
   "start_url": "./index.html#/defis",
   "scope": "./",
@@ -10,7 +10,29 @@
   "background_color": "#f4f1ea",
   "theme_color": "#1d3b57",
   "icons": [
-    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
