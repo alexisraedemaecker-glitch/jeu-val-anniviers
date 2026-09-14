@@ -322,6 +322,15 @@ begin
   values (p_submitter, v_sub.id, v_sub.created_at)
   on conflict (submission_id) do nothing;
 
+  -- Les autres personnes du groupe du moment sont prevenues : un defi vient
+  -- d'etre valide en leur nom, meme si elles n'ont pas tenu le telephone.
+  perform public.notifier(
+    (select coalesce(array_agg(x), array[]::uuid[]) from unnest(v_members) as t(x)),
+    'defi',
+    (select id from public.posts where submission_id = v_sub.id),
+    null,
+    p_submitter);
+
   perform public.recompute_synergies();
 
   select coalesce(jsonb_agg(jsonb_build_object(
@@ -999,4 +1008,91 @@ $$;
 create or replace function public.photo_post_est_orpheline(p_name text) returns boolean
 language sql stable security definer set search_path = public as $$
   select not exists (select 1 from public.posts p where p.photo_path = p_name);
+$$;
+
+-- =====================================================================
+-- Notifications poussees
+-- =====================================================================
+
+-- Un appareil s'abonne. La meme personne peut en avoir plusieurs, et un
+-- appareil qui change de main est reattribue plutot que duplique.
+create or replace function public.save_push_subscription(
+  p_participant uuid,
+  p_endpoint    text,
+  p_p256dh      text,
+  p_auth        text,
+  p_agent       text default null
+) returns boolean
+language plpgsql security definer set search_path = public as $$
+begin
+  if p_endpoint is null or btrim(p_endpoint) = '' then
+    raise exception 'Abonnement incomplet';
+  end if;
+  if not exists (select 1 from public.participants where id = p_participant) then
+    raise exception 'Profil inconnu';
+  end if;
+  insert into public.push_subscriptions (endpoint, participant_id, p256dh, auth, user_agent)
+  values (btrim(p_endpoint), p_participant, p_p256dh, p_auth, left(coalesce(p_agent, ''), 300))
+  on conflict (endpoint) do update
+    set participant_id = excluded.participant_id,
+        p256dh = excluded.p256dh,
+        auth = excluded.auth,
+        user_agent = excluded.user_agent,
+        last_seen = now(),
+        echecs = 0;
+  return true;
+end;
+$$;
+
+create or replace function public.delete_push_subscription(p_endpoint text)
+returns boolean
+language sql security definer set search_path = public as $$
+  delete from public.push_subscriptions where endpoint = p_endpoint;
+  select true;
+$$;
+
+create or replace function public.a_un_abonnement_push(p_participant uuid)
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.push_subscriptions where participant_id = p_participant);
+$$;
+
+-- Tout ce qu'il faut pour rediger et envoyer une notification, en une ligne.
+-- Appelee par la fonction Edge, qui ne voit jamais le reste de la base.
+create or replace function public.push_a_envoyer(p_notification uuid)
+returns jsonb
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'notification_id', n.id,
+    'kind',            n.kind,
+    'acteur',          coalesce(a.first_name || ' ' || a.last_name, 'Quelqu''un'),
+    'defi',            c.name,
+    'abonnements',     coalesce((
+      select jsonb_agg(jsonb_build_object(
+               'endpoint', s.endpoint, 'p256dh', s.p256dh, 'auth', s.auth))
+        from public.push_subscriptions s
+       where s.participant_id = n.participant_id), '[]'::jsonb)
+  )
+  from public.notifications n
+  left join public.participants a on a.id = n.actor_id
+  left join public.posts p on p.id = n.post_id
+  left join public.submissions sub on sub.id = p.submission_id
+  left join public.challenges c on c.id = sub.challenge_id
+ where n.id = p_notification;
+$$;
+
+-- Un abonnement mort, par exemple une application desinstallee, est retire
+-- apres quelques echecs plutot qu'a la premiere erreur reseau.
+create or replace function public.push_echec(p_endpoint text, p_definitif boolean default false)
+returns boolean
+language plpgsql security definer set search_path = public as $$
+begin
+  if p_definitif then
+    delete from public.push_subscriptions where endpoint = p_endpoint;
+  else
+    update public.push_subscriptions set echecs = echecs + 1 where endpoint = p_endpoint;
+    delete from public.push_subscriptions where endpoint = p_endpoint and echecs >= 5;
+  end if;
+  return true;
+end;
 $$;

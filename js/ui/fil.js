@@ -16,6 +16,9 @@ import {
   deletePost,
   markNotificationsRead,
   unreadCount,
+  activerPush,
+  rafraichirEtatPush,
+  pushDisponible,
   friendly
 } from "../store.js";
 import { PILLAR_BY_ID } from "../data/pillars.js";
@@ -417,6 +420,63 @@ function Notifications() {
   </div>`;
 }
 
+/**
+ * Petite invitation a activer les notifications, une seule fois. Elle disparait
+ * des qu'on l'accepte ou qu'on la repousse, et ne revient pas.
+ */
+function InviteNotifications() {
+  const CLE = "anniviers2056.pushPropose";
+  const [cache, setCache] = useState(() => {
+    try {
+      return localStorage.getItem(CLE) === "1";
+    } catch (err) {
+      return false;
+    }
+  });
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    rafraichirEtatPush();
+  }, []);
+
+  if (cache || !state.me || !pushDisponible() || state.pushEtat !== "possible") return null;
+
+  const ranger = () => {
+    try {
+      localStorage.setItem(CLE, "1");
+    } catch (err) {
+      /* stockage indisponible, tant pis */
+    }
+    setCache(true);
+  };
+
+  async function activer() {
+    setBusy(true);
+    try {
+      await activerPush();
+      ranger();
+    } catch (err) {
+      console.warn(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return html`<div class="card" style="border-color:#e3c98f;background:var(--warn-soft)">
+    <h3 style="margin-top:0">Être prévenu sans ouvrir l'application</h3>
+    <p class="small" style="margin-bottom:.6rem">
+      Quand quelqu'un vous nomme, valide un défi avec vous ou commente votre publication, le
+      téléphone vous le dit, même verrouillé.
+    </p>
+    <div class="row" style="gap:.5rem">
+      <button class="btn sm grow" disabled=${busy} onClick=${activer}>
+        ${busy ? html`<${Spinner} />` : null} Activer
+      </button>
+      <button class="btn sm quiet" onClick=${ranger}>Plus tard</button>
+    </div>
+  </div>`;
+}
+
 export function Fil() {
   const [photo, setPhoto] = useState(null);
   const [filtre, setFiltre] = useState("tout");
@@ -457,6 +517,7 @@ export function Fil() {
   const indexPhoto = (post) => photos.findIndex((x) => x.src === photoUrl(post.photo_path));
 
   return html`<div class="stack">
+    <${InviteNotifications} />
     <${Notifications} />
     ${state.me ? html`<${Composer} />` : null}
 

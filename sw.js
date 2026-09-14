@@ -7,7 +7,7 @@
 //   - photos du stockage Supabase : le cache d'abord, elles ne changent jamais.
 //   - appels a la base : jamais de cache, les scores doivent etre justes.
 
-const CACHE = "anniviers2056-v12";
+const CACHE = "anniviers2056-v14";
 const NET_TIMEOUT = 4000;
 
 const SHELL = [
@@ -174,4 +174,46 @@ self.addEventListener("fetch", (event) => {
   if (url.origin === self.location.origin) {
     event.respondWith(fromNetworkFirst(req));
   }
+});
+
+// ------------------------------------------------- notifications poussées
+
+// Le message arrive chiffré, déchiffré par le navigateur, et s'affiche même
+// quand l'application est fermée et le téléphone verrouillé.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (err) {
+    data = { titre: "Anniviers 2056", corps: event.data ? event.data.text() : "" };
+  }
+  const titre = data.titre || "Anniviers 2056";
+  const options = {
+    body: data.corps || "",
+    icon: "assets/icon-192.png",
+    badge: "assets/icon-192.png",
+    tag: data.id || undefined,
+    data: { url: data.url || "#/fil" },
+    lang: "fr"
+  };
+  event.waitUntil(self.registration.showNotification(titre, options));
+});
+
+// Toucher la notification ouvre le fil, en réutilisant l'onglet déjà ouvert
+// plutôt qu'en empilant les fenêtres.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const cible = (event.notification.data && event.notification.data.url) || "#/fil";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((fenetres) => {
+      for (const f of fenetres) {
+        if (f.url.includes(self.registration.scope.replace(/\/$/, ""))) {
+          f.focus();
+          if ("navigate" in f) f.navigate(f.url.split("#")[0] + cible).catch(() => null);
+          return;
+        }
+      }
+      return self.clients.openWindow("./index.html" + cible);
+    })
+  );
 });

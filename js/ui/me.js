@@ -1,5 +1,5 @@
 // Mon profil, mes soumissions en attente, et l'entree vers la vue organisateur.
-const { html, useState } = window.htmPreact;
+const { html, useState, useEffect } = window.htmPreact;
 
 import {
   state,
@@ -8,6 +8,10 @@ import {
   myUnlocks,
   updateVibe,
   setPortrait,
+  activerPush,
+  desactiverPush,
+  rafraichirEtatPush,
+  pushDisponible,
   signOut,
   flushQueue,
   dropPending,
@@ -17,6 +21,73 @@ import { STYLES } from "../data/pillars.js";
 import { CHALLENGE_BY_ID, CHALLENGES } from "../data/challenges.js";
 import { SYNERGIES } from "../data/synergies.js";
 import { Banner, Spinner, Avatar, dateTimeShort } from "./bits.js";
+
+/**
+ * Notifications sur l'ecran verrouille. La demande doit partir d'un geste, et
+ * sur iPhone elle n'est possible que depuis l'application ajoutee a l'ecran
+ * d'accueil : on le dit plutot que de laisser un bouton qui ne fait rien.
+ */
+function Notifications() {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    rafraichirEtatPush();
+  }, []);
+
+  if (!pushDisponible()) {
+    return html`<div class="card">
+      <h2>Notifications</h2>
+      <p class="small muted">
+        Ce navigateur ne sait pas afficher de notifications. Sur iPhone, ajoutez d'abord
+        l'application à l'écran d'accueil avec le bouton Partager, puis rouvrez la depuis
+        cette icône.
+      </p>
+    </div>`;
+  }
+
+  const etat = state.pushEtat;
+
+  async function basculer() {
+    setBusy(true);
+    setError(null);
+    try {
+      if (etat === "actif") await desactiverPush();
+      else await activerPush();
+    } catch (err) {
+      setError(friendly(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return html`<div class="card">
+    <div class="card-head">
+      <h2>Notifications</h2>
+      ${etat === "actif" ? html`<span class="chip ok">Activées</span>` : null}
+    </div>
+    <p class="small muted">
+      Pour être prévenu quand quelqu'un vous nomme dans le fil, valide un défi avec vous,
+      applaudit ou commente votre publication. Elles s'affichent sur l'écran verrouillé, même
+      application fermée.
+    </p>
+    ${error ? html`<${Banner} kind="bad">${error}<//>` : null}
+    ${etat === "refusé"
+      ? html`<${Banner} kind="warn">
+          Les notifications ont été refusées sur cet appareil. Pour les rétablir, passez par les
+          réglages du téléphone, à la ligne de ce site ou de cette application.
+        <//>`
+      : html`<button class=${"btn block" + (etat === "actif" ? " quiet" : "")}
+               disabled=${busy} onClick=${basculer}>
+          ${busy ? html`<${Spinner} dark=${etat === "actif"} />` : null}
+          ${etat === "actif" ? "Couper les notifications" : "Activer les notifications"}
+        </button>`}
+    <p class="tiny faint" style="margin-top:.6rem">
+      Sur iPhone, elles ne fonctionnent que depuis l'application ajoutée à l'écran d'accueil.
+      Sur Android, depuis le navigateur comme depuis l'application.
+    </p>
+  </div>`;
+}
 
 export function Me({ go }) {
   const me = state.me;
@@ -124,6 +195,8 @@ export function Me({ go }) {
               )}
           </div>`}
     </div>
+
+    <${Notifications} />
 
     <div class="card">
       <h2>Réglages</h2>

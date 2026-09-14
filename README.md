@@ -86,6 +86,46 @@ Changer de photo passe par `set_photo`. L'ancienne devient orpheline et
 `portrait_est_orphelin` autorise alors sa suppression depuis le navigateur,
 exactement comme pour les photos de défi.
 
+## Les notifications poussées
+
+Être prévenu sur l'écran verrouillé demande une vraie chaîne, montée ici de
+bout en bout sans aucune dépendance :
+
+1. Le navigateur s'abonne avec la clé publique VAPID de `js/config.js` et
+   dépose son abonnement par `save_push_subscription`. La table
+   `push_subscriptions` a RLS sans policy : ces clés d'appareil ne se lisent
+   jamais depuis le navigateur.
+2. Chaque insertion dans `notifications` déclenche `declenche_push`, qui
+   appelle la fonction Edge par `pg_net`, en arrière plan : la transaction qui
+   a créé la notification n'attend pas le réseau.
+3. `supabase/functions/envoyer-push` relit la notification, rédige le message
+   et le pousse à chaque appareil de la personne.
+
+Le protocole est écrit à la main avec la cryptographie du navigateur : RFC 8291
+pour le chiffrement, RFC 8188 pour l'enveloppe `aes128gcm`, RFC 8292 pour la
+signature VAPID. La fonction expose une route d'essai qui rejoue le vecteur de
+test publié dans la RFC 8291, avec ses clés et son sel fixes : le résultat doit
+être identique octet pour octet, ce qui vérifie le chiffrement sans dépendre
+d'un vrai téléphone.
+
+La clé privée VAPID ne vit que dans les secrets Supabase et dans
+`supabase/vapid.local.json`, exclu du dépôt. La clé publique, elle, est faite
+pour être dans le code.
+
+Deux limites à connaître. Sur iPhone, les notifications web ne fonctionnent que
+depuis l'application ajoutée à l'écran d'accueil, jamais depuis un onglet
+Safari. Et la demande d'autorisation doit partir d'un geste : c'est pour cela
+qu'elle passe par un bouton, jamais au chargement.
+
+### Un piège de droits PostgreSQL
+
+Une fonction est exécutable par PUBLIC dès sa création. Retirer le droit à
+`anon` et `authenticated` ne suffit donc pas, ils le gardent par héritage. Le
+test de bout en bout l'a montré : `push_a_envoyer`, qui renvoie les clés de
+chiffrement d'un appareil, restait appelable. Toutes les fonctions internes
+sont maintenant révoquées à PUBLIC, et seules `push_a_envoyer` et `push_echec`
+sont rendues à `service_role`, pour la fonction Edge.
+
 ## Le récit complet
 
 Le texte du jeu vit dans `js/data/histoire.js`, repris mot pour mot, et
@@ -368,7 +408,7 @@ test, joue des défis, puis nettoie tout derrière lui.
 python3 tools/selftest.py
 ```
 
-Les 124 contrôles couvrent la création de profil et la déduplication des noms, le
+Les 133 contrôles couvrent la création de profil et la déduplication des noms, le
 rendement dégressif sur trois passages, le score personnel non dégressif, le non
 cumul d'un même défi par une même personne, l'idempotence après coupure réseau,
 le dépôt et la lecture des photos, le refus d'un chemin de photo malveillant, le

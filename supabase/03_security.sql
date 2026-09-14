@@ -62,6 +62,41 @@ grant select on
   public.v_feed, public.v_lockouts, public.v_posts
 to anon, authenticated;
 
+-- Fonctions internes. En PostgreSQL, une fonction est exécutable par PUBLIC
+-- dès sa création : retirer le droit à anon et authenticated ne suffit pas,
+-- il faut le retirer à PUBLIC, sinon tout le monde le garde par héritage.
+-- Ces fonctions ne sont appelées que par d'autres fonctions security definer,
+-- qui s'exécutent avec les droits de leur propriétaire.
+do $$
+declare f record;
+begin
+  for f in
+    select p.oid::regprocedure as signature
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.proname in ('recompute_synergies','verifie_code','set_code','notifier',
+                         'push_a_envoyer','push_echec','declenche_push')
+  loop
+    execute format('revoke all on function %s from public, anon, authenticated', f.signature);
+  end loop;
+end;
+$$;
+
+-- La fonction Edge se présente avec la clé de service : elle seule prépare et
+-- marque les envois.
+do $$
+declare f record;
+begin
+  for f in
+    select p.oid::regprocedure as signature
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public' and p.proname in ('push_a_envoyer','push_echec')
+  loop
+    execute format('grant execute on function %s to service_role', f.signature);
+  end loop;
+end;
+$$;
+
 -- Fonctions appelables depuis l'application.
 revoke all on function public.recompute_synergies() from anon, authenticated;
 grant execute on function public.ensure_participant(text, text, text, text, text) to anon, authenticated;
@@ -69,9 +104,7 @@ grant execute on function public.a_un_code(uuid)                      to anon, a
 grant execute on function public.code_valide(text)                    to anon, authenticated;
 -- verifie_code et set_code ne sont pas exposees : la verification se fait a
 -- l'interieur de ensure_participant, qui ne renvoie le profil qu'au bon code.
-revoke all on function public.verifie_code(uuid, text) from anon, authenticated;
-revoke all on function public.set_code(uuid, text)     from anon, authenticated;
-revoke all on function public.notifier(uuid[], text, uuid, uuid, uuid) from anon, authenticated;
+-- Leur retrait est traite plus haut, avec les autres fonctions internes.
 grant execute on function public.add_post(text, uuid, text, text, uuid[])       to anon, authenticated;
 grant execute on function public.add_comment(text, uuid, uuid, text, uuid[])    to anon, authenticated;
 grant execute on function public.toggle_kudo(uuid, uuid)                        to anon, authenticated;
@@ -196,3 +229,37 @@ alter table public.submissions        replica identity full;
 alter table public.submission_members replica identity full;
 alter table public.synergy_unlocks    replica identity full;
 alter table public.quiz_lockouts      replica identity full;
+
+-- ------------------------------------------ notifications poussees
+
+alter table public.push_subscriptions enable row level security;
+-- Aucune policy : la table des abonnements ne se lit pas depuis le navigateur.
+-- Un abonnement contient les cles de chiffrement d'un appareil, elles n'ont
+-- aucune raison de circuler. Tout passe par les fonctions security definer.
+
+grant execute on function public.save_push_subscription(uuid, text, text, text, text) to anon, authenticated;
+grant execute on function public.delete_push_subscription(text)  to anon, authenticated;
+grant execute on function public.a_un_abonnement_push(uuid)      to anon, authenticated;
+-- push_a_envoyer et push_echec ne servent qu'a la fonction Edge : leur retrait
+-- et leur droit pour la cle de service sont traites plus haut.
+
+-- Une notification inseree part aussitot vers la fonction Edge, qui se charge
+-- de joindre les appareils. pg_net travaille en arriere plan : la transaction
+-- qui a cree la notification n'attend pas le reseau.
+create or replace function public.declenche_push() returns trigger
+language plpgsql security definer set search_path = public, extensions as $$
+begin
+  perform net.http_post(
+    url := 'https://bdqbrdoorqcxutfojgze.supabase.co/functions/v1/envoyer-push',
+    body := jsonb_build_object('notification_id', new.id),
+    headers := '{"Content-Type": "application/json"}'::jsonb,
+    timeout_milliseconds := 5000
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists notifications_push on public.notifications;
+create trigger notifications_push
+  after insert on public.notifications
+  for each row execute function public.declenche_push();

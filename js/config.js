@@ -8,6 +8,12 @@
 export const SUPABASE_URL = "https://bdqbrdoorqcxutfojgze.supabase.co";
 export const SUPABASE_KEY = "sb_publishable_4LtKdowLhCiBJIbBfpuhqg_fgFU-2nQ";
 
+// Clé publique des notifications poussées. Publique par construction : elle
+// sert au navigateur à chiffrer son abonnement pour nous. La clé privée, elle,
+// ne vit que dans les secrets Supabase.
+export const VAPID_PUBLIC_KEY =
+  "BFj3KbIfVcz9r009qWPPPvquWVMxzeS7QY0eLWhlvW0iETZ7ffQVvz0WrimaW8dIkZt93PRUMor6zl_Z6v0X47s";
+
 export const PHOTO_BUCKET = "preuves";
 export const PORTRAIT_BUCKET = "profils";
 

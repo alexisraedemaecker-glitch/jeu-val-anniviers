@@ -170,7 +170,7 @@ create index if not exists post_comments_post_idx on public.post_comments (post_
 create table if not exists public.notifications (
   id             uuid primary key default gen_random_uuid(),
   participant_id uuid not null references public.participants(id) on delete cascade,
-  kind           text not null check (kind in ('kudo','commentaire','mention','reponse')),
+  kind           text not null check (kind in ('kudo','commentaire','mention','reponse','defi')),
   post_id        uuid references public.posts(id) on delete cascade,
   comment_id     uuid references public.post_comments(id) on delete cascade,
   actor_id       uuid references public.participants(id) on delete cascade,
@@ -179,6 +179,23 @@ create table if not exists public.notifications (
 );
 create index if not exists notifications_pour_idx
   on public.notifications (participant_id, read_at, created_at desc);
+
+-- Abonnements aux notifications poussees. Un appareil par ligne : la meme
+-- personne peut avoir son telephone et son ordinateur. L'endpoint est l'adresse
+-- que le navigateur nous donne pour la joindre, les deux cles servent a
+-- chiffrer le message pour cet appareil la et pour lui seul.
+create table if not exists public.push_subscriptions (
+  endpoint       text primary key,
+  participant_id uuid not null references public.participants(id) on delete cascade,
+  p256dh         text not null,
+  auth           text not null,
+  user_agent     text,
+  created_at     timestamptz not null default now(),
+  last_seen      timestamptz not null default now(),
+  echecs         int not null default 0
+);
+create index if not exists push_subscriptions_participant_idx
+  on public.push_subscriptions (participant_id);
 
 -- Chaque defi deja valide avant l'arrivee du fil recoit sa publication, pour
 -- que le fil et l'album racontent la journee en entier.

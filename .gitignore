@@ -19,6 +19,7 @@ tmp/
 
 # Fichiers SQL locaux contenant des secrets
 supabase/*.local.sql
+supabase/*.local.json
 
 # Python
 __pycache__/

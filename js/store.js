@@ -6,6 +6,7 @@ import {
   SUPABASE_KEY,
   PHOTO_BUCKET,
   PORTRAIT_BUCKET,
+  VAPID_PUBLIC_KEY,
   SYNC_INTERVAL_MS,
   POLL_INTERVAL_MS
 } from "./config.js";
@@ -40,6 +41,8 @@ export const state = {
   posts: [],
   postsLoaded: false,
   notifications: [],
+  // Notifications poussées : "possible", "refusé", "actif" ou "impossible".
+  pushEtat: "possible",
   lockouts: [],
   localLockouts: readLocalLockouts(),
   lockoutMinutes: 30,
@@ -255,6 +258,94 @@ export async function refreshPosts() {
   } catch (err) {
     console.warn("Fil indisponible", err);
   }
+}
+
+// ------------------------------------------------- notifications poussées
+
+function cleVersOctets(base64) {
+  const base = (base64 + "=".repeat((4 - (base64.length % 4)) % 4))
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const brut = atob(base);
+  const out = new Uint8Array(brut.length);
+  for (let i = 0; i < brut.length; i += 1) out[i] = brut.charCodeAt(i);
+  return out;
+}
+
+export function pushDisponible() {
+  return (
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window
+  );
+}
+
+/** Regarde où on en est, sans rien demander à personne. */
+export async function etatPush() {
+  if (!pushDisponible()) return "impossible";
+  if (Notification.permission === "denied") return "refusé";
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const ab = await reg.pushManager.getSubscription();
+    if (ab && Notification.permission === "granted") return "actif";
+  } catch (err) {
+    return "impossible";
+  }
+  return "possible";
+}
+
+export async function rafraichirEtatPush() {
+  const etat = await etatPush();
+  if (etat !== state.pushEtat) setState({ pushEtat: etat });
+  return etat;
+}
+
+/**
+ * Demande l'autorisation puis enregistre l'appareil. Doit partir d'un geste de
+ * la personne : les navigateurs refusent la demande autrement, et iPhone ne
+ * l'accepte que depuis une application ajoutée à l'écran d'accueil.
+ */
+export async function activerPush() {
+  if (!state.me) throw new Error("Identifiez vous d'abord");
+  if (!pushDisponible()) {
+    throw new Error("Ce navigateur ne sait pas afficher de notifications");
+  }
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    setState({ pushEtat: permission === "denied" ? "refusé" : "possible" });
+    throw new Error("Notifications refusées. Vous pouvez les réactiver dans les réglages du téléphone");
+  }
+  const reg = await navigator.serviceWorker.ready;
+  let ab = await reg.pushManager.getSubscription();
+  if (!ab) {
+    ab = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: cleVersOctets(VAPID_PUBLIC_KEY)
+    });
+  }
+  const json = ab.toJSON();
+  const { error } = await sb.rpc("save_push_subscription", {
+    p_participant: state.me.id,
+    p_endpoint: ab.endpoint,
+    p_p256dh: json.keys.p256dh,
+    p_auth: json.keys.auth,
+    p_agent: navigator.userAgent
+  });
+  if (error) throw new Error(friendly(error));
+  setState({ pushEtat: "actif", toast: { kind: "success", text: "Notifications activées" } });
+  return true;
+}
+
+export async function desactiverPush() {
+  if (!pushDisponible()) return;
+  const reg = await navigator.serviceWorker.ready;
+  const ab = await reg.pushManager.getSubscription();
+  if (ab) {
+    await sb.rpc("delete_push_subscription", { p_endpoint: ab.endpoint });
+    await ab.unsubscribe();
+  }
+  setState({ pushEtat: "possible", toast: { kind: "success", text: "Notifications coupées" } });
 }
 
 export function unreadCount() {
@@ -979,6 +1070,7 @@ export async function boot() {
   // Une fois au demarrage, pour que la pastille de notifications soit juste
   // des la premiere seconde. Ensuite le temps reel s'en charge.
   refreshPosts();
+  rafraichirEtatPush();
   connectRealtime();
   checkSilentSynergies();
   setState({ booted: true });

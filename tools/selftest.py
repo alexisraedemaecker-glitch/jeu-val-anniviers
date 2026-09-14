@@ -680,7 +680,52 @@ check("la jauge Montagne revient à son point de départ",
       gauge(state(), "montagne")["points"] == avant_montagne,
       f"avant {avant_montagne}, après {gauge(state(), 'montagne')['points']}")
 
-print("\n=== 15. Cohérence des vues ===")
+print("\n=== 15. Notifications poussées ===")
+FAUX_ENDPOINT = "https://fcm.googleapis.com/fcm/send/zztest-" + str(uuid.uuid4())
+st, d = rpc("save_push_subscription", {
+    "p_participant": A, "p_endpoint": FAUX_ENDPOINT,
+    "p_p256dh": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4",
+    "p_auth": "BTBZMqHH6r4Tts7J_aSIgg", "p_agent": "selftest"})
+check("un appareil peut s'abonner", st == 200, str(d))
+st, d = rpc("a_un_abonnement_push", {"p_participant": A})
+check("l'abonnement est visible par son propriétaire", st == 200 and d is True, str(d))
+
+st, d = call("/rest/v1/push_subscriptions?select=*")
+check("le navigateur ne peut pas lire les abonnements des autres",
+      st >= 400 or d == [], f"{st} {str(d)[:100]}")
+st, d = rpc("push_a_envoyer", {"p_notification": str(uuid.uuid4())})
+check("la préparation d'un envoi n'est pas exposée au navigateur", st >= 400, str(d)[:80])
+st, d = rpc("push_echec", {"p_endpoint": FAUX_ENDPOINT})
+check("le marquage d'échec non plus", st >= 400, str(d)[:80])
+
+st, d = rpc("save_push_subscription", {
+    "p_participant": B, "p_endpoint": FAUX_ENDPOINT,
+    "p_p256dh": "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4",
+    "p_auth": "BTBZMqHH6r4Tts7J_aSIgg"})
+st, d = rpc("a_un_abonnement_push", {"p_participant": A})
+check("un appareil qui change de main suit son nouveau propriétaire", st == 200 and d is False, str(d))
+
+st, d = rpc("delete_push_subscription", {"p_endpoint": FAUX_ENDPOINT})
+st, d = rpc("a_un_abonnement_push", {"p_participant": B})
+check("se désabonner retire bien l'appareil", st == 200 and d is False, str(d))
+
+# Un defi valide avec quelqu'un doit le prevenir, meme s'il n'a pas touche au
+# telephone.
+cid = str(uuid.uuid4())
+st, d = rpc("submit_challenge", {"p_client_id": cid, "p_challenge_id": "les-salaisons-danniviers",
+                                 "p_submitter": A, "p_member_ids": [B]})
+sub_salaisons = d.get("submission_id") if st == 200 else None
+st, d = rpc("feed_state", {"p_participant": B})
+check("un défi validé avec vous vous est notifié",
+      any(n["kind"] == "defi" for n in (d.get("notifications") or [])),
+      str([n["kind"] for n in (d.get("notifications") or [])]))
+st, d = rpc("feed_state", {"p_participant": A})
+check("celui qui valide ne se notifie pas lui même",
+      not any(n["kind"] == "defi" for n in (d.get("notifications") or [])),
+      str([n["kind"] for n in (d.get("notifications") or [])]))
+rpc("delete_submission", {"p_submission": sub_salaisons, "p_pin": PIN})
+
+print("\n=== 16. Cohérence des vues ===")
 st_now = state()
 check("les cinq jauges sont présentes", len(st_now["gauges"]) == 5, str(len(st_now["gauges"])))
 check(
@@ -701,7 +746,7 @@ check("un défi inconnu est refusé", st >= 400, str(d))
 
 # ---------------------------------------------------------------- nettoyage
 if "--keep" not in sys.argv:
-    print("\n=== 16. Nettoyage ===")
+    print("\n=== 17. Nettoyage ===")
     sys.path.insert(0, str(ROOT / "tools"))
     import apply_sql
 
