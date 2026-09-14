@@ -439,6 +439,15 @@ textarea {
 .modal .learn { margin-top: .7rem; padding: .7rem; border-radius: 11px; background: #f3eef7; font-size: .9rem; }
 .modal .bonus { margin-top: .7rem; display: flex; gap: .4rem; flex-wrap: wrap; }
 
+/* Le recit complet. Paragraphes aeres, premiere ligne en date de bascule. */
+.modal.recit { padding: 1.3rem 1.2rem 1.1rem; }
+.modal.recit p { font-size: 1rem; line-height: 1.55; margin: 0 0 1.05em; }
+.modal.recit .recit-ouverture {
+  font-size: 2rem; font-weight: 800; letter-spacing: -.02em;
+  color: var(--accent); margin-bottom: .8rem;
+}
+.modal.recit p:last-of-type { font-weight: 650; }
+
 @media (min-width: 560px) { .modal-back { align-items: center; } }
 
 /* ------------------------------------------------------------------ toast */

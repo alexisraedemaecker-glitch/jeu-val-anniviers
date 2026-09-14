@@ -10,6 +10,7 @@ const { html, useState, useMemo, useEffect, useRef } = window.htmPreact;
 import { state, signIn, uploadPortrait, friendly } from "../store.js";
 import { STYLES } from "../data/pillars.js";
 import { PALIERS_VALLEE } from "../data/vallee.js";
+import { HISTOIRE } from "../data/histoire.js";
 import { Banner, Spinner, Avatar, PhotoZoom, Frag } from "./bits.js";
 
 // Duree d'affichage d'une image, puis duree du fondu. Six images, donc un tour
@@ -178,6 +179,36 @@ function ChampCode({ code, setCode, nouveau }) {
   </label>`;
 }
 
+/**
+ * Le recit complet, dans sa propre fenetre. Le texte vient de
+ * js/data/histoire.js et n'est pas retouche ici : la premiere ligne prend
+ * seulement la place d'un titre, le reste garde ses paragraphes.
+ */
+function Histoire({ onFermer }) {
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onFermer();
+    }
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  return html`<div class="modal-back" onClick=${(e) => { if (e.target === e.currentTarget) onFermer(); }}>
+    <div class="modal recit" role="dialog" aria-modal="true" aria-label="L'histoire complète">
+      ${HISTOIRE.map((para, i) =>
+        i === 0
+          ? html`<p key=${i} class="recit-ouverture">${para}</p>`
+          : html`<p key=${i}>${para}</p>`
+      )}
+      <button class="btn block" onClick=${onFermer}>Fermer</button>
+    </div>
+  </div>`;
+}
+
 export function Onboarding() {
   const [mode, setMode] = useState("liste");
   const [search, setSearch] = useState("");
@@ -194,8 +225,9 @@ export function Onboarding() {
   // Diaporama d'arriere plan et photo ouverte en grand.
   const [vue, setVue] = useState(0);
   const [plein, setPlein] = useState(null);
-  // Le recit complet est replie par defaut : sur un telephone, un long texte
-  // recouvrirait justement les photos que l'on veut faire voir.
+  // Le recit complet s'ouvre dans sa propre fenetre : sur un telephone, le
+  // derouler dans la carte recouvrirait justement les photos que l'on veut
+  // faire voir, et le texte se lit mieux seul.
   const [histoire, setHistoire] = useState(false);
 
   useEffect(() => () => apercu && URL.revokeObjectURL(apercu), [apercu]);
@@ -306,27 +338,12 @@ export function Onboarding() {
         Nous sommes en 2056 et la vallée s'est dégradée. Vous intervenez depuis 2026 pour lui
         rendre ce qui fait sa richesse. Commencez par vous identifier.
       </p>
-      ${histoire
-        ? html`<${Frag}>
-            <p class="muted small">
-              Les glaciers ont reculé, les alpages se sont vidés, une partie de la mémoire locale
-              s'est effacée. Votre mission est de redécouvrir ce qui rend cette vallée riche, et de
-              la faire remonter.
-            </p>
-            <p class="muted small">
-              Chacun joue en son nom. Les groupes se forment et se déforment librement au fil de la
-              journée.
-            </p>
-            <p class="tiny faint">
-              En fond défilent les six états de la vallée, du plus abandonné au plus vivant. C'est
-              ce chemin que la journée doit parcourir.
-            </p>
-          <//>`
-        : null}
-      <button class="btn sm ghost" type="button" onClick=${() => setHistoire(!histoire)}>
-        ${histoire ? "Masquer l'histoire" : "Lire l'histoire en entier"}
+      <button class="btn sm ghost" type="button" onClick=${() => setHistoire(true)}>
+        Découvrir l'histoire complète
       </button>
     </div>
+
+    ${histoire ? html`<${Histoire} onFermer=${() => setHistoire(false)} />` : null}
 
     ${error ? html`<${Banner} kind="bad">${error}<//>` : null}
     ${state.loadError

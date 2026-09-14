@@ -86,6 +86,18 @@ Changer de photo passe par `set_photo`. L'ancienne devient orpheline et
 `portrait_est_orphelin` autorise alors sa suppression depuis le navigateur,
 exactement comme pour les photos de défi.
 
+## Le récit complet
+
+Le texte du jeu vit dans `js/data/histoire.js`, repris mot pour mot, et
+s'ouvre dans sa propre fenêtre depuis l'écran d'identification, par le bouton
+`Découvrir l'histoire complète`. Le texte court de la carte d'accueil reste
+tel quel : c'est lui qu'on lit en trois secondes avant de s'inscrire.
+
+Le découpage en paragraphes est celui de l'original et fait partie du rythme.
+À l'intérieur d'un paragraphe, en revanche, le texte se replie selon la
+largeur de l'écran : une coupure fixe en plein milieu d'une phrase tomberait
+n'importe où sur un téléphone.
+
 ## L'icône de l'application
 
 La photo posée dans `Icones/` sous un nom commençant par `logo` devient l'icône
