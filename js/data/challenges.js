@@ -1,9 +1,9 @@
-// Catalogue complet des 39 defis. Source de verite partagee avec le seed SQL.
+// Catalogue complet des 45 defis. Source de verite partagee avec le seed SQL.
 // Le bloc ci dessous est du JSON strict pour pouvoir etre relu par le script de seed.
 // Regle de redaction : aucun tiret dans les textes affiches aux joueurs.
 export const CHALLENGES = /* json */ [
 
-  /* ============ PILIER 1. MONTAGNE ET GLACIERS (12) ============ */
+  /* ============ PILIER 1. MONTAGNE ET GLACIERS (15) ============ */
 
   {
     "id": "panorama-nomme",
@@ -30,14 +30,14 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Quel sommet de la Couronne est le plus haut, avec 4506 mètres ?",
-        "options": ["Le Bishorn", "Le Zinalrothorn", "Le Weisshorn", "La Dent Blanche"],
-        "answer": 2,
+        "options": ["Le Bishorn", "Le Weisshorn", "Le Zinalrothorn", "La Dent Blanche"],
+        "answer": 1,
         "why": "Le Weisshorn culmine à 4506 mètres, c'est le point le plus élevé visible depuis la vallée."
       },
       {
         "q": "À quelle altitude culmine la Dent Blanche ?",
-        "options": ["4506 mètres", "4634 mètres", "3890 mètres", "4357 mètres"],
-        "answer": 3,
+        "options": ["4506 mètres", "4634 mètres", "4357 mètres", "3890 mètres"],
+        "answer": 2,
         "why": "4357 mètres. Sa silhouette en pyramide est reconnaissable de très loin."
       }
     ]
@@ -68,14 +68,14 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Que désigne le mot bisse ?",
-        "options": ["Un canal d'irrigation à ciel ouvert", "Un col de montagne", "Un grenier sur pilotis", "Une vache de race d'Hérens"],
-        "answer": 0,
+        "options": ["Un col de montagne", "Un canal d'irrigation à ciel ouvert", "Un grenier sur pilotis", "Une vache de race d'Hérens"],
+        "answer": 1,
         "why": "Les bisses conduisent l'eau des torrents vers les prés et les vignes, parfois sur des kilomètres."
       },
       {
         "q": "Et un raccard ?",
-        "options": ["Une étable en pierre", "Une chapelle de hameau", "Un grenier à céréales en bois monté sur pilotis", "Un four à pain communal"],
-        "answer": 2,
+        "options": ["Une étable en pierre", "Un grenier à céréales en bois monté sur pilotis", "Une chapelle de hameau", "Un four à pain communal"],
+        "answer": 1,
         "why": "Le raccard abritait le grain et le pain. Ses pilotis sont coiffés de dalles plates pour arrêter les rongeurs."
       }
     ]
@@ -100,20 +100,20 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "À partir de quelle année le gypaète barbu a t il été réintroduit dans les Alpes ?",
-        "options": ["1986", "2001", "1978", "1952"],
-        "answer": 0,
+        "options": ["2001", "1978", "1952", "1986"],
+        "answer": 3,
         "why": "Les premiers lâchers ont eu lieu en 1986, huit ans après le lancement du projet international."
       },
       {
         "q": "De quoi se nourrit principalement le gypaète barbu ?",
-        "options": ["De jeunes marmottes vivantes", "D'os et de carcasses", "De baies et de graines", "De poissons de torrent"],
-        "answer": 1,
+        "options": ["De jeunes marmottes vivantes", "De baies et de graines", "D'os et de carcasses", "De poissons de torrent"],
+        "answer": 2,
         "why": "C'est le seul oiseau au monde spécialisé dans les os. Il les laisse tomber sur les rochers pour les briser."
       },
       {
         "q": "Comment le bouquetin a t il réapparu en Suisse au début du vingtième siècle ?",
-        "options": ["Par élevage en parc zoologique allemand", "Par migration naturelle depuis l'Autriche", "Par réintroduction d'animaux venus du Grand Paradis en Italie", "Il n'avait jamais disparu de Suisse"],
-        "answer": 2,
+        "options": ["Par élevage en parc zoologique allemand", "Par migration naturelle depuis l'Autriche", "Il n'avait jamais disparu de Suisse", "Par réintroduction d'animaux venus du Grand Paradis en Italie"],
+        "answer": 3,
         "why": "Quelques animaux venus du massif du Grand Paradis ont servi de souche à toutes les colonies suisses actuelles."
       }
     ]
@@ -138,20 +138,20 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "À quoi sert le duvet blanc qui recouvre l'edelweiss ?",
-        "options": ["Stocker l'eau de pluie", "La protéger des UV et du froid", "Attirer les abeilles de nuit", "Repousser les bouquetins"],
-        "answer": 1,
+        "options": ["Stocker l'eau de pluie", "Attirer les abeilles de nuit", "La protéger des UV et du froid", "Repousser les bouquetins"],
+        "answer": 2,
         "why": "Ce feutrage fait office de crème solaire et de manteau. À 2500 mètres, les UV sont bien plus agressifs qu'en plaine."
       },
       {
         "q": "Pour quel usage principal l'edelweiss est il cultivé en Valais aujourd'hui ?",
-        "options": ["La fabrication de fromage", "L'alimentation du bétail", "La teinture des tissus", "L'industrie cosmétique"],
-        "answer": 3,
+        "options": ["La fabrication de fromage", "L'alimentation du bétail", "L'industrie cosmétique", "La teinture des tissus"],
+        "answer": 2,
         "why": "Ses molécules antioxydantes intéressent les fabricants de crèmes. La culture évite aussi la cueillette sauvage."
       },
       {
         "q": "Le génépi est traditionnellement utilisé pour préparer quoi ?",
-        "options": ["Un fumage pour la viande séchée", "Une liqueur de plantes alpines", "Un mortier pour les murs d'alpage", "Une teinture pour la laine"],
-        "answer": 1,
+        "options": ["Un fumage pour la viande séchée", "Un mortier pour les murs d'alpage", "Une teinture pour la laine", "Une liqueur de plantes alpines"],
+        "answer": 3,
         "why": "On le fait macérer dans l'alcool. C'est un savoir faire directement lié à l'agriculture de montagne."
       }
     ]
@@ -176,8 +176,8 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Quel pain se conservait plusieurs mois et accompagnait les bergers en altitude ?",
-        "options": ["Le pain au lait", "La baguette blanche", "Le pain de seigle", "La brioche de fête"],
-        "answer": 2,
+        "options": ["Le pain au lait", "Le pain de seigle", "La baguette blanche", "La brioche de fête"],
+        "answer": 1,
         "why": "Dense et peu hydraté, le pain de seigle valaisan durcit mais ne moisit pas. On le coupait à la lame fixe."
       },
       {
@@ -188,8 +188,8 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Où les familles stockaient elles ces réserves au village ?",
-        "options": ["Dans le clocher de l'église", "Dans un grenier sur pilotis coiffé de dalles de pierre", "Dans une cave creusée sous le torrent", "Dans l'étable avec les bêtes"],
-        "answer": 1,
+        "options": ["Dans le clocher de l'église", "Dans une cave creusée sous le torrent", "Dans l'étable avec les bêtes", "Dans un grenier sur pilotis coiffé de dalles de pierre"],
+        "answer": 3,
         "why": "Les dalles rondes au sommet des pilotis empêchaient les rongeurs d'atteindre les provisions."
       }
     ]
@@ -214,20 +214,20 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Où pousse principalement le génépi ?",
-        "options": ["Dans les vignes du coteau", "Au bord des torrents en plaine", "Dans les forêts de feuillus", "Dans les éboulis et les rocailles d'altitude"],
-        "answer": 3,
+        "options": ["Dans les vignes du coteau", "Au bord des torrents en plaine", "Dans les éboulis et les rocailles d'altitude", "Dans les forêts de feuillus"],
+        "answer": 2,
         "why": "Il faut monter haut, souvent au dessus de 2000 mètres, dans les pierriers. C'est ce qui rend la cueillette longue."
       },
       {
         "q": "Comment fabrique t on traditionnellement la liqueur de génépi ?",
-        "options": ["En faisant fermenter les feuilles dans du petit lait", "En laissant macérer les tiges fleuries dans de l'alcool avec du sucre", "En faisant bouillir les racines dans du lait", "En pressant les fleurs comme du raisin"],
-        "answer": 1,
+        "options": ["En faisant fermenter les feuilles dans du petit lait", "En faisant bouillir les racines dans du lait", "En pressant les fleurs comme du raisin", "En laissant macérer les tiges fleuries dans de l'alcool avec du sucre"],
+        "answer": 3,
         "why": "Quelques tiges, de l'alcool, du sucre, plusieurs semaines de patience. Chaque famille avait son dosage."
       },
       {
         "q": "Pourquoi la cueillette de cette plante est elle réglementée ?",
-        "options": ["Parce qu'elle attire les bouquetins", "Parce qu'elle pousse lentement et se régénère mal", "Parce qu'elle est toxique avant la floraison", "Parce qu'elle appartient aux consortages"],
-        "answer": 1,
+        "options": ["Parce qu'elle attire les bouquetins", "Parce qu'elle est toxique avant la floraison", "Parce qu'elle appartient aux consortages", "Parce qu'elle pousse lentement et se régénère mal"],
+        "answer": 3,
         "why": "Une touffe met des années à s'installer dans un pierrier. Une cueillette trop franche ne repousse pas."
       }
     ]
@@ -252,8 +252,8 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Quelle part de leur volume les glaciers suisses ont ils perdu entre 2015 et 2025 ?",
-        "options": ["Presque rien", "Environ la moitié", "Environ un quart", "Environ 5 pourcent"],
-        "answer": 2,
+        "options": ["Environ un quart", "Presque rien", "Environ la moitié", "Environ 5 pourcent"],
+        "answer": 0,
         "why": "Un quart en dix ans, contre 17 pourcent sur la décennie précédente. La perte s'accélère."
       },
       {
@@ -264,8 +264,8 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Qu'est ce qu'une moraine ?",
-        "options": ["Un canal d'irrigation en bois", "Un pâturage de haute altitude", "Un lac de barrage artificiel", "Un amas de roches et de débris déposé par un glacier"],
-        "answer": 3,
+        "options": ["Un canal d'irrigation en bois", "Un pâturage de haute altitude", "Un amas de roches et de débris déposé par un glacier", "Un lac de barrage artificiel"],
+        "answer": 2,
         "why": "Les moraines marquent la position d'un glacier disparu. Elles donnent sa taille d'avant, en vrai, sur le terrain."
       }
     ]
@@ -296,8 +296,8 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Que sont les roches moutonnées qu'on observe près des anciens glaciers ?",
-        "options": ["Des concrétions formées par l'eau du bisse", "Des roches polies et arrondies par le passage de la glace", "Des blocs taillés par les bergers", "Des restes de murs d'alpage"],
-        "answer": 1,
+        "options": ["Des concrétions formées par l'eau du bisse", "Des blocs taillés par les bergers", "Des roches polies et arrondies par le passage de la glace", "Des restes de murs d'alpage"],
+        "answer": 2,
         "why": "La glace chargée de cailloux agit comme du papier de verre. Elle laisse des dalles lisses et striées."
       },
       {
@@ -372,14 +372,14 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Que risque t il d'arriver aux glaciers suisses d'ici la fin du siècle si rien ne change côté climat ?",
-        "options": ["Ils devraient regagner du volume", "Ils devraient se stabiliser", "Ils seront recouverts de forêt", "Ils pourraient avoir presque entièrement disparu"],
-        "answer": 3,
+        "options": ["Ils devraient regagner du volume", "Ils devraient se stabiliser", "Ils pourraient avoir presque entièrement disparu", "Ils seront recouverts de forêt"],
+        "answer": 2,
         "why": "C'est le scénario central des projections actuelles à politique inchangée."
       },
       {
         "q": "Comment reconnaît on sur le terrain jusqu'où montait le glacier autrefois ?",
-        "options": ["À la couleur de l'eau du torrent", "Aux bornes posées par les consortages", "À la présence d'edelweiss", "Aux moraines et à la roche polie encore sans végétation"],
-        "answer": 3,
+        "options": ["À la couleur de l'eau du torrent", "Aux bornes posées par les consortages", "Aux moraines et à la roche polie encore sans végétation", "À la présence d'edelweiss"],
+        "answer": 2,
         "why": "La zone libérée depuis peu reste grise et nue. La végétation met des décennies à s'y installer."
       }
     ]
@@ -410,8 +410,8 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Pourquoi l'eau des torrents glaciaires est elle souvent grise et laiteuse ?",
-        "options": ["Parce qu'elle contient du calcaire dissous", "Parce qu'elle transporte une fine farine de roche broyée par la glace", "Parce qu'elle est mélangée à de la neige fondue", "Parce qu'elle reflète le ciel"],
-        "answer": 1,
+        "options": ["Parce qu'elle contient du calcaire dissous", "Parce qu'elle est mélangée à de la neige fondue", "Parce qu'elle reflète le ciel", "Parce qu'elle transporte une fine farine de roche broyée par la glace"],
+        "answer": 3,
         "why": "On appelle ça la farine glaciaire. Le glacier broie la roche sous lui en une poudre très fine."
       },
       {
@@ -442,21 +442,136 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "À 2500 mètres, la pression atmosphérique représente environ quelle part de celle du niveau de la mer ?",
-        "options": ["Trois quarts", "La même", "Un quart", "La moitié"],
-        "answer": 0,
+        "options": ["La même", "Trois quarts", "Un quart", "La moitié"],
+        "answer": 1,
         "why": "Environ trois quarts. C'est déjà assez pour qu'on sente le souffle plus court à l'effort."
       },
       {
         "q": "Pourquoi la limite des arbres se situe elle vers 2200 à 2400 mètres dans les Alpes valaisannes ?",
-        "options": ["Parce que la saison de croissance devient trop courte et trop froide", "Parce que les bergers les ont tous coupés", "Parce que le sol y est toujours rocheux", "Parce que le vent y souffle en permanence"],
-        "answer": 0,
+        "options": ["Parce que les bergers les ont tous coupés", "Parce que la saison de croissance devient trop courte et trop froide", "Parce que le sol y est toujours rocheux", "Parce que le vent y souffle en permanence"],
+        "answer": 1,
         "why": "Un arbre a besoin de plusieurs mois au dessus d'un certain seuil de chaleur pour former du bois. Plus haut, il n'y arrive plus."
       },
       {
         "q": "Que désigne un col, en montagne ?",
-        "options": ["Le sommet le plus élevé d'une chaîne", "Un point de passage bas entre deux sommets", "Une paroi verticale", "Un replat où l'on fait paître les bêtes"],
-        "answer": 1,
+        "options": ["Le sommet le plus élevé d'une chaîne", "Une paroi verticale", "Un replat où l'on fait paître les bêtes", "Un point de passage bas entre deux sommets"],
+        "answer": 3,
         "why": "C'est par les cols que passaient les chemins. Ils ont façonné toute la géographie des échanges alpins."
+      }
+    ]
+  },
+
+  {
+    "id": "lobservatoire-de-tignousa",
+    "pillar": "montagne",
+    "name": "L'observatoire de Tignousa",
+    "style": "chill",
+    "tier": "decouverte",
+    "points": 10,
+    "location_kind": "precise",
+    "location_detail": "Tignousa, au sommet du funiculaire de Saint Luc, à 2200 mètres",
+    "branch": "les deux branches",
+    "duration": "30 minutes sur place",
+    "brief": "Montez à Tignousa et trouvez la coupole de l'observatoire. Repérez aussi le départ du Chemin des Planètes, juste à côté, et la première borne du système solaire. Regardez dans quelle direction s'ouvre le ciel depuis ce balcon.",
+    "savoir": "L'Observatoire François Xavier Bagnoud a ouvert en 1995 à 2200 mètres. Son télescope principal de 60 centimètres est l'un des plus grands accessibles au public en Suisse. Il abrite aussi un télescope de 15 centimètres, un héliostat pour observer le Soleil et un planétarium. Depuis ce petit observatoire de vallée, une exoplanète déjà connue, HD 189733 b, a été détectée et mesurée par la méthode des transits, c'est à dire en guettant la baisse de lumière quand la planète passe devant son étoile.",
+    "proof": "photo_quiz",
+    "photo_hint": "Une photo du groupe du moment devant la coupole, ou devant une borne du Chemin des Planètes.",
+    "note_label": "Ce que vous voyez d'ici, et dans quelle direction le ciel s'ouvre le mieux",
+    "quiz": [
+      {
+        "q": "Quel diamètre fait le télescope principal de l'observatoire ?",
+        "options": ["60 centimètres", "15 centimètres", "5 centimètres", "2 mètres"],
+        "answer": 0,
+        "why": "Soixante centimètres, l'un des plus grands télescopes ouverts au public en Suisse."
+      },
+      {
+        "q": "Qu'a réussi à détecter cet observatoire de vallée ?",
+        "options": ["Une comète encore inconnue", "Un nouveau satellite de Jupiter", "Une exoplanète, par la baisse de lumière de son étoile", "Une étoile en train de naître"],
+        "answer": 2,
+        "why": "HD 189733 b, repérée par la méthode des transits, la planète passant devant son étoile."
+      },
+      {
+        "q": "En quelle année l'observatoire a t il ouvert à Tignousa ?",
+        "options": ["1969", "2015", "1995", "1888"],
+        "answer": 2,
+        "why": "1995. Le Chemin des Planètes, lui, date de 1989."
+      }
+    ]
+  },
+
+  {
+    "id": "les-champignons-de-la-vallee",
+    "pillar": "montagne",
+    "name": "Les champignons de la vallée",
+    "style": "chill",
+    "tier": "decouverte",
+    "points": 10,
+    "location_kind": "libre",
+    "location_detail": "Dans les forêts de mélèzes et d'épicéas, n'importe où dans la vallée",
+    "branch": "les deux branches",
+    "duration": "30 minutes",
+    "brief": "Trouvez et photographiez trois champignons différents, sans y toucher. Regardez le pied, le dessous du chapeau, l'arbre au pied duquel il pousse, et essayez de les nommer, même approximativement.",
+    "alerte": "Ce défi se joue à l'œil et à l'appareil photo. On ne cueille pas, on ne goûte pas, on ne rapporte rien. Plusieurs espèces mortelles ressemblent beaucoup à des espèces comestibles, et seul un contrôleur officiel des champignons peut dire si une récolte est sûre.",
+    "savoir": "Ce qui dépasse du sol n'est que le fruit du champignon. L'essentiel vit dessous, en un réseau de filaments qui peut couvrir plusieurs hectares. La plupart des espèces de montagne vivent en échange avec les arbres : le champignon apporte de l'eau et des minéraux aux racines du mélèze ou de l'épicéa, l'arbre lui donne en retour les sucres qu'il fabrique. Le Valais reste l'un des rares cantons romands sans limite de quantité ni jour d'interdiction, mais les règles communales et les zones protégées s'appliquent partout.",
+    "proof": "photo_quiz",
+    "photo_hint": "Une photo de chacun de vos champignons, ou une photo du groupe à côté du plus beau, sans y toucher.",
+    "note_label": "Les trois champignons repérés, et l'arbre au pied duquel poussait chacun",
+    "quiz": [
+      {
+        "q": "Ce qui dépasse du sol, dans un champignon, c'est quoi ?",
+        "options": ["Un animal endormi", "Toute la plante", "Le fruit, l'essentiel vivant sous terre", "Une racine d'arbre malade"],
+        "answer": 2,
+        "why": "Le réseau de filaments sous le sol peut couvrir plusieurs hectares et vivre des décennies."
+      },
+      {
+        "q": "Qu'échangent un champignon de montagne et le mélèze à son pied ?",
+        "options": ["Le champignon apporte eau et minéraux, l'arbre donne ses sucres", "Le champignon protège l'arbre du gel", "Rien du tout, ils se gênent", "L'arbre lui donne de l'ombre contre un loyer"],
+        "answer": 0,
+        "why": "C'est une association à bénéfice partagé, entre les racines de l'arbre et les filaments du champignon."
+      },
+      {
+        "q": "Qui peut dire si une récolte de champignons est propre à la consommation ?",
+        "options": ["Une application de reconnaissance photo", "Un contrôleur officiel des champignons", "Le restaurateur du village", "N'importe quel guide de montagne"],
+        "answer": 1,
+        "why": "Les contrôleurs agréés sont là pour ça, et eux seuls. Dans le doute, on ne mange pas."
+      }
+    ]
+  },
+
+  {
+    "id": "lillgraben",
+    "pillar": "montagne",
+    "name": "L'Illgraben",
+    "style": "sportif",
+    "tier": "experience",
+    "points": 20,
+    "location_kind": "precise",
+    "location_detail": "Le point de vue sur l'Illgraben, à 15 minutes de marche de la Cabane Illhorn",
+    "branch": "aval, vers la plaine",
+    "duration": "1 à 2 heures depuis Chandolin",
+    "brief": "Depuis la Cabane Illhorn, marchez un quart d'heure jusqu'au point de vue qui plonge sur l'Illgraben. Regardez l'entaille, la couleur des roches, le lit du torrent tout en bas, et cherchez les traces des dernières coulées.",
+    "savoir": "L'Illgraben est l'un des torrents les plus actifs des Alpes. Son bassin descend du sommet de l'Illhorn, à 2717 mètres, jusqu'au Rhône, vers 605 mètres. Depuis l'an 2000, l'institut fédéral WSL y mesure les laves torrentielles avec des géophones posés sur deux kilomètres de lit. Il en dévale trois à cinq par an entre mai et octobre, d'un volume moyen de 25 000 mètres cubes, et jusqu'à 100 000 pour la plus grosse mesurée. Tout ce matériel a construit en bas le plus grand cône de déjection de Suisse, qui porte aujourd'hui la pinède du Bois de Finges.",
+    "proof": "photo_quiz",
+    "photo_hint": "Une photo du groupe du moment au point de vue, avec l'entaille de l'Illgraben derrière vous.",
+    "note_label": "Ce que vous voyez des dernières coulées, et la couleur des roches",
+    "quiz": [
+      {
+        "q": "Combien de laves torrentielles dévalent l'Illgraben en moyenne chaque année ?",
+        "options": ["Une tous les dix ans", "Aucune depuis 1950", "Plus de cent", "Trois à cinq, entre mai et octobre"],
+        "answer": 3,
+        "why": "C'est ce qui en fait un laboratoire à ciel ouvert, suivi par le WSL depuis l'an 2000."
+      },
+      {
+        "q": "Jusqu'où descend le bassin de l'Illgraben depuis le sommet de l'Illhorn ?",
+        "options": ["Il s'arrête à 2000 mètres", "Jusqu'au lac de Moiry", "Jusqu'au Rhône, vers 605 mètres", "Jusqu'à Vissoie"],
+        "answer": 2,
+        "why": "Du sommet à 2717 mètres jusqu'à la plaine du Rhône, plus de deux mille mètres de dénivelé."
+      },
+      {
+        "q": "Qu'a construit l'Illgraben au bas de sa course ?",
+        "options": ["Un barrage naturel qui a formé un lac", "Rien, tout part dans le Rhône", "Une moraine glaciaire", "Le plus grand cône de déjection de Suisse, qui porte le Bois de Finges"],
+        "answer": 3,
+        "why": "La pinède du Bois de Finges pousse sur ce cône, et le Rhône a été repoussé contre l'autre versant."
       }
     ]
   },
@@ -488,14 +603,14 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Dans quelle localité la Navizence rejoint elle le Rhône ?",
-        "options": ["Martigny", "Sion", "Chippis", "Sierre"],
-        "answer": 2,
+        "options": ["Chippis", "Martigny", "Sion", "Sierre"],
+        "answer": 0,
         "why": "À Chippis, juste à la sortie de la vallée. Sa force a d'ailleurs attiré l'industrie dès le début du vingtième siècle."
       },
       {
         "q": "Où finit l'eau du Rhône après avoir quitté la Suisse ?",
-        "options": ["En mer du Nord", "En mer Noire", "Dans le Danube", "En mer Méditerranée"],
-        "answer": 3,
+        "options": ["En mer du Nord", "En mer Méditerranée", "En mer Noire", "Dans le Danube"],
+        "answer": 1,
         "why": "De la glace du fond de la vallée à la Méditerranée. Le même litre d'eau fait tout le chemin."
       }
     ]
@@ -526,14 +641,14 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Comment appelle t on l'association de paysans qui gérait un bisse ?",
-        "options": ["Un consortage", "Une confrérie", "Un syndicat", "Une commanderie"],
-        "answer": 0,
+        "options": ["Une confrérie", "Un syndicat", "Un consortage", "Une commanderie"],
+        "answer": 2,
         "why": "Le consortage construisait, entretenait et répartissait. C'est une des plus vieilles formes de gestion collective d'Europe."
       },
       {
         "q": "Quel était le rôle du répartiteur élu par le consortage ?",
-        "options": ["Distribuer l'eau entre les ayants droit selon des règles strictes", "Surveiller les troupeaux à l'alpage", "Entretenir le four à pain", "Percevoir l'impôt communal"],
-        "answer": 0,
+        "options": ["Surveiller les troupeaux à l'alpage", "Entretenir le four à pain", "Percevoir l'impôt communal", "Distribuer l'eau entre les ayants droit selon des règles strictes"],
+        "answer": 3,
         "why": "Il tenait les tours d'eau. Chacun savait quel jour et combien d'heures l'eau était à lui."
       }
     ]
@@ -564,20 +679,20 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Pourquoi le Valais a t il eu besoin de ces canaux ?",
-        "options": ["Parce que c'est l'une des régions les plus sèches de Suisse", "Parce que les pluies y étaient trop violentes", "Parce que les rivières gelaient toute l'année", "Pour faire tourner des moulins à vent"],
-        "answer": 0,
+        "options": ["Parce que les pluies y étaient trop violentes", "Parce que les rivières gelaient toute l'année", "Parce que c'est l'une des régions les plus sèches de Suisse", "Pour faire tourner des moulins à vent"],
+        "answer": 2,
         "why": "Les montagnes arrêtent les pluies. Certaines vallées valaisannes reçoivent moins de 600 millimètres par an."
       },
       {
         "q": "Quelle est la longueur du Grand Bisse de Lens ?",
-        "options": ["120 kilomètres", "14 kilomètres", "45 kilomètres", "2 kilomètres"],
-        "answer": 1,
+        "options": ["14 kilomètres", "120 kilomètres", "45 kilomètres", "2 kilomètres"],
+        "answer": 0,
         "why": "14 kilomètres à flanc de falaise, creusés en deux ans, sans machine."
       },
       {
         "q": "Comment un bisse maintient il un débit régulier sur des kilomètres ?",
-        "options": ["Grâce à des écluses ouvertes chaque matin", "Grâce à des pompes placées tous les cent mètres", "Grâce à une pente très faible et constante", "Grâce à la pression du glacier en amont"],
-        "answer": 2,
+        "options": ["Grâce à une pente très faible et constante", "Grâce à des écluses ouvertes chaque matin", "Grâce à des pompes placées tous les cent mètres", "Grâce à la pression du glacier en amont"],
+        "answer": 0,
         "why": "Quelques millimètres de dénivelé par mètre. Trop peu, l'eau stagne. Trop, elle creuse et emporte tout."
       }
     ]
@@ -602,20 +717,20 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Entre quelles années le barrage de Moiry a t il été construit ?",
-        "options": ["Entre 1995 et 2000", "Entre 1954 et 1958", "Entre 1920 et 1925", "Entre 1975 et 1980"],
-        "answer": 1,
+        "options": ["Entre 1995 et 2000", "Entre 1920 et 1925", "Entre 1954 et 1958", "Entre 1975 et 1980"],
+        "answer": 2,
         "why": "Quatre ans de chantier à 2250 mètres, à une époque où tout montait par des routes provisoires."
       },
       {
         "q": "Quelle est la hauteur du barrage de Moiry ?",
-        "options": ["148 mètres", "40 mètres", "90 mètres", "285 mètres"],
-        "answer": 0,
+        "options": ["40 mètres", "90 mètres", "285 mètres", "148 mètres"],
+        "answer": 3,
         "why": "148 mètres, soit la hauteur d'un immeuble de quarante étages."
       },
       {
         "q": "Combien de ménages les centrales liées à Moiry alimentent elles chaque année ?",
-        "options": ["Environ 12 000", "Plus de 120 000", "Environ 1200", "Plus d'un million"],
-        "answer": 1,
+        "options": ["Environ 12 000", "Environ 1200", "Plus de 120 000", "Plus d'un million"],
+        "answer": 2,
         "why": "Plus de 120 000 ménages, bien plus que toute la population du Valais."
       },
       {
@@ -646,8 +761,8 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Dans quelle rivière le bisse du Ricard prend il sa source ?",
-        "options": ["La Navizence", "Le Rhône", "La Lienne", "La Borgne"],
-        "answer": 0,
+        "options": ["Le Rhône", "La Lienne", "La Navizence", "La Borgne"],
+        "answer": 2,
         "why": "L'eau du Val d'Anniviers irrigue donc des vignes situées en dehors de la vallée."
       },
       {
@@ -658,8 +773,8 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Quels coteaux ce bisse irrigue t il encore aujourd'hui ?",
-        "options": ["Sion et Conthey", "Chippis, Chalais et Réchy", "Zinal et Grimentz", "Martigny et Fully"],
-        "answer": 1,
+        "options": ["Chippis, Chalais et Réchy", "Sion et Conthey", "Zinal et Grimentz", "Martigny et Fully"],
+        "answer": 0,
         "why": "Des centaines d'hectares de vigne, juste à la sortie de la vallée."
       }
     ]
@@ -684,20 +799,20 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "En Valais, à quelle période l'irrigation est elle historiquement la plus nécessaire ?",
-        "options": ["Juste après les vendanges", "Au cœur de l'hiver", "En novembre, avant les gels", "Au printemps et en été, quand l'herbe pousse et qu'il pleut peu"],
-        "answer": 3,
+        "options": ["Au printemps et en été, quand l'herbe pousse et qu'il pleut peu", "Juste après les vendanges", "Au cœur de l'hiver", "En novembre, avant les gels"],
+        "answer": 0,
         "why": "C'est exactement la période où les bisses étaient ouverts, et où les tours d'eau se négociaient le plus durement."
       },
       {
         "q": "Pourquoi un hiver peu enneigé pose t il problème à l'irrigation de l'été suivant ?",
-        "options": ["Parce que la neige fertilise les prairies", "Parce que la neige d'altitude est la réserve qui alimente les torrents au printemps et en été", "Parce que la neige protège les canaux du gel", "Parce qu'elle empêche les bêtes de sortir trop tôt"],
-        "answer": 1,
+        "options": ["Parce que la neige fertilise les prairies", "Parce que la neige protège les canaux du gel", "Parce qu'elle empêche les bêtes de sortir trop tôt", "Parce que la neige d'altitude est la réserve qui alimente les torrents au printemps et en été"],
+        "answer": 3,
         "why": "La neige est un réservoir à libération lente. Sans elle, l'eau arrive trop tôt, toute d'un coup, puis manque."
       },
       {
         "q": "En cas de manque d'eau, quel usage la loi suisse rend elle prioritaire ?",
-        "options": ["La production d'électricité", "L'irrigation des vignes", "L'enneigement artificiel", "L'eau potable pour la population"],
-        "answer": 3,
+        "options": ["La production d'électricité", "L'eau potable pour la population", "L'irrigation des vignes", "L'enneigement artificiel"],
+        "answer": 1,
         "why": "L'alimentation en eau potable passe avant tout le reste. Les autres usages se partagent ce qui reste."
       }
     ]
@@ -722,26 +837,26 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "De combien de mètres un rehaussement du barrage de Moiry est il à l'étude ?",
-        "options": ["50 mètres", "25 mètres", "9 mètres", "2 mètres"],
-        "answer": 2,
+        "options": ["50 mètres", "25 mètres", "2 mètres", "9 mètres"],
+        "answer": 3,
         "why": "Neuf mètres de plus, ce qui augmenterait nettement le volume stocké sans reconstruire le mur."
       },
       {
         "q": "Pourquoi veut on rehausser ce barrage ?",
-        "options": ["Pour élargir la route d'accès", "Pour créer une plage au bord du lac", "Pour protéger Zinal des avalanches", "Pour stocker davantage d'énergie disponible en hiver"],
-        "answer": 3,
+        "options": ["Pour stocker davantage d'énergie disponible en hiver", "Pour élargir la route d'accès", "Pour créer une plage au bord du lac", "Pour protéger Zinal des avalanches"],
+        "answer": 0,
         "why": "L'hiver, la Suisse manque d'électricité. Plus d'eau stockée en altitude, c'est plus de production quand il fait froid."
       },
       {
         "q": "À quelle altitude se trouve le barrage de Moiry ?",
-        "options": ["Environ 2250 mètres", "Environ 1000 mètres", "Environ 3000 mètres", "Environ 1400 mètres"],
-        "answer": 0,
+        "options": ["Environ 1000 mètres", "Environ 2250 mètres", "Environ 3000 mètres", "Environ 1400 mètres"],
+        "answer": 1,
         "why": "2250 mètres, bien au dessus de la limite des arbres."
       },
       {
         "q": "Quel type de barrage est celui de Moiry ?",
-        "options": ["Un barrage gonflable", "Une digue de rochers empilés", "Un barrage voûte en béton, arqué vers l'amont", "Un barrage en terre compactée"],
-        "answer": 2,
+        "options": ["Un barrage voûte en béton, arqué vers l'amont", "Un barrage gonflable", "Une digue de rochers empilés", "Un barrage en terre compactée"],
+        "answer": 0,
         "why": "La voûte reporte la poussée de l'eau sur les flancs rocheux. C'est ce qui permet un mur aussi fin pour 148 mètres de haut."
       }
     ]
@@ -766,26 +881,26 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Où les eaux venues de Zinal et celles venues du Val de Moiry se rejoignent elles ?",
-        "options": ["Elles ne se rejoignent jamais", "Au sommet du barrage de Moiry", "Directement à Chippis", "En aval, vers Vissoie, là où la vallée se resserre en une seule branche"],
-        "answer": 3,
+        "options": ["Elles ne se rejoignent jamais", "En aval, vers Vissoie, là où la vallée se resserre en une seule branche", "Au sommet du barrage de Moiry", "Directement à Chippis"],
+        "answer": 1,
         "why": "Vissoie est le nœud de la vallée. C'est là que les deux branches et les deux eaux se rejoignent."
       },
       {
         "q": "Comment s'appelle le torrent qui descend du Val de Moiry ?",
-        "options": ["La Sionne", "La Borgne", "La Gougra", "La Vispa"],
-        "answer": 2,
+        "options": ["La Gougra", "La Sionne", "La Borgne", "La Vispa"],
+        "answer": 0,
         "why": "La Gougra rejoint la Navizence vers Vissoie. Deux noms pour la même eau, finalement."
       },
       {
         "q": "Pourquoi le niveau de la Navizence monte il fortement en juillet ?",
-        "options": ["Parce que le barrage est vidé chaque été", "Parce que les bisses sont fermés", "Parce que la fonte des neiges et des glaces est à son maximum", "Parce que c'est la saison des pluies en Valais"],
-        "answer": 2,
+        "options": ["Parce que le barrage est vidé chaque été", "Parce que la fonte des neiges et des glaces est à son maximum", "Parce que les bisses sont fermés", "Parce que c'est la saison des pluies en Valais"],
+        "answer": 1,
         "why": "Le régime de cette rivière est glaciaire. Elle est pleine en été et basse en hiver, l'inverse d'une rivière de plaine."
       }
     ]
   },
 
-  /* ============ PILIER 3. VIE ALPINE (7) ============ */
+  /* ============ PILIER 3. VIE ALPINE (9) ============ */
 
   {
     "id": "les-cornes-qui-saffrontent",
@@ -812,14 +927,14 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Ces combats laissent ils habituellement des blessures ?",
-        "options": ["Oui, presque toujours", "Les bêtes sont séparées avant tout contact", "Non, les bêtes se blessent très rarement", "Oui, les cornes sont cassées à chaque fois"],
-        "answer": 2,
+        "options": ["Non, les bêtes se blessent très rarement", "Oui, presque toujours", "Les bêtes sont séparées avant tout contact", "Oui, les cornes sont cassées à chaque fois"],
+        "answer": 0,
         "why": "C'est un comportement naturel et codifié. Les bêtes savent exactement quand s'arrêter."
       },
       {
         "q": "Quelle est la particularité physique de la vache d'Hérens ?",
-        "options": ["Une race petite, trapue et très musclée, adaptée aux fortes pentes", "Elle n'a pas de cornes", "Elle ne supporte pas l'altitude", "La plus grande race laitière d'Europe"],
-        "answer": 0,
+        "options": ["Elle n'a pas de cornes", "Elle ne supporte pas l'altitude", "La plus grande race laitière d'Europe", "Une race petite, trapue et très musclée, adaptée aux fortes pentes"],
+        "answer": 3,
         "why": "Petite et basse sur pattes, elle tient debout là où une race de plaine glisserait. Elle produit moins de lait, mais elle monte."
       },
       {
@@ -850,14 +965,14 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Combien de litres de lait faut il environ pour produire un kilo de fromage à pâte mi dure ?",
-        "options": ["Environ 50 litres", "Environ 2 litres", "Environ 100 litres", "Environ 10 litres"],
-        "answer": 3,
+        "options": ["Environ 10 litres", "Environ 50 litres", "Environ 2 litres", "Environ 100 litres"],
+        "answer": 0,
         "why": "Environ dix litres. Une meule d'alpage de dix kilos représente donc la traite de tout un troupeau."
       },
       {
         "q": "Qu'est ce que la présure, utilisée dans la fabrication du fromage ?",
-        "options": ["Un outil en bois pour brasser", "Un sel de conservation", "Une herbe d'alpage aromatique", "Un ferment qui fait cailler le lait"],
-        "answer": 3,
+        "options": ["Un ferment qui fait cailler le lait", "Un outil en bois pour brasser", "Un sel de conservation", "Une herbe d'alpage aromatique"],
+        "answer": 0,
         "why": "Elle sépare le lait en caillé et en petit lait. Sans elle, pas de fromage possible."
       },
       {
@@ -868,8 +983,8 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Pourquoi le goût d'un fromage d'alpage change t il au fil de l'été ?",
-        "options": ["Parce que la température des caves baisse", "Parce qu'on ajoute plus de sel en fin de saison", "Parce qu'on change de race de vache en août", "Parce que la flore que broutent les bêtes change avec l'altitude et la saison"],
-        "answer": 3,
+        "options": ["Parce que la température des caves baisse", "Parce qu'on ajoute plus de sel en fin de saison", "Parce que la flore que broutent les bêtes change avec l'altitude et la saison", "Parce qu'on change de race de vache en août"],
+        "answer": 2,
         "why": "Les bêtes montent progressivement pendant l'été et ne broutent jamais deux fois la même prairie. Le fromage suit."
       }
     ]
@@ -894,20 +1009,20 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Selon quel critère l'eau était elle répartie entre les membres d'un consortage ?",
-        "options": ["Selon leur ancienneté dans le village", "Au tirage au sort chaque printemps", "De façon strictement égale", "Selon la taille de leur troupeau"],
-        "answer": 3,
+        "options": ["Selon la taille de leur troupeau", "Selon leur ancienneté dans le village", "Au tirage au sort chaque printemps", "De façon strictement égale"],
+        "answer": 0,
         "why": "Plus de bêtes, plus de prés à irriguer, donc plus de droits d'eau. Et aussi plus d'heures de travail à fournir pour l'entretien."
       },
       {
         "q": "Quelle peine le règlement du bisse de Bitailla prévoyait il en 1306 pour le vol d'eau ?",
-        "options": ["Couper la main du voleur", "Une amende de trois fromages", "L'exclusion du consortage", "La confiscation du troupeau"],
-        "answer": 0,
+        "options": ["Une amende de trois fromages", "L'exclusion du consortage", "Couper la main du voleur", "La confiscation du troupeau"],
+        "answer": 2,
         "why": "La sévérité dit tout de la valeur de l'eau. Détourner le tour d'eau d'un voisin, c'était menacer sa récolte."
       },
       {
         "q": "Que gère encore aujourd'hui un consortage dans certains villages valaisans ?",
-        "options": ["Les remontées mécaniques", "Un bien commun comme un bisse, un alpage ou une forêt", "L'école du village", "Le bureau de poste"],
-        "answer": 1,
+        "options": ["Un bien commun comme un bisse, un alpage ou une forêt", "Les remontées mécaniques", "L'école du village", "Le bureau de poste"],
+        "answer": 0,
         "why": "Ces structures ont survécu des siècles. Elles gèrent toujours des biens que personne ne possède seul."
       }
     ]
@@ -932,8 +1047,8 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Que désigne l'inalpe ?",
-        "options": ["La montée des troupeaux à l'alpage au début de l'été", "La tonte des moutons", "La descente des troupeaux en automne", "La fête de fin des vendanges"],
-        "answer": 0,
+        "options": ["La tonte des moutons", "La descente des troupeaux en automne", "La montée des troupeaux à l'alpage au début de l'été", "La fête de fin des vendanges"],
+        "answer": 2,
         "why": "C'est la grande fête du début de l'été. Le troupeau monte, et les combats désignent la reine de l'alpage."
       },
       {
@@ -944,14 +1059,14 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Comment le réchauffement modifie t il ce rythme ?",
-        "options": ["La neige fond plus tôt, mais l'herbe d'altitude peut manquer d'eau plus tôt aussi", "La désalpe a été supprimée", "Les troupeaux montent désormais en hiver", "L'herbe pousse toute l'année en altitude"],
-        "answer": 0,
+        "options": ["La désalpe a été supprimée", "La neige fond plus tôt, mais l'herbe d'altitude peut manquer d'eau plus tôt aussi", "Les troupeaux montent désormais en hiver", "L'herbe pousse toute l'année en altitude"],
+        "answer": 1,
         "why": "Monter plus tôt semble possible, mais la sécheresse d'août peut griller l'herbe avant la fin de la saison. Le calcul devient difficile."
       },
       {
         "q": "Pourquoi montait on traditionnellement les bêtes en altitude l'été ?",
-        "options": ["Parce que les étables du village étaient trop petites", "Pour utiliser l'herbe d'altitude et garder celle du village pour le foin d'hiver", "Pour produire un lait moins gras", "Pour les éloigner des loups uniquement"],
-        "answer": 1,
+        "options": ["Parce que les étables du village étaient trop petites", "Pour produire un lait moins gras", "Pour utiliser l'herbe d'altitude et garder celle du village pour le foin d'hiver", "Pour les éloigner des loups uniquement"],
+        "answer": 2,
         "why": "Pendant que les bêtes sont en haut, les prés du bas poussent tranquillement et deviennent le foin qui tiendra tout l'hiver."
       }
     ]
@@ -976,14 +1091,14 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Quel plat valaisan se prépare en faisant fondre un demi fromage devant la braise ?",
-        "options": ["La fondue moitié moitié", "La raclette", "La brisolée", "Le gratin de cardons"],
-        "answer": 1,
+        "options": ["La fondue moitié moitié", "La brisolée", "La raclette", "Le gratin de cardons"],
+        "answer": 2,
         "why": "La raclette est née exactement comme ça, un demi fromage tourné vers le feu, raclé au couteau."
       },
       {
         "q": "Qu'indique la mention d'alpage sur un fromage valaisan ?",
-        "options": ["Qu'il a été fabriqué en altitude pendant la saison d'estivage", "Qu'il vient d'un troupeau de race d'Hérens uniquement", "Qu'il a été fabriqué au lait pasteurisé", "Qu'il a été affiné plus de trois ans"],
-        "answer": 0,
+        "options": ["Qu'il vient d'un troupeau de race d'Hérens uniquement", "Qu'il a été fabriqué en altitude pendant la saison d'estivage", "Qu'il a été fabriqué au lait pasteurisé", "Qu'il a été affiné plus de trois ans"],
+        "answer": 1,
         "why": "Fabriqué là haut, pendant les quelques mois où le troupeau est à l'alpage. Une production courte et datée."
       },
       {
@@ -1014,20 +1129,20 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Quelle est la principale raison de l'abandon de nombreux alpages au vingtième siècle ?",
-        "options": ["La disparition des bisses", "L'exode rural et la baisse de rentabilité de l'agriculture de montagne", "L'interdiction légale de l'estivage", "Une épidémie touchant les vaches d'Hérens"],
-        "answer": 1,
+        "options": ["La disparition des bisses", "L'interdiction légale de l'estivage", "L'exode rural et la baisse de rentabilité de l'agriculture de montagne", "Une épidémie touchant les vaches d'Hérens"],
+        "answer": 2,
         "why": "Les bras sont partis vers l'industrie et le tourisme. Un alpage demande des gens, et il n'y en avait plus assez."
       },
       {
         "q": "Que devient un pâturage d'altitude qui n'est plus pâturé ?",
-        "options": ["Il se transforme en tourbière", "Il se referme peu à peu, envahi par les buissons et la forêt", "Il reste identique pendant des siècles", "Il devient un désert de pierre en quelques années"],
-        "answer": 1,
+        "options": ["Il se transforme en tourbière", "Il reste identique pendant des siècles", "Il devient un désert de pierre en quelques années", "Il se referme peu à peu, envahi par les buissons et la forêt"],
+        "answer": 3,
         "why": "Ces prairies sont un paysage fabriqué par les bêtes. Sans elles, l'aulne et le rhododendron reprennent tout."
       },
       {
         "q": "Pourquoi l'entretien des alpages compte t il aussi pour la sécurité en montagne ?",
-        "options": ["Parce que les troupeaux tassent les chemins", "Parce que les bergers surveillent les avalanches", "Parce qu'une prairie pâturée et entretenue retient mieux la neige et limite les glissements", "Parce que les chalets servent de refuges officiels"],
-        "answer": 2,
+        "options": ["Parce que les troupeaux tassent les chemins", "Parce que les bergers surveillent les avalanches", "Parce que les chalets servent de refuges officiels", "Parce qu'une prairie pâturée et entretenue retient mieux la neige et limite les glissements"],
+        "answer": 3,
         "why": "Une herbe rase et un sol travaillé tiennent mieux le manteau neigeux. Un versant laissé en friche glisse plus facilement."
       }
     ]
@@ -1052,32 +1167,114 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Combien de fois par jour un troupeau laitier est il traditionnellement trait à l'alpage ?",
-        "options": ["Trois fois", "Seulement le matin", "Une seule fois à midi", "Deux fois, matin et soir"],
-        "answer": 3,
+        "options": ["Deux fois, matin et soir", "Trois fois", "Seulement le matin", "Une seule fois à midi"],
+        "answer": 0,
         "why": "Matin et soir, tous les jours de la saison, sans exception. C'est ce qui rend le métier si exigeant."
       },
       {
         "q": "À quoi servent les grands bacs en bois ou en béton qu'on trouve sur un alpage ?",
-        "options": ["Ils stockent le petit lait", "Ils servent à saler les fromages", "Ils servent à laver le linge des bergers", "Ils amènent l'eau au troupeau, souvent par une conduite depuis une source"],
-        "answer": 3,
+        "options": ["Ils amènent l'eau au troupeau, souvent par une conduite depuis une source", "Ils stockent le petit lait", "Ils servent à saler les fromages", "Ils servent à laver le linge des bergers"],
+        "answer": 0,
         "why": "Une vache boit jusqu'à cent litres par jour en été. Sans eau amenée sur place, pas d'alpage possible."
       },
       {
         "q": "Pourquoi faut il garder ses distances avec un troupeau, surtout s'il y a des veaux ?",
-        "options": ["Parce que les mères protègent leurs veaux et peuvent charger", "Parce que les vaches transmettent des maladies aux humains", "Parce que le bruit fait tourner le lait", "Parce que le règlement du consortage l'interdit"],
-        "answer": 0,
+        "options": ["Parce que les vaches transmettent des maladies aux humains", "Parce que le bruit fait tourner le lait", "Parce que le règlement du consortage l'interdit", "Parce que les mères protègent leurs veaux et peuvent charger"],
+        "answer": 3,
         "why": "Une mère qui juge son veau menacé charge sans prévenir. Contourner largement, c'est la règle."
       },
       {
         "q": "Que fait un berger d'alpage de la majeure partie du lait produit l'été ?",
-        "options": ["Il le vend directement aux promeneurs", "Il le redescend chaque jour au village en camion", "Il le donne aux veaux", "Il le transforme sur place en fromage et en beurre"],
-        "answer": 3,
+        "options": ["Il le transforme sur place en fromage et en beurre", "Il le vend directement aux promeneurs", "Il le redescend chaque jour au village en camion", "Il le donne aux veaux"],
+        "answer": 0,
         "why": "Transformer sur place, c'est la seule façon de faire descendre la production sans la perdre."
       }
     ]
   },
 
-  /* ============ PILIER 4. PATRIMOINE (6) ============ */
+  {
+    "id": "le-vin-du-glacier",
+    "pillar": "vie-alpine",
+    "name": "Le vin du Glacier",
+    "style": "culinaire",
+    "tier": "experience",
+    "points": 20,
+    "location_kind": "typee",
+    "location_detail": "Là où l'on sert ou raconte le vin du Glacier, à Grimentz en particulier",
+    "branch": "les deux branches",
+    "duration": "45 minutes",
+    "brief": "Trouvez un endroit qui sert le vin du Glacier ou qui sait en parler, et faites vous raconter comment il se garde. Goûtez si vous pouvez. Notez ce que vous comprenez du système des tonneaux, qui ne se vident jamais.",
+    "savoir": "Le vin du Glacier vient de la Rèze, un cépage très ancien du Valais. Les Anniviards cultivaient la vigne en plaine et montaient le vin au village avec eux : de là son nom. Les tonneaux, en mélèze, ne sont jamais vidés. Chaque printemps on complète le plus vieux avec celui qui le suit en âge, et ainsi de suite en cascade, comme la méthode solera. La Bourgeoisie de Grimentz entretient ainsi quatre tonneaux datés de 1886, 1888, 1934 et 1969, si bien qu'un verre servi aujourd'hui contient encore une trace de tous les millésimes précédents.",
+    "proof": "photo_quiz",
+    "photo_hint": "Une photo du groupe du moment avec le verre, la bouteille ou la cave qui raconte le vin du Glacier.",
+    "note_label": "Ce qu'on vous a raconté, et le goût si vous avez pu goûter",
+    "quiz": [
+      {
+        "q": "De quel cépage vient le vin du Glacier ?",
+        "options": ["Le chasselas", "La Rèze", "La syrah", "Le pinot noir"],
+        "answer": 1,
+        "why": "La Rèze est un très vieux cépage valaisan, presque uniquement gardé pour ce vin là."
+      },
+      {
+        "q": "Comment entretient on les tonneaux du vin du Glacier ?",
+        "options": ["On ne les vide jamais, on complète le plus vieux avec le suivant", "On les descend en plaine chaque hiver", "On les vide et on les nettoie chaque automne", "On change de tonneau tous les cinq ans"],
+        "answer": 0,
+        "why": "C'est le principe du transvasage en cascade, proche de la méthode solera."
+      },
+      {
+        "q": "En quel bois sont faits ces tonneaux ?",
+        "options": ["En mélèze", "En chêne", "En châtaignier", "En acier"],
+        "answer": 0,
+        "why": "Le mélèze, très répandu en Valais, donne au vin son goût résineux si particulier."
+      },
+      {
+        "q": "De quand date le plus ancien tonneau entretenu par la Bourgeoisie de Grimentz ?",
+        "options": ["1886", "1789", "1969", "1934"],
+        "answer": 0,
+        "why": "Quatre tonneaux se suivent : 1886, 1888, 1934 et 1969."
+      }
+    ]
+  },
+
+  {
+    "id": "les-salaisons-danniviers",
+    "pillar": "vie-alpine",
+    "name": "Les salaisons d'Anniviers",
+    "style": "culinaire",
+    "tier": "decouverte",
+    "points": 10,
+    "location_kind": "libre",
+    "location_detail": "N'importe où dans la vallée, sur une assiette ou dans un commerce",
+    "branch": "les deux branches",
+    "duration": "20 minutes",
+    "brief": "Mettez la main sur de la viande séchée, du lard ou du jambon cru de la vallée. Regardez de près la couleur, le grain, la façon dont la tranche se tient. Goûtez, et essayez de dire ce qui distingue une pièce séchée longtemps d'une pièce pressée.",
+    "savoir": "La viande séchée du Valais IGP se fait uniquement avec du bœuf suisse. Les pièces sont frottées de sel, d'herbes et d'épices, puis suspendues et séchées à l'air de 5 à 16 semaines selon leur taille. Elles y perdent 40 à 50 pourcent de leur poids, ce qui concentre tout le goût. Le jambon cru du Valais IGP, lui, demande 6 à 10 semaines, jusqu'à ce qu'une fleur blanche apparaisse en surface. Cette tradition de séchage à l'air sec des vallées remonte au seizième siècle et figure au patrimoine culinaire suisse. À Vissoie, l'atelier des Salaisons d'Anniviers en produit plus de soixante dix tonnes par an.",
+    "proof": "photo_quiz",
+    "photo_hint": "Une photo de l'assiette ou de l'étal, avec le groupe du moment autour.",
+    "note_label": "Ce que vous avez goûté, et ce que vous en pensez",
+    "quiz": [
+      {
+        "q": "Avec quelle viande se fait la viande séchée du Valais IGP ?",
+        "options": ["De la viande de chamois", "Du bœuf suisse uniquement", "Du porc et du bœuf mélangés", "Du cheval"],
+        "answer": 1,
+        "why": "Le cahier des charges IGP l'impose : du bœuf, et d'origine suisse."
+      },
+      {
+        "q": "Combien de temps une pièce sèche t elle, selon sa taille ?",
+        "options": ["Deux à trois jours", "Quelques heures au four", "Une année entière", "De 5 à 16 semaines"],
+        "answer": 3,
+        "why": "Le séchage se fait à l'air, lentement, et c'est ce temps long qui fait le goût."
+      },
+      {
+        "q": "Que perd la viande pendant ce séchage ?",
+        "options": ["Sa couleur, mais pas son poids", "Presque rien", "Un dixième de son poids", "Entre 40 et 50 pourcent de son poids"],
+        "answer": 3,
+        "why": "Près de la moitié du poids part en eau. Tout le reste se concentre."
+      }
+    ]
+  },
+
+  /* ============ PILIER 4. PATRIMOINE (7) ============ */
 
   {
     "id": "le-grenier-sur-pilotis",
@@ -1098,26 +1295,26 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "À quoi servent les dalles de pierre rondes posées au sommet des pilotis ?",
-        "options": ["Marquer la propriété de la famille", "Soutenir le poids de la toiture", "Empêcher les rongeurs de grimper jusqu'aux réserves", "Évacuer l'eau de pluie"],
-        "answer": 2,
+        "options": ["Marquer la propriété de la famille", "Empêcher les rongeurs de grimper jusqu'aux réserves", "Soutenir le poids de la toiture", "Évacuer l'eau de pluie"],
+        "answer": 1,
         "why": "Une souris grimpe le long d'un pilotis, mais elle ne passe pas le rebord d'une dalle qui dépasse."
       },
       {
         "q": "Que stockait on dans ces greniers ?",
-        "options": ["Les outils et les charrues", "Le vin de la famille", "Du grain, du pain de seigle et de la viande séchée", "Le foin pour l'hiver"],
-        "answer": 2,
+        "options": ["Les outils et les charrues", "Du grain, du pain de seigle et de la viande séchée", "Le vin de la famille", "Le foin pour l'hiver"],
+        "answer": 1,
         "why": "Tout ce qui devait rester sec et à l'abri des bêtes. Le foin, lui, allait dans la grange."
       },
       {
         "q": "Pourquoi le bâtiment est il posé sur des pierres plutôt que directement au sol ?",
-        "options": ["Pour résister aux tremblements de terre", "Parce que le bois coûtait moins cher que la pierre", "Pour pouvoir le déplacer facilement", "Pour laisser l'air circuler et éviter l'humidité et la pourriture"],
-        "answer": 3,
+        "options": ["Pour laisser l'air circuler et éviter l'humidité et la pourriture", "Pour résister aux tremblements de terre", "Parce que le bois coûtait moins cher que la pierre", "Pour pouvoir le déplacer facilement"],
+        "answer": 0,
         "why": "L'air qui passe sous le plancher garde le bois sec. Certains raccards tiennent debout depuis plus de trois siècles."
       },
       {
         "q": "Comment appelle t on en Valais ce grenier à céréales en bois sur pilotis ?",
-        "options": ["Un bisse", "Un mayen", "Un raccard", "Un consortage"],
-        "answer": 2,
+        "options": ["Un bisse", "Un raccard", "Un mayen", "Un consortage"],
+        "answer": 1,
         "why": "Le raccard est l'un des bâtiments les plus reconnaissables du Valais, et l'un des plus malins."
       }
     ]
@@ -1148,14 +1345,14 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Et en 1990 ?",
-        "options": ["Encore 80 pourcent", "Environ 60 pourcent", "Environ 30 pourcent", "À peine 2 pourcent"],
-        "answer": 3,
+        "options": ["Encore 80 pourcent", "À peine 2 pourcent", "Environ 60 pourcent", "Environ 30 pourcent"],
+        "answer": 1,
         "why": "De 92 à 2 pourcent en quatre vingts ans. Peu de sociétés ont changé aussi vite."
       },
       {
         "q": "Quel élément du paysage a le plus progressé dans les villages anniviards depuis les années 1950 ?",
-        "options": ["Les surfaces de vigne en altitude", "Les champs de seigle", "Les pâturages de très haute altitude", "La forêt et les constructions de villégiature, au détriment des prés cultivés"],
-        "answer": 3,
+        "options": ["Les surfaces de vigne en altitude", "Les champs de seigle", "La forêt et les constructions de villégiature, au détriment des prés cultivés", "Les pâturages de très haute altitude"],
+        "answer": 2,
         "why": "Sur les vieilles photos, les versants sont pelés et cultivés jusqu'en haut. Aujourd'hui la forêt est remontée."
       }
     ]
@@ -1180,8 +1377,8 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Sur quoi reposait la vie d'un village comme Mission jusque dans les années 1950 ?",
-        "options": ["Sur l'artisanat du bois vendu à l'étranger", "Sur l'exploitation minière", "Presque entièrement sur l'élevage et l'agriculture", "Sur le tourisme d'hiver"],
-        "answer": 2,
+        "options": ["Sur l'artisanat du bois vendu à l'étranger", "Presque entièrement sur l'élevage et l'agriculture", "Sur l'exploitation minière", "Sur le tourisme d'hiver"],
+        "answer": 1,
         "why": "Chaque famille avait ses bêtes, ses prés et ses parcelles. Le village était une unité de production."
       },
       {
@@ -1198,8 +1395,8 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Pourquoi les familles anniviardes déménageaient elles plusieurs fois par an ?",
-        "options": ["Pour fuir les avalanches chaque hiver", "Parce que les maisons étaient louées à tour de rôle", "Pour suivre l'herbe et les cultures selon l'altitude et la saison", "Pour éviter les impôts communaux"],
-        "answer": 2,
+        "options": ["Pour fuir les avalanches chaque hiver", "Parce que les maisons étaient louées à tour de rôle", "Pour éviter les impôts communaux", "Pour suivre l'herbe et les cultures selon l'altitude et la saison"],
+        "answer": 3,
         "why": "Vigne en plaine, prés au village, alpage en haut. Il fallait être là où le travail était, et il se déplaçait avec la saison."
       }
     ]
@@ -1224,14 +1421,14 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "À quelle fréquence le four à pain communal était il traditionnellement allumé ?",
-        "options": ["Quelques fois par an seulement, et tout le village cuisait ensemble", "Une fois par semaine sans exception", "Uniquement pour les mariages", "Chaque matin"],
-        "answer": 0,
+        "options": ["Une fois par semaine sans exception", "Uniquement pour les mariages", "Chaque matin", "Quelques fois par an seulement, et tout le village cuisait ensemble"],
+        "answer": 3,
         "why": "Chauffer un four de pierre coûtait énormément de bois. On mutualisait, et on cuisait pour des mois."
       },
       {
         "q": "Pourquoi le pain de seigle valaisan est il dense et se conserve t il longtemps ?",
-        "options": ["Parce qu'il est séché au soleil après cuisson", "Parce qu'on en cuisait de grandes quantités d'un coup, pour des mois", "Parce qu'il contient du miel", "Parce qu'il est cuit deux fois"],
-        "answer": 1,
+        "options": ["Parce qu'il est séché au soleil après cuisson", "Parce qu'il contient du miel", "Parce qu'on en cuisait de grandes quantités d'un coup, pour des mois", "Parce qu'il est cuit deux fois"],
+        "answer": 2,
         "why": "Un pain peu hydraté et dense durcit au lieu de moisir. C'était une conserve, pas un pain du jour."
       },
       {
@@ -1262,20 +1459,20 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "D'où viendrait le nom Anniviers ?",
-        "options": ["D'une expression latine évoquant les chemins de l'année", "Du nom d'un glacier disparu", "D'un mot germanique signifiant vallée froide", "Du nom d'un seigneur savoyard"],
-        "answer": 0,
+        "options": ["Du nom d'un glacier disparu", "D'un mot germanique signifiant vallée froide", "D'une expression latine évoquant les chemins de l'année", "Du nom d'un seigneur savoyard"],
+        "answer": 2,
         "why": "Le nom même de la vallée parle de déplacement. C'est dire à quel point le mouvement la définissait."
       },
       {
         "q": "À quoi cette expression fait elle allusion ?",
-        "options": ["Au pèlerinage annuel vers Sion", "Aux migrations saisonnières des habitants entre mayens d'altitude et coteaux de plaine", "À la foire du bétail de printemps", "Au passage des marchands italiens"],
-        "answer": 1,
+        "options": ["Au pèlerinage annuel vers Sion", "À la foire du bétail de printemps", "Au passage des marchands italiens", "Aux migrations saisonnières des habitants entre mayens d'altitude et coteaux de plaine"],
+        "answer": 3,
         "why": "Les Anniviards étaient des semi nomades. Une famille pouvait occuper quatre logements différents dans l'année."
       },
       {
         "q": "Avant les routes carrossables, comment transportait on marchandises et récoltes ?",
-        "options": ["Par téléphérique", "À dos de mulet et à dos d'homme, sur des chemins étroits", "Par flottage sur la Navizence", "En chariot à quatre roues"],
-        "answer": 1,
+        "options": ["Par téléphérique", "Par flottage sur la Navizence", "À dos de mulet et à dos d'homme, sur des chemins étroits", "En chariot à quatre roues"],
+        "answer": 2,
         "why": "Un mulet porte environ cent kilos. Tout ce qui entrait et sortait de la vallée passait par là."
       }
     ]
@@ -1300,21 +1497,60 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Qu'est ce qu'un mayen ?",
-        "options": ["Un abri de chasse", "Une grange au bord du Rhône", "Un groupe de bâtiments à mi hauteur, occupé au printemps et en automne", "Un alpage de très haute altitude"],
-        "answer": 2,
+        "options": ["Un abri de chasse", "Une grange au bord du Rhône", "Un alpage de très haute altitude", "Un groupe de bâtiments à mi hauteur, occupé au printemps et en automne"],
+        "answer": 3,
         "why": "C'est l'étage intermédiaire, celui qui a le plus disparu. Trop haut pour la vie moderne, trop bas pour l'alpage."
       },
       {
         "q": "Pourquoi beaucoup de mayens ont ils été abandonnés ?",
-        "options": ["Parce que le travail agricole s'est concentré en plaine et que la main d'œuvre a quitté la vallée", "Parce qu'ils ont été rachetés par l'État", "Parce qu'ils ont été détruits par des avalanches", "Parce que l'eau y a été coupée par les barrages"],
-        "answer": 0,
+        "options": ["Parce qu'ils ont été rachetés par l'État", "Parce qu'ils ont été détruits par des avalanches", "Parce que le travail agricole s'est concentré en plaine et que la main d'œuvre a quitté la vallée", "Parce que l'eau y a été coupée par les barrages"],
+        "answer": 2,
         "why": "Avec la route et la voiture, il devenait absurde de déménager quatre fois par an. L'étage du milieu a perdu sa raison d'être."
       },
       {
         "q": "À quoi reconnaît on un bâtiment agricole abandonné depuis longtemps ?",
-        "options": ["Murs fraîchement rejointoyés", "Présence d'un compteur électrique", "Toiture effondrée, végétation installée à l'intérieur, murs encore debout", "Volets peints en rouge"],
-        "answer": 2,
+        "options": ["Murs fraîchement rejointoyés", "Présence d'un compteur électrique", "Volets peints en rouge", "Toiture effondrée, végétation installée à l'intérieur, murs encore debout"],
+        "answer": 3,
         "why": "Le toit part toujours en premier. Une fois l'eau entrée, le reste suit en quelques décennies."
+      }
+    ]
+  },
+
+  {
+    "id": "la-mine-de-cuivre-de-la-lee",
+    "pillar": "patrimoine",
+    "name": "La mine de cuivre de la Lée",
+    "style": "sportif",
+    "tier": "mission",
+    "points": 30,
+    "location_kind": "precise",
+    "location_detail": "Secteur de la Lée, au dessus de Zinal, environ 1h30 de marche depuis le village",
+    "branch": "vallée de Zinal",
+    "duration": "3 heures ou plus depuis Zinal",
+    "brief": "Montez au secteur de la Lée, au dessus de Zinal, et retrouvez les traces de la mine de cuivre : l'entrée de galerie, les déblais rejetés devant, les roches qui verdissent là où le cuivre affleure. Observez tout cela depuis l'extérieur, puis racontez ce que vous avez trouvé.",
+    "alerte": "Les visites de la galerie sont suspendues à cause d'un risque de chutes de pierres. Ce défi se joue entièrement à l'extérieur. N'entrez jamais dans une galerie, même de quelques pas.",
+    "savoir": "Le filon de la Lée a été découvert en 1832 au dessus de Zinal, puis exploré entre 1857 et 1859. La vraie exploitation n'a duré que de 1900 à 1902, sous la Société des Mines du Val d'Anniviers : la teneur en cuivre s'est révélée trop faible et tout s'est arrêté. Il reste 500 mètres de galeries creusées à la main dans la montagne, à 1937 mètres d'altitude. Sur la vingtaine de mines recensées en Anniviers, c'est la seule qui ait été remise en état, à partir de 1998, et la seule mine de cuivre de Suisse ouverte au public en temps normal.",
+    "proof": "photo_quiz",
+    "photo_hint": "Une photo du groupe du moment devant les traces de la mine, prise depuis l'extérieur.",
+    "note_label": "Ce que vous avez trouvé sur place, et l'état des lieux aujourd'hui",
+    "quiz": [
+      {
+        "q": "En quelle année le filon de cuivre de la Lée a t il été découvert ?",
+        "options": ["1957", "1900", "1832", "1998"],
+        "answer": 2,
+        "why": "Découvert en 1832, il a pourtant attendu la fin du siècle pour être vraiment exploité."
+      },
+      {
+        "q": "Pourquoi l'exploitation s'est elle arrêtée au bout de deux ans ?",
+        "options": ["La guerre a vidé la vallée", "Le filon avait été entièrement extrait", "La teneur en cuivre était trop faible", "Un éboulement a tout enseveli"],
+        "answer": 2,
+        "why": "Le minerai était bien là, mais trop pauvre pour payer le travail. Tout a cessé en 1902."
+      },
+      {
+        "q": "Quelle longueur de galeries a été creusée à la main dans la montagne ?",
+        "options": ["500 mètres", "50 mètres", "20 kilomètres", "5 kilomètres"],
+        "answer": 0,
+        "why": "Cinq cents mètres, à 1937 mètres d'altitude, pour deux ans d'exploitation seulement."
       }
     ]
   },
@@ -1340,20 +1576,20 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "À quelle famille de langues le patois valaisan appartient il ?",
-        "options": ["Au rhéto roman des Grisons", "Au lombard italien", "Au franco provençal, une langue romane distincte du français", "Au germanique alémanique"],
-        "answer": 2,
+        "options": ["Au rhéto roman des Grisons", "Au franco provençal, une langue romane distincte du français", "Au lombard italien", "Au germanique alémanique"],
+        "answer": 1,
         "why": "Ce n'est pas du français déformé, c'est une autre langue romane, avec sa grammaire et son histoire."
       },
       {
         "q": "Que désigne le mot fendant en Valais ?",
-        "options": ["Un outil pour fendre le bois", "Un fromage jeune", "Un vin blanc issu du chasselas", "Un raccourci de montagne"],
-        "answer": 2,
+        "options": ["Un outil pour fendre le bois", "Un vin blanc issu du chasselas", "Un fromage jeune", "Un raccourci de montagne"],
+        "answer": 1,
         "why": "C'est le nom valaisan du chasselas. Le mot vient de ce que le grain se fend sous le doigt quand il est mûr."
       },
       {
         "q": "Pourquoi le patois a t il presque disparu de l'usage quotidien ?",
-        "options": ["Parce qu'il n'a jamais été parlé que par les bergers", "Parce que l'école et l'administration ont imposé le français au vingtième siècle", "Parce qu'il a été interdit par le Vatican", "Parce que les habitants sont partis en Italie"],
-        "answer": 1,
+        "options": ["Parce qu'il n'a jamais été parlé que par les bergers", "Parce qu'il a été interdit par le Vatican", "Parce que les habitants sont partis en Italie", "Parce que l'école et l'administration ont imposé le français au vingtième siècle"],
+        "answer": 3,
         "why": "Une génération l'a parlé à la maison, la suivante l'a comprise sans le parler, la troisième ne l'a plus entendu."
       }
     ]
@@ -1378,14 +1614,14 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "Qu'est ce qu'une source orale, en histoire locale ?",
-        "options": ["Un document notarié ancien", "Un témoignage raconté par une personne, recueilli et conservé", "Une inscription gravée dans la pierre", "Une carte topographique annotée"],
-        "answer": 1,
+        "options": ["Un document notarié ancien", "Une inscription gravée dans la pierre", "Une carte topographique annotée", "Un témoignage raconté par une personne, recueilli et conservé"],
+        "answer": 3,
         "why": "C'est une vraie source historique, avec ses forces et ses limites. Elle dit ce qu'aucun document n'a noté."
       },
       {
         "q": "Pourquoi les archives écrites manquent elles souvent pour la vie quotidienne des villages de montagne ?",
-        "options": ["Parce que l'essentiel se transmettait oralement et que peu de gens écrivaient", "Parce que le patois n'a pas d'alphabet", "Parce que tous les registres ont brûlé", "Parce que l'écriture était réservée au clergé dans toute l'Europe"],
-        "answer": 0,
+        "options": ["Parce que le patois n'a pas d'alphabet", "Parce que l'essentiel se transmettait oralement et que peu de gens écrivaient", "Parce que tous les registres ont brûlé", "Parce que l'écriture était réservée au clergé dans toute l'Europe"],
+        "answer": 1,
         "why": "On notait les actes, les ventes, les naissances. Pas la façon de faire le pain ni les histoires du soir."
       },
       {
@@ -1422,8 +1658,8 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Qu'appelle t on l'isotherme zéro degré ?",
-        "options": ["La température moyenne annuelle d'un village", "La profondeur du sol gelé", "L'altitude à laquelle la température atteint zéro degré dans l'atmosphère", "La limite des arbres"],
-        "answer": 2,
+        "options": ["La température moyenne annuelle d'un village", "L'altitude à laquelle la température atteint zéro degré dans l'atmosphère", "La profondeur du sol gelé", "La limite des arbres"],
+        "answer": 1,
         "why": "C'est la frontière invisible entre la pluie et la neige. Sa hauteur décide de tout, en montagne."
       },
       {
@@ -1434,8 +1670,8 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Pourquoi le témoignage d'un habitant âgé a t il une valeur pour comprendre le climat ?",
-        "options": ["Parce qu'il couvre plusieurs décennies vécues au même endroit", "Parce qu'il remplace les relevés de température", "Parce qu'il est toujours plus précis qu'une mesure", "Parce qu'il porte sur toute la Suisse"],
-        "answer": 0,
+        "options": ["Parce qu'il remplace les relevés de température", "Parce qu'il couvre plusieurs décennies vécues au même endroit", "Parce qu'il est toujours plus précis qu'une mesure", "Parce qu'il porte sur toute la Suisse"],
+        "answer": 1,
         "why": "Une personne qui a vu le même versant pendant soixante ans a une série d'observations que personne n'a notée ailleurs."
       }
     ]
@@ -1466,14 +1702,14 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Qu'est ce que la brisolée, fête d'automne valaisanne ?",
-        "options": ["Un ragoût de viande séchée", "Une soupe de seigle de Noël", "Un gâteau de mariage à étages", "Un repas de châtaignes grillées accompagné de fromage et de vin nouveau"],
-        "answer": 3,
+        "options": ["Un repas de châtaignes grillées accompagné de fromage et de vin nouveau", "Un ragoût de viande séchée", "Une soupe de seigle de Noël", "Un gâteau de mariage à étages"],
+        "answer": 0,
         "why": "Châtaignes grillées, fromage, raisin, vin nouveau. Une fête qui célèbre la fin des récoltes."
       },
       {
         "q": "Que servait on traditionnellement lors des grandes fêtes de village ?",
-        "options": ["Du riz au safran uniquement", "Du poisson du lac chaque dimanche", "De la viande, rare et réservée aux occasions, avec du pain de seigle et du vin", "Des pâtisseries à la crème"],
-        "answer": 2,
+        "options": ["Du riz au safran uniquement", "De la viande, rare et réservée aux occasions, avec du pain de seigle et du vin", "Du poisson du lac chaque dimanche", "Des pâtisseries à la crème"],
+        "answer": 1,
         "why": "On tuait une bête pour une occasion. Le reste de l'année, c'était le fromage et le pain qui nourrissaient."
       }
     ]
@@ -1498,8 +1734,8 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "À quoi servait une channe en étain, objet valaisan emblématique ?",
-        "options": ["À mesurer le lait à l'alpage", "À conserver le sel", "À fondre le plomb des toitures", "À servir le vin"],
-        "answer": 3,
+        "options": ["À mesurer le lait à l'alpage", "À servir le vin", "À conserver le sel", "À fondre le plomb des toitures"],
+        "answer": 1,
         "why": "La channe est devenue un symbole du Valais. On l'offre encore aujourd'hui comme trophée ou cadeau d'honneur."
       },
       {
@@ -1510,8 +1746,8 @@ export const CHALLENGES = /* json */ [
       },
       {
         "q": "Pourquoi les outils agricoles anciens portent ils souvent des initiales ou une date gravée ?",
-        "options": ["Pour identifier la famille propriétaire, car beaucoup d'objets étaient partagés ou prêtés", "Parce que la loi l'imposait", "Pour indiquer la taille de l'objet", "Pour porter chance"],
-        "answer": 0,
+        "options": ["Parce que la loi l'imposait", "Pour indiquer la taille de l'objet", "Pour porter chance", "Pour identifier la famille propriétaire, car beaucoup d'objets étaient partagés ou prêtés"],
+        "answer": 3,
         "why": "Dans un village où tout se prête, marquer son outil évite bien des discussions."
       }
     ]
@@ -1536,20 +1772,20 @@ export const CHALLENGES = /* json */ [
     "quiz": [
       {
         "q": "En quelle année Vissoie a t il été relié à la vallée du Rhône par une route carrossable ?",
-        "options": ["1789", "1951", "1863", "1905"],
-        "answer": 2,
+        "options": ["1863", "1789", "1951", "1905"],
+        "answer": 0,
         "why": "Avant 1863, tout montait et descendait à pied ou à dos de mulet. La vallée était un monde à part."
       },
       {
         "q": "En quelle année la route vers Zinal, au fond de la vallée, a t elle été ouverte ?",
-        "options": ["1975", "1863", "1951", "1920"],
-        "answer": 2,
+        "options": ["1951", "1975", "1863", "1920"],
+        "answer": 0,
         "why": "1951. Des gens vivants aujourd'hui se souviennent de Zinal sans route."
       },
       {
         "q": "Quelle conséquence cet isolement a t il eue sur la vie de la vallée ?",
-        "options": ["Le commerce du vin y était interdit", "La vallée s'est dépeuplée dès le Moyen Âge", "Le patois a disparu très tôt", "Les villages devaient produire eux mêmes presque tout ce dont ils avaient besoin"],
-        "answer": 3,
+        "options": ["Le commerce du vin y était interdit", "Les villages devaient produire eux mêmes presque tout ce dont ils avaient besoin", "La vallée s'est dépeuplée dès le Moyen Âge", "Le patois a disparu très tôt"],
+        "answer": 1,
         "why": "Pain, fromage, viande, bois, laine, outils. Tout se faisait sur place, parce que rien n'arrivait facilement."
       },
       {

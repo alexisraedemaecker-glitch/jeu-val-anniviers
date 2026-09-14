@@ -196,6 +196,14 @@ Attention au contexte d'empilement : la couche de fond est fixe et se place
 derrière le contenu, mais donner un `z-index` au conteneur `ident` enfermerait
 la vue plein écran sous la barre du haut.
 
+## Un avertissement porté par un défi
+
+Un défi peut porter un champ `alerte`, affiché en encadré orange sous la
+consigne et signalé par une pastille dans la liste. Il sert aux défis où une
+consigne de sécurité prime sur le jeu : ne rien cueillir pour les champignons,
+ne pas entrer dans la galerie de la mine de cuivre, dont les visites sont
+suspendues pour risque de chutes de pierres.
+
 ## Un piège de htm à connaître
 
 htm supprime complètement l'espace quand un saut de ligne sépare du texte d'une
@@ -331,7 +339,7 @@ test, joue des défis, puis nettoie tout derrière lui.
 python3 tools/selftest.py
 ```
 
-Les 110 contrôles couvrent la création de profil et la déduplication des noms, le
+Les 121 contrôles couvrent la création de profil et la déduplication des noms, le
 rendement dégressif sur trois passages, le score personnel non dégressif, le non
 cumul d'un même défi par une même personne, l'idempotence après coupure réseau,
 le dépôt et la lecture des photos, le refus d'un chemin de photo malveillant, le

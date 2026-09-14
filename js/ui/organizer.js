@@ -675,7 +675,7 @@ function Reglages({ onError }) {
       <h2 style="color:var(--bad)">Remise à zéro</h2>
       <p class="small" style="color:#7d1f1f">
         Efface tous les profils, toutes les soumissions et toutes les photos. À faire une fois les
-        essais terminés, avant le jour de l'événement. Les 39 défis, les 5 découvertes et votre
+        essais terminés, avant le jour de l'événement. Les ${CHALLENGES.length} défis, les 5 découvertes et votre
         code organisateur ne sont pas touchés.
       </p>
       <label class="field">

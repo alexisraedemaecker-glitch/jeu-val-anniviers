@@ -3,7 +3,8 @@
 const { html, render, useState, useEffect } = window.htmPreact;
 
 import { state, subscribe, setState, boot, clearToast, dismissSynergy, unreadCount } from "./store.js";
-import { PILLAR_BY_ID } from "./data/pillars.js";
+import { PILLAR_BY_ID, PILLARS } from "./data/pillars.js";
+import { CHALLENGES } from "./data/challenges.js";
 import { Onboarding } from "./ui/onboarding.js";
 import { ChallengeList } from "./ui/challenges.js";
 import { ChallengeDetail } from "./ui/challenge.js";
@@ -160,7 +161,7 @@ function App() {
 
 function titleFor(route) {
   const map = {
-    defis: ["Les défis", "39 défis, 5 piliers"],
+    defis: ["Les défis", `${CHALLENGES.length} défis, ${PILLARS.length} piliers`],
     defi: ["Un défi", "Validation"],
     fil: ["Le fil", "La journée en direct"],
     activites: ["Activités", "Le week end dans la vallée"],

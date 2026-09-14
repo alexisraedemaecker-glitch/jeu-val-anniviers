@@ -85,6 +85,7 @@ function Row({ c, done, go }) {
       <span class="chip plain">${styleIcon(c.style)} ${styleLabel(c.style)}</span>
       ${done ? html`<span class="chip ok">✓ Validé</span>` : null}
       ${c.proof === "quiz" ? html`<span class="chip">Quiz</span>` : null}
+      ${c.alerte ? html`<span class="chip warn">⚠️ À lire avant</span>` : null}
       ${passages > 0 && !done ? html`<span class="chip plain">${passages} ${passages === 1 ? "passage" : "passages"}</span>` : null}
     </div>
     <div class="loc">${locIcon(c.location_kind)} ${c.location_detail || ""} · ${c.duration}</div>

@@ -643,7 +643,41 @@ check("la suppression d'un profil renvoie son portrait à nettoyer", st == 200 a
 st, d = call("/storage/v1/object/profils", data={"prefixes": [portrait2]}, method="DELETE")
 check("le portrait du profil supprimé est retirable", st == 200, f"{st} {d}")
 
-print("\n=== 14. Cohérence des vues ===")
+print("\n=== 14. Nouveaux défis du catalogue ===")
+NOUVEAUX = {
+    "la-mine-de-cuivre-de-la-lee": ("patrimoine", "sportif", 30),
+    "le-vin-du-glacier": ("vie-alpine", "culinaire", 20),
+    "les-salaisons-danniviers": ("vie-alpine", "culinaire", 10),
+    "lobservatoire-de-tignousa": ("montagne", "chill", 10),
+    "les-champignons-de-la-vallee": ("montagne", "chill", 10),
+    "lillgraben": ("montagne", "sportif", 20),
+}
+st, d = call("/rest/v1/challenges?select=id,pillar,style,points,tier,location_kind&id=in.("
+             + ",".join(NOUVEAUX) + ")")
+trouves = {c["id"]: c for c in d} if isinstance(d, list) else {}
+check("les six nouveaux défis sont dans la base", len(trouves) == 6, str(sorted(trouves)))
+for cid, (pil, sty, pts) in NOUVEAUX.items():
+    c = trouves.get(cid, {})
+    check(
+        f"{cid} : {pil}, {sty}, {pts} points",
+        c.get("pillar") == pil and c.get("style") == sty and c.get("points") == pts,
+        str(c),
+    )
+
+avant_montagne = gauge(state(), "montagne")["points"]
+st, d = rpc("submit_challenge", {"p_client_id": str(uuid.uuid4()),
+                                 "p_challenge_id": "lillgraben", "p_submitter": A})
+check("un nouveau défi se valide comme les autres", st == 200 and d.get("pillar") == "montagne", str(d))
+check("il verse ses points pleins dans sa jauge au premier passage",
+      abs(float(d.get("gauge_points", 0)) - 20) < 0.01 or d.get("repeat_index", 1) > 1,
+      str(d))
+check("le score personnel monte de 20", score(state(), A)["score_defis"] >= 20, str(score(state(), A)))
+rpc("delete_submission", {"p_submission": d.get("submission_id"), "p_pin": PIN})
+check("la jauge Montagne revient à son point de départ",
+      gauge(state(), "montagne")["points"] == avant_montagne,
+      f"avant {avant_montagne}, après {gauge(state(), 'montagne')['points']}")
+
+print("\n=== 15. Cohérence des vues ===")
 st_now = state()
 check("les cinq jauges sont présentes", len(st_now["gauges"]) == 5, str(len(st_now["gauges"])))
 check(
@@ -664,7 +698,7 @@ check("un défi inconnu est refusé", st >= 400, str(d))
 
 # ---------------------------------------------------------------- nettoyage
 if "--keep" not in sys.argv:
-    print("\n=== 15. Nettoyage ===")
+    print("\n=== 16. Nettoyage ===")
     sys.path.insert(0, str(ROOT / "tools"))
     import apply_sql
 

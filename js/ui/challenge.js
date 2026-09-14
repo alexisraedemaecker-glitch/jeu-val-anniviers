@@ -243,6 +243,12 @@ function Form({ c, go }) {
     <div class="card">
       <h2>Ce qu'il faut faire</h2>
       <p>${c.brief}</p>
+      ${c.alerte
+        ? html`<div class="alerte-defi">
+            <span class="ic" aria-hidden="true">⚠️</span>
+            <span>${c.alerte}</span>
+          </div>`
+        : null}
     </div>
 
     ${alreadyDone
