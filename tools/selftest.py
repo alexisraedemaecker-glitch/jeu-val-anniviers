@@ -645,6 +645,9 @@ check("le portrait du profil supprimé est retirable", st == 200, f"{st} {d}")
 
 print("\n=== 14. Nouveaux défis du catalogue ===")
 NOUVEAUX = {
+    "la-memoire-de-la-mine": ("memoire", "chill", 20),
+    "lillgraben-dans-les-memoires": ("memoire", "chill", 20),
+    "le-gout-qui-a-disparu": ("memoire", "culinaire", 10),
     "la-mine-de-cuivre-de-la-lee": ("patrimoine", "sportif", 30),
     "le-vin-du-glacier": ("vie-alpine", "culinaire", 20),
     "les-salaisons-danniviers": ("vie-alpine", "culinaire", 10),
@@ -655,7 +658,7 @@ NOUVEAUX = {
 st, d = call("/rest/v1/challenges?select=id,pillar,style,points,tier,location_kind&id=in.("
              + ",".join(NOUVEAUX) + ")")
 trouves = {c["id"]: c for c in d} if isinstance(d, list) else {}
-check("les six nouveaux défis sont dans la base", len(trouves) == 6, str(sorted(trouves)))
+check("les neuf nouveaux défis sont dans la base", len(trouves) == 9, str(sorted(trouves)))
 for cid, (pil, sty, pts) in NOUVEAUX.items():
     c = trouves.get(cid, {})
     check(
