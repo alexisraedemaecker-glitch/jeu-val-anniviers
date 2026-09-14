@@ -115,6 +115,7 @@ grant execute on function public.photo_post_est_orpheline(text)                 
 grant execute on function public.set_photo(uuid, text)                to anon, authenticated;
 grant execute on function public.set_bio(uuid, text)                  to anon, authenticated;
 grant execute on function public.ouverture_du_jeu()                   to anon, authenticated;
+grant execute on function public.activites_ouvertes()                 to anon, authenticated;
 grant execute on function public.portrait_est_orphelin(text)          to anon, authenticated;
 grant execute on function public.chemin_valide(text)                  to anon, authenticated;
 grant execute on function public.set_vibe(uuid, text)                 to anon, authenticated;
@@ -136,6 +137,7 @@ grant execute on function public.admin_reset_game(text, text)                  t
 grant execute on function public.admin_set_lockout_minutes(text, int)          to anon, authenticated;
 grant execute on function public.admin_reset_code(text, uuid, text)            to anon, authenticated;
 grant execute on function public.admin_set_ouverture(text, timestamptz)        to anon, authenticated;
+grant execute on function public.admin_set_activites(text, boolean)            to anon, authenticated;
 
 -- -------------------------------------------------------------- stockage
 

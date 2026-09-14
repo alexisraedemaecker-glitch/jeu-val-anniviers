@@ -98,6 +98,10 @@ l'heure du serveur, pas sur celle du téléphone : `game_state` renvoie son
 horloge, l'application en déduit un décalage, et un téléphone mal réglé
 n'ouvre donc pas le jeu en avance.
 
+L'onglet Activités a son propre interrupteur, indépendant de l'heure du jeu :
+il permet d'ouvrir les randonnées et les tables un jour ou deux avant, pour
+faire patienter, puis d'annoncer la chose dans le fil avec un `@tous`.
+
 Le verrou est côté écran, pas côté base : il range l'application avant le jour
 J, il n'empêche pas quelqu'un de très déterminé d'appeler l'API à la main. Ce
 choix est volontaire, un verrou serveur aurait aussi bloqué les essais de
@@ -425,7 +429,7 @@ test, joue des défis, puis nettoie tout derrière lui.
 python3 tools/selftest.py
 ```
 
-Les 142 contrôles couvrent la création de profil et la déduplication des noms, le
+Les 147 contrôles couvrent la création de profil et la déduplication des noms, le
 rendement dégressif sur trois passages, le score personnel non dégressif, le non
 cumul d'un même défi par une même personne, l'idempotence après coupure réseau,
 le dépôt et la lecture des photos, le refus d'un chemin de photo malveillant, le

@@ -22,7 +22,7 @@ import {
   friendly
 } from "../store.js";
 import { PILLAR_BY_ID } from "../data/pillars.js";
-import { Avatar, Banner, Empty, Spinner, PhotoZoom, dateTimeShort, pillarColor } from "./bits.js";
+import { Avatar, Banner, Empty, Frag, Spinner, PhotoZoom, dateTimeShort, pillarColor } from "./bits.js";
 
 /** Corne de bouquetin, l'applaudissement de la vallée. */
 export function Corne({ pleine }) {
@@ -63,8 +63,28 @@ function analyser(texte, gens) {
   while ((m = re.exec(texte))) {
     const prenom = m[1].trim().toLowerCase();
     const suivant = (m[3] || "").trim().toLowerCase();
-    // Fin de la mention si l'on ne retient que le prénom.
+    // Fin de la mention si l'on ne retient que le premier mot.
     let fin = m.index + 1 + m[1].length;
+
+    // @tous, ou @tout le monde, nomme la vallée entière. Un simple @tout, lui,
+    // ne nomme personne : « @tout de suite » ne doit prévenir personne.
+    if (prenom === "tous" || prenom === "tout") {
+      let entier = prenom === "tous";
+      if (prenom === "tout" && suivant === "le") {
+        const reste = texte.slice(m.index + m[0].length).match(/^\s+monde/iu);
+        if (reste) {
+          fin = m.index + m[0].length + reste[0].length;
+          entier = true;
+        }
+      }
+      if (entier) {
+        const ids = liste.map((g) => g.id).filter((id) => !state.me || id !== state.me.id);
+        if (ids.length) trouvees.push({ debut: m.index, fin, ids, tous: true });
+      }
+      re.lastIndex = fin;
+      continue;
+    }
+
     let p = null;
     if (suivant) {
       p = liste.find(
@@ -78,7 +98,7 @@ function analyser(texte, gens) {
       const memes = liste.filter((g) => g.first_name.trim().toLowerCase() === prenom);
       if (memes.length === 1) p = memes[0];
     }
-    if (p) trouvees.push({ debut: m.index, fin, id: p.id });
+    if (p) trouvees.push({ debut: m.index, fin, ids: [p.id] });
     // On repart juste après le prénom lu, jamais en arrière : la boucle
     // avance donc toujours, même quand rien ne correspond.
     re.lastIndex = fin;
@@ -90,7 +110,9 @@ function analyser(texte, gens) {
 export function extraireMentions(texte, gens) {
   const ids = [];
   analyser(texte, gens).forEach((x) => {
-    if (!ids.includes(x.id)) ids.push(x.id);
+    (x.ids || []).forEach((id) => {
+      if (!ids.includes(id)) ids.push(id);
+    });
   });
   return ids;
 }
@@ -127,7 +149,12 @@ function SaisieMention({ valeur, setValeur, placeholder, multiligne, onEntree })
       .filter((g) => !debut || g.first_name.toLowerCase().startsWith(debut)
         || `${g.first_name} ${g.last_name}`.toLowerCase().startsWith(debut))
       .slice(0, 5);
-    setSuggestions(trouves.map((g) => ({ p: g, debut: m[1].length })));
+    const propositions = trouves.map((g) => ({ p: g, debut: m[1].length }));
+    // Toujours en tête : nommer tout le monde d'un seul coup.
+    if (!debut || "tous".startsWith(debut)) {
+      propositions.unshift({ tous: true, debut: m[1].length });
+    }
+    setSuggestions(propositions);
   }
 
   function choisir(s) {
@@ -135,14 +162,15 @@ function SaisieMention({ valeur, setValeur, placeholder, multiligne, onEntree })
     const pos = el.selectionStart == null ? el.value.length : el.selectionStart;
     const avant = el.value.slice(0, pos - s.debut);
     const apres = el.value.slice(pos);
-    const texte = `${avant}${etiquette(s.p, gens)} ${apres}`.replace(/\s+$/, " ");
+    const mot = s.tous ? "tous" : etiquette(s.p, gens);
+    const texte = `${avant}${mot} ${apres}`.replace(/\s+$/, " ");
     setValeur(texte);
     setSuggestions([]);
-    // On rend la main au clavier, curseur juste apres le prénom inséré.
+    // On rend la main au clavier, curseur juste apres le mot inséré.
     setTimeout(() => {
       if (!champ.current) return;
       champ.current.focus();
-      const p = avant.length + etiquette(s.p, gens).length + 1;
+      const p = avant.length + mot.length + 1;
       champ.current.setSelectionRange(p, p);
     }, 0);
   }
@@ -167,10 +195,21 @@ function SaisieMention({ valeur, setValeur, placeholder, multiligne, onEntree })
     ${suggestions.length
       ? html`<div class="suggestions">
           ${suggestions.map(
-            (s) => html`<button type="button" key=${s.p.id} class="suggestion"
+            (s) => html`<button type="button" key=${s.tous ? "tous" : s.p.id} class="suggestion"
               onMouseDown=${(e) => e.preventDefault()} onClick=${() => choisir(s)}>
-              <${Avatar} p=${s.p} taille="sm" />
-              <span class="grow">${s.p.first_name} ${s.p.last_name}</span>
+              ${s.tous
+                ? html`<${Frag}>
+                    <span class="avatar vide" aria-hidden="true">📣</span>
+                    <span class="grow"><strong>Tout le monde</strong>
+                      <span class="tiny faint" style="display:block">
+                        Prévient les ${(state.scores || []).length} joueurs
+                      </span>
+                    </span>
+                  <//>`
+                : html`<${Frag}>
+                    <${Avatar} p=${s.p} taille="sm" />
+                    <span class="grow">${s.p.first_name} ${s.p.last_name}</span>
+                  <//>`}
             </button>`
           )}
         </div>`
@@ -185,7 +224,9 @@ function Texte({ texte, classe }) {
   let i = 0;
   analyser(texte, state.scores).forEach((x) => {
     if (x.debut > i) bouts.push(texte.slice(i, x.debut));
-    bouts.push(html`<span class="mention">${texte.slice(x.debut, x.fin)}</span>`);
+    bouts.push(html`<span class=${"mention" + (x.tous ? " tous" : "")}>
+      ${texte.slice(x.debut, x.fin)}
+    </span>`);
     i = x.fin;
   });
   if (i < texte.length) bouts.push(texte.slice(i));

@@ -544,6 +544,31 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
+-- L'onglet Activites peut s'ouvrir avant le reste, pour faire patienter la
+-- veille du jeu. Ferme par defaut.
+create or replace function public.activites_ouvertes()
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce(
+    (select value = 'true' from public.app_settings where key = 'activites_ouvertes'),
+    false
+  );
+$$;
+
+create or replace function public.admin_set_activites(p_pin text, p_ouvert boolean)
+returns boolean
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.check_organizer(p_pin) then
+    raise exception 'Code organisateur incorrect';
+  end if;
+  insert into public.app_settings (key, value)
+  values ('activites_ouvertes', case when p_ouvert then 'true' else 'false' end)
+  on conflict (key) do update set value = excluded.value;
+  return public.activites_ouvertes();
+end;
+$$;
+
 create or replace function public.admin_set_ouverture(p_pin text, p_quand timestamptz)
 returns timestamptz
 language plpgsql security definer set search_path = public as $$
@@ -593,7 +618,8 @@ as $$
                       from public.quiz_lockouts l where l.until > now()),
     'settings',    jsonb_build_object(
                      'lockout_minutes', public.lockout_minutes(),
-                     'ouverture',       public.ouverture_du_jeu()),
+                     'ouverture',          public.ouverture_du_jeu(),
+                     'activites_ouvertes', public.activites_ouvertes()),
     'server_time', now()
   );
 $$;

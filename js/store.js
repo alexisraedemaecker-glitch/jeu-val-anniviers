@@ -49,6 +49,7 @@ export const state = {
   // Heure d'ouverture du jeu, et decalage entre l'horloge du serveur et celle
   // de l'appareil : un telephone mal regle ne doit pas ouvrir le jeu en avance.
   ouverture: null,
+  activitesOuvertes: false,
   decalageServeur: 0,
   pending: [],
   syncing: false,
@@ -156,6 +157,11 @@ export function jeuOuvert() {
   return maintenant() >= new Date(state.ouverture).getTime();
 }
 
+/** L'onglet Activites peut s'ouvrir avant le reste du jeu. */
+export function activitesOuvertes() {
+  return jeuOuvert() || state.activitesOuvertes;
+}
+
 /** Millisecondes restantes avant l'ouverture, zero si c'est ouvert. */
 export function avantOuverture() {
   if (!state.ouverture) return 0;
@@ -249,6 +255,7 @@ export async function refresh({ feed = false } = {}) {
       lockouts: data.lockouts || [],
       lockoutMinutes: (data.settings && data.settings.lockout_minutes) || 30,
       ouverture: (data.settings && data.settings.ouverture) || null,
+      activitesOuvertes: !!(data.settings && data.settings.activites_ouvertes),
       decalageServeur: data.server_time ? new Date(data.server_time).getTime() - Date.now() : state.decalageServeur,
       loading: false,
       loadError: null,
@@ -970,6 +977,21 @@ export async function adminSetOuverture(quand) {
   return data;
 }
 
+/** Ouvre ou referme l'onglet Activités pour tout le monde. */
+export async function adminSetActivites(ouvert) {
+  const { data, error } = await sb.rpc("admin_set_activites", {
+    p_pin: state.organizerPin,
+    p_ouvert: !!ouvert
+  });
+  if (error) throw new Error(friendly(error));
+  setState({
+    activitesOuvertes: !!data,
+    toast: { kind: "success", text: data ? "Activités ouvertes" : "Activités refermées" }
+  });
+  await refresh();
+  return data;
+}
+
 export async function adminResetGame(confirmation) {
   const { data, error } = await sb.rpc("admin_reset_game", {
     p_pin: state.organizerPin,
@@ -1120,6 +1142,17 @@ export async function boot() {
   });
 
   await refreshPending();
+  // Un code organisateur garde en memoire ouvre tous les onglets : on verifie
+  // qu'il est toujours valable, sinon un ancien code continuerait d'ouvrir le
+  // jeu sur cet appareil.
+  if (state.organizerPin) {
+    try {
+      const { data } = await sb.rpc("check_organizer", { p_pin: state.organizerPin });
+      if (data !== true) forgetOrganizer();
+    } catch (err) {
+      /* hors ligne : on garde ce qu'on a */
+    }
+  }
   await refresh({ feed: true });
   // Une fois au demarrage, pour que la pastille de notifications soit juste
   // des la premiere seconde. Ensuite le temps reel s'en charge.

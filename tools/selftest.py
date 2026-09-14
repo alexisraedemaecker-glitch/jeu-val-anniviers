@@ -738,6 +738,19 @@ check("une description trop longue est coupée à 280 signes",
 st, d = rpc("set_bio", {"p_participant": A, "p_bio": "   "})
 check("une description vide efface la précédente", st == 200 and d.get("bio") is None, str(d)[:80])
 
+st, d = rpc("activites_ouvertes", {})
+check("l'onglet Activités est fermé par défaut", st == 200 and d is False, str(d))
+st, d = rpc("admin_set_activites", {"p_pin": "0000", "p_ouvert": True})
+check("ouvrir les activités sans le bon code est refusé", st >= 400, str(d)[:80])
+st, d = rpc("admin_set_activites", {"p_pin": PIN, "p_ouvert": True})
+check("l'organisateur peut ouvrir les activités", st == 200 and d is True, str(d))
+st, d = rpc("game_state", {})
+check("l'état des activités voyage avec le jeu",
+      d["settings"].get("activites_ouvertes") is True, str(d["settings"]))
+rpc("admin_set_activites", {"p_pin": PIN, "p_ouvert": False})
+st, d = rpc("activites_ouvertes", {})
+check("et les refermer", st == 200 and d is False, str(d))
+
 st, d = rpc("ouverture_du_jeu", {})
 check("le jeu a une heure d'ouverture", st == 200 and d, str(d))
 ouverture_avant = d

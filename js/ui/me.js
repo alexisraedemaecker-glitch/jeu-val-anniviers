@@ -1,5 +1,5 @@
 // Mon profil, mes soumissions en attente, et l'entree vers la vue organisateur.
-const { html, useState, useEffect } = window.htmPreact;
+const { html, useState, useEffect, useMemo } = window.htmPreact;
 
 import {
   state,
@@ -21,7 +21,7 @@ import {
 import { STYLES } from "../data/pillars.js";
 import { CHALLENGE_BY_ID, CHALLENGES } from "../data/challenges.js";
 import { SYNERGIES } from "../data/synergies.js";
-import { Banner, Spinner, Avatar, dateTimeShort } from "./bits.js";
+import { Banner, Spinner, Avatar, Empty, dateTimeShort } from "./bits.js";
 
 /**
  * Notifications sur l'ecran verrouille. La demande doit partir d'un geste, et
@@ -87,6 +87,54 @@ function Notifications() {
       Sur iPhone, elles ne fonctionnent que depuis l'application ajoutée à l'écran d'accueil.
       Sur Android, depuis le navigateur comme depuis l'application.
     </p>
+  </div>`;
+}
+
+/**
+ * Qui joue. Une ligne par personne, triee par prenom, avec sa description en
+ * deux mots. Un appui ouvre son profil.
+ */
+function LesJoueurs({ go }) {
+  const [cherche, setCherche] = useState("");
+
+  const gens = useMemo(() => {
+    const q = cherche.trim().toLowerCase();
+    const liste = (state.scores || [])
+      .slice()
+      .sort((a, b) =>
+        `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`, "fr")
+      );
+    if (!q) return liste;
+    return liste.filter((p) =>
+      `${p.first_name} ${p.last_name} ${p.bio || ""}`.toLowerCase().includes(q)
+    );
+  }, [state.scores, cherche]);
+
+  return html`<div class="card">
+    <div class="card-head">
+      <h2>Qui joue</h2>
+      <span class="chip plain">${(state.scores || []).length}</span>
+    </div>
+    ${(state.scores || []).length > 8
+      ? html`<input type="search" placeholder="Chercher quelqu'un" value=${cherche}
+               onInput=${(e) => setCherche(e.target.value)} style="margin-bottom:.5rem" />`
+      : null}
+    ${gens.length === 0
+      ? html`<p class="small muted">Personne d'autre pour le moment.</p>`
+      : html`<div class="rank">
+          ${gens.map(
+            (p) => html`<button key=${p.id}
+              class=${"rank-row" + (state.me && p.id === state.me.id ? " me" : "")}
+              onClick=${() => go("#/profil/" + p.id)}>
+              <${Avatar} p=${p} taille="sm" />
+              <span class="rank-name">
+                ${p.first_name} ${p.last_name}
+                ${p.bio ? html`<small>${p.bio}</small>` : null}
+              </span>
+              <span class="faint" style="font-size:1.1rem">›</span>
+            </button>`
+          )}
+        </div>`}
   </div>`;
 }
 
@@ -234,6 +282,8 @@ export function Me({ go }) {
         </button>
       </div>
     </form>
+
+    <${LesJoueurs} go=${go} />
 
     <${Notifications} />
 

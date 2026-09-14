@@ -11,7 +11,8 @@ import {
   dismissSynergy,
   unreadCount,
   jeuOuvert,
-  avantOuverture
+  avantOuverture,
+  activitesOuvertes
 } from "./store.js";
 import { PILLAR_BY_ID, PILLARS } from "./data/pillars.js";
 import { CHALLENGES } from "./data/challenges.js";
@@ -40,7 +41,13 @@ const TABS = [
   { href: "#/moi", icon: "🙋", label: "Moi" }
 ];
 
-const ECRANS_FERMES = ["defis", "defi", "activites", "progression", "classement", "album"];
+const ECRANS_FERMES = ["defis", "defi", "progression", "classement", "album"];
+
+/** Un écran est fermé tant que son heure n'est pas venue. */
+function ecranFerme(nom) {
+  if (nom === "activites") return !activitesOuvertes();
+  return !jeuOuvert() && ECRANS_FERMES.includes(nom);
+}
 
 /** Compte a rebours jusqu'a l'ouverture, en jours, heures, minutes, secondes. */
 function decompte(ms) {
@@ -53,7 +60,7 @@ function decompte(ms) {
   };
 }
 
-function Attente({ go }) {
+function Attente({ go, activites }) {
   const [, setTic] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setTic((n) => n + 1), 1000);
@@ -84,8 +91,9 @@ function Attente({ go }) {
         <div><strong>${String(d.secondes).padStart(2, "0")}</strong><span>secondes</span></div>
       </div>
       <p class="small muted" style="margin-top:.9rem">
-        Les défis, les piliers, le classement et l'album s'ouvrent tous en même temps, à l'heure
-        dite. D'ici là, le fil est à vous : présentez vous, dites qui vient, mettez une photo.
+        ${activites
+          ? "Les idées de randonnées, de tables et de visites s'ouvriront avant le week end. L'organisateur vous préviendra dans le fil."
+          : "Les défis, les piliers, le classement et l'album s'ouvrent tous en même temps, à l'heure dite. D'ici là, le fil est à vous : présentez vous, dites qui vient, mettez une photo."}
       </p>
       <div class="row" style="gap:.5rem">
         <button class="btn grow" onClick=${() => go("#/fil")}>Aller au fil</button>
@@ -146,13 +154,15 @@ function App() {
         <${NetDot} />
       </header>
       <main>
-        ${surActivites
+        ${surActivites && activitesOuvertes()
           ? html`<${Activites} go=${go} identifie=${false} />`
           : html`<div class="stack accueil">
               <${Onboarding} />
-              <button class="btn quiet block" onClick=${() => go("#/activites")}>
-                🧭 Voir les activités du week end sans m'identifier
-              </button>
+              ${activitesOuvertes()
+                ? html`<button class="btn quiet block" onClick=${() => go("#/activites")}>
+                    🧭 Voir les activités du week end sans m'identifier
+                  </button>`
+                : null}
             </div>`}
       </main>
       <${Toast} />
@@ -162,7 +172,7 @@ function App() {
   const title = titleFor(route);
   // Un écran fermé se remplace par le compte à rebours, sans jamais empêcher
   // de naviguer : on peut toujours redescendre vers le fil ou son profil.
-  const ferme = !jeuOuvert() && ECRANS_FERMES.includes(route.name);
+  const ferme = ecranFerme(route.name);
 
   return html`<div class="shell">
     <header class="topbar">
@@ -190,7 +200,7 @@ function App() {
 
       ${route.name !== "moi" && state.pending.length ? html`<${Pending} />` : null}
 
-      ${ferme ? html`<${Attente} go=${go} />` : null}
+      ${ferme ? html`<${Attente} go=${go} activites=${route.name === "activites"} />` : null}
       ${!ferme && route.name === "defis" ? html`<${ChallengeList} go=${go} />` : null}
       ${route.name === "fil" ? html`<${Fil} go=${go} />` : null}
       ${route.name === "profil" ? html`<${Profil} id=${route.id} go=${go} />` : null}
@@ -220,7 +230,7 @@ function App() {
             : t.href === "#/fil"
               ? unreadCount()
               : 0;
-        const bloque = t.ferme && !jeuOuvert();
+        const bloque = t.ferme && ecranFerme(t.href.replace("#/", ""));
         return html`<a key=${t.href} href=${t.href}
           class=${(on ? "on" : "") + (bloque ? " bloque" : "")}
           aria-disabled=${bloque ? "true" : "false"}>

@@ -408,6 +408,7 @@ input[type=file] { display: none; }
 }
 .suggestion + .suggestion { border-top: 1px solid var(--line); }
 .mention { color: var(--accent); font-weight: 650; }
+.mention.tous { color: var(--warn); }
 .com-texte { margin: 0; overflow-wrap: break-word; }
 .post-apercu { margin-top: .5rem; display: flex; align-items: center; gap: .6rem; }
 .post-apercu img { width: 88px; height: 88px; object-fit: cover; border-radius: 10px; }

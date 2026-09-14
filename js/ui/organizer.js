@@ -21,6 +21,8 @@ import {
   adminResetGame,
   adminSetLockoutMinutes,
   adminSetOuverture,
+  adminSetActivites,
+  activitesOuvertes,
   jeuOuvert,
   avantOuverture,
   friendly
@@ -71,7 +73,7 @@ function Gate() {
     ${error ? html`<${Banner} kind="bad">${error}<//>` : null}
     <label class="field">
       <span>Code organisateur</span>
-      <input type="tel" inputmode="numeric" autocomplete="off" value=${pin}
+      <input type="password" autocomplete="off" value=${pin}
              onInput=${(e) => setPin(e.target.value)} />
     </label>
     <button class="btn block" type="submit" disabled=${busy || !pin}>
@@ -648,6 +650,18 @@ function Reglages({ onError }) {
     }
   }
 
+  async function basculerActivites() {
+    setBusy("activites");
+    onError(null);
+    try {
+      await adminSetActivites(!state.activitesOuvertes);
+    } catch (err) {
+      onError(friendly(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function ouvrirMaintenant() {
     if (!confirm("Ouvrir le jeu pour tout le monde, tout de suite ?")) return;
     setBusy("ouverture");
@@ -718,6 +732,25 @@ function Reglages({ onError }) {
             })
           : "aucun"}, heure suisse.
       </p>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>L'onglet Activités</h2>
+        ${state.activitesOuvertes
+          ? html`<span class="chip ok">Ouvert</span>`
+          : html`<span class="chip warn">Fermé</span>`}
+      </div>
+      <p class="small muted">
+        Les randonnées, les tables et les visites peuvent s'ouvrir avant le reste du jeu, pour
+        faire patienter. Une fois ouvert, publiez dans le fil un message qui commence par
+        ${" "}<strong>@tous</strong> : tout le monde reçoit la notification.
+      </p>
+      <button class=${"btn block" + (state.activitesOuvertes ? " quiet" : "")}
+              disabled=${busy === "activites"} onClick=${basculerActivites}>
+        ${busy === "activites" ? html`<${Spinner} dark=${state.activitesOuvertes} />` : null}
+        ${state.activitesOuvertes ? "Refermer les activités" : "Ouvrir les activités maintenant"}
+      </button>
     </div>
 
     <form class="card" onSubmit=${enregistrerDuree}>
