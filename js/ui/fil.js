@@ -20,6 +20,7 @@ import {
   activerPush,
   rafraichirEtatPush,
   pushDisponible,
+  jeuOuvert,
   friendly
 } from "../store.js";
 import { PILLAR_BY_ID } from "../data/pillars.js";
@@ -575,6 +576,23 @@ function Notifications({ aller }) {
 }
 
 /**
+ * Renvoi vers la page qui explique le jeu. Elle n'a d'interet que tant que le
+ * jeu n'est pas ouvert : le jour venu, le fil a mieux a montrer, et la page
+ * reste atteignable depuis l'onglet Moi.
+ */
+function InviteConcept({ go }) {
+  if (jeuOuvert()) return null;
+  return html`<div class="card">
+    <h3 style="margin-top:0">Vous n'avez pas encore lu les règles</h3>
+    <p class="small" style="margin-bottom:.6rem">
+      Le principe, les cinq piliers, comment se valide un défi, et ce que vous pouvez déjà
+      préparer pour le week end. Deux minutes de lecture.
+    </p>
+    <button class="btn sm block" onClick=${() => go("#/le-jeu")}>Comment se joue le jeu</button>
+  </div>`;
+}
+
+/**
  * Petite invitation a activer les notifications, une seule fois. Elle disparait
  * des qu'on l'accepte ou qu'on la repousse, et ne revient pas.
  */
@@ -711,6 +729,7 @@ export function Fil({ go }) {
   const indexPhoto = (post) => photos.findIndex((x) => x.src === photoUrl(post.photo_path));
 
   return html`<div class="stack">
+    <${InviteConcept} go=${go} />
     <${InviteNotifications} />
     <${Notifications} aller=${aller} />
     ${state.me ? html`<${Composer} />` : null}

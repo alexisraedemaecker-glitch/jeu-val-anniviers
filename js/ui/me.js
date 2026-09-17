@@ -233,6 +233,15 @@ export function Me({ go }) {
     ${error ? html`<${Banner} kind="bad">${error}<//>` : null}
 
     <div class="card">
+      <h2>Comment se joue le jeu</h2>
+      <p class="small muted">
+        Le principe, les cinq piliers, la façon de valider un défi, et ce que vous pouvez préparer
+        pour le week end. À relire autant de fois que nécessaire.
+      </p>
+      <button class="btn sm quiet block" onClick=${() => go("#/le-jeu")}>Ouvrir les règles</button>
+    </div>
+
+    <div class="card">
       <h2>Votre envie du moment</h2>
       <p class="small muted">
         Purement informatif, modifiable autant de fois que vous voulez. Cela ne limite aucun défi.

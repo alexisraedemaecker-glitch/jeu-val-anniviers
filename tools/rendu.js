@@ -27,6 +27,7 @@ window.rendu = async function rendu() {
     ["Album", "../js/ui/gallery.js", "Gallery", {}],
     ["Moi", "../js/ui/me.js", "Me", { go: () => {} }],
     ["Identification", "../js/ui/onboarding.js", "Onboarding", {}],
+    ["Comment ça marche", "../js/ui/concept.js", "Concept", { go: () => {} }],
     ["Organisateur", "../js/ui/organizer.js", "Organizer", { go: () => {} }]
   ];
 

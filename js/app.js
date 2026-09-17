@@ -27,7 +27,8 @@ import { Organizer } from "./ui/organizer.js";
 import { Activites } from "./ui/activites.js";
 import { Fil } from "./ui/fil.js";
 import { Profil } from "./ui/profil.js";
-import { Banner } from "./ui/bits.js";
+import { Concept } from "./ui/concept.js";
+import { Banner, Frag } from "./ui/bits.js";
 
 // Avant l'ouverture, seuls le fil et le profil sont accessibles : tout le monde
 // peut s'inscrire et discuter, le jeu lui meme attend samedi matin.
@@ -95,9 +96,14 @@ function Attente({ go, activites }) {
           ? "Les idées de randonnées, de tables et de visites s'ouvriront avant le week end. L'organisateur vous préviendra dans le fil."
           : "Les défis, les piliers, le classement et l'album s'ouvrent tous en même temps, à l'heure dite. D'ici là, le fil est à vous : présentez vous, dites qui vient, mettez une photo."}
       </p>
-      <div class="row" style="gap:.5rem">
-        <button class="btn grow" onClick=${() => go("#/fil")}>Aller au fil</button>
-        <button class="btn quiet" onClick=${() => go("#/moi")}>Mon profil</button>
+      <button class="btn block" onClick=${() => go("#/le-jeu")}>
+        Comment se joue le jeu
+      </button>
+      <div class="row" style="gap:.5rem;margin-top:.5rem">
+        <button class="btn quiet grow" onClick=${() => go("#/fil")}>Aller au fil</button>
+        ${activitesOuvertes()
+          ? html`<button class="btn quiet grow" onClick=${() => go("#/activites")}>Les activités</button>`
+          : html`<button class="btn quiet grow" onClick=${() => go("#/moi")}>Mon profil</button>`}
       </div>
     </div>
   </div>`;
@@ -140,30 +146,52 @@ function App() {
   }, [state.toast]);
 
   if (!state.me) {
-    const surActivites = route.name === "activites";
+    // Deux pages se visitent sans profil : les activites du week end, et la
+    // page qui explique le jeu. C'est celle qu'on peut envoyer a quelqu'un
+    // pour lui donner envie avant qu'il ne s'inscrive.
+    const surActivites = route.name === "activites" && activitesOuvertes();
+    const surConcept = route.name === "le-jeu";
+    const ailleurs = surActivites || surConcept;
     return html`<div class="shell">
       <header class="topbar">
-        ${surActivites
+        ${ailleurs
           ? html`<button class="topbar-back" aria-label="Retour"
                    onClick=${() => go("#/")}>‹</button>`
           : null}
         <div class="topbar-title">
-          ${surActivites ? "Activités" : "Anniviers 2056"}
-          <small>${surActivites ? "Le week end dans la vallée" : "Identification"}</small>
+          ${surConcept ? "Comment ça marche" : surActivites ? "Activités" : "Anniviers 2056"}
+          <small>
+            ${surConcept
+              ? "Le jeu en bref"
+              : surActivites
+                ? "Le week end dans la vallée"
+                : "Identification"}
+          </small>
         </div>
         <${NetDot} />
       </header>
       <main>
-        ${surActivites && activitesOuvertes()
-          ? html`<${Activites} go=${go} identifie=${false} />`
-          : html`<div class="stack accueil">
-              <${Onboarding} />
-              ${activitesOuvertes()
-                ? html`<button class="btn quiet block" onClick=${() => go("#/activites")}>
-                    🧭 Voir les activités du week end sans m'identifier
-                  </button>`
-                : null}
-            </div>`}
+        ${surConcept
+          ? html`<${Frag}>
+              <${Concept} go=${go} />
+              <div style="height:.8rem"></div>
+              <button class="btn block" onClick=${() => go("#/")}>
+                Rejoindre le jeu et créer mon profil
+              </button>
+            <//>`
+          : surActivites
+            ? html`<${Activites} go=${go} identifie=${false} />`
+            : html`<div class="stack accueil">
+                <${Onboarding} />
+                <button class="btn quiet block" onClick=${() => go("#/le-jeu")}>
+                  Comment se joue le jeu
+                </button>
+                ${activitesOuvertes()
+                  ? html`<button class="btn quiet block" onClick=${() => go("#/activites")}>
+                      🧭 Voir les activités du week end sans m'identifier
+                    </button>`
+                  : null}
+              </div>`}
       </main>
       <${Toast} />
     </div>`;
@@ -176,9 +204,9 @@ function App() {
 
   return html`<div class="shell">
     <header class="topbar">
-      ${route.name === "defi" || route.name === "organisateur" || route.name === "profil"
+      ${["defi", "organisateur", "profil", "le-jeu"].includes(route.name)
         ? html`<button class="topbar-back" aria-label="Retour"
-                 onClick=${() => go(route.name === "defi" ? "#/defis" : route.name === "profil" ? "#/fil" : "#/moi")}>‹</button>`
+                 onClick=${() => go(route.name === "defi" ? "#/defis" : route.name === "profil" || route.name === "le-jeu" ? "#/fil" : "#/moi")}>‹</button>`
         : null}
       <div class="topbar-title">
         ${title.main}<small>${title.sub}</small>
@@ -210,8 +238,9 @@ function App() {
       ${!ferme && route.name === "classement" ? html`<${Ranking} go=${go} />` : null}
       ${!ferme && route.name === "album" ? html`<${Gallery} />` : null}
       ${route.name === "moi" ? html`<${Me} go=${go} />` : null}
+      ${route.name === "le-jeu" ? html`<${Concept} go=${go} />` : null}
       ${route.name === "organisateur" ? html`<${Organizer} go=${go} />` : null}
-      ${["defis", "defi", "fil", "profil", "activites", "progression", "classement", "album", "moi", "organisateur"].includes(route.name)
+      ${["defis", "defi", "fil", "profil", "activites", "progression", "classement", "album", "moi", "organisateur", "le-jeu"].includes(route.name)
         ? null
         : html`<${ChallengeList} go=${go} />`}
     </main>
@@ -258,6 +287,7 @@ function titleFor(route) {
     classement: ["Classement", "En direct"],
     album: ["L'album", "Les photos de la journée"],
     moi: ["Mon profil", state.me ? `${state.me.first_name} ${state.me.last_name}` : ""],
+    "le-jeu": ["Comment ça marche", "Le jeu en bref"],
     organisateur: ["Administration", "Gestion du jeu"]
   };
   const t = map[route.name] || map.defis;
