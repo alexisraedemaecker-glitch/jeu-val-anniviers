@@ -211,6 +211,18 @@ create table if not exists public.push_subscriptions (
 create index if not exists push_subscriptions_participant_idx
   on public.push_subscriptions (participant_id);
 
+-- Profils retires par un organisateur. Supprimer la ligne d'un joueur ne
+-- suffit pas : son telephone garde son profil en memoire locale, et il lui
+-- suffirait de se reinscrire du meme nom pour revenir. Le nom reste donc ici,
+-- l'inscription le refuse, et l'organisateur peut reautoriser d'un bouton en
+-- cas de suppression par erreur.
+create table if not exists public.exclusions (
+  nom        text primary key,
+  first_name text not null,
+  last_name  text not null,
+  retire_le  timestamptz not null default now()
+);
+
 -- Chaque defi deja valide avant l'arrivee du fil recoit sa publication, pour
 -- que le fil et l'album racontent la journee en entier.
 insert into public.posts (author_id, submission_id, created_at)

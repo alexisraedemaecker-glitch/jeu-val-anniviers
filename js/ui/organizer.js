@@ -18,6 +18,8 @@ import {
   adminRenameParticipant,
   adminResetCode,
   adminDeleteParticipant,
+  adminExclusions,
+  adminReautoriser,
   adminResetGame,
   adminSetLockoutMinutes,
   adminSetOuverture,
@@ -30,7 +32,7 @@ import {
 import { PILLARS, PILLAR_BY_ID, VICTORY } from "../data/pillars.js";
 import { CHALLENGES, CHALLENGE_BY_ID } from "../data/challenges.js";
 import { SYNERGIES } from "../data/synergies.js";
-import { Banner, Spinner, Empty, Gauge, dateTimeShort, pillarColor, Avatar } from "./bits.js";
+import { Banner, Spinner, Empty, Frag, Gauge, dateTimeShort, pillarColor, Avatar } from "./bits.js";
 
 const ONGLETS = [
   { id: "bord", label: "Tableau de bord" },
@@ -371,12 +373,84 @@ function Soumissions({ onError }) {
 
 // ----------------------------------------------------------------- joueurs
 
+/**
+ * Les personnes retirees du jeu. Supprimer un profil bloque aussi son nom a
+ * l'inscription, sinon la personne reviendrait en trente secondes et la
+ * suppression n'aurait servi a rien. Une suppression par erreur se repare ici.
+ */
+function Retires({ onError, cle }) {
+  const [rows, setRows] = useState(null);
+  const [ouvert, setOuvert] = useState(false);
+  const [busy, setBusy] = useState(null);
+
+  async function charger() {
+    try {
+      setRows(await adminExclusions());
+    } catch (err) {
+      onError(friendly(err));
+      setRows([]);
+    }
+  }
+
+  useEffect(() => {
+    charger();
+  }, [cle]);
+
+  async function rouvrir(x) {
+    if (!confirm(`Rouvrir l'inscription à ${x.first_name} ${x.last_name} ?\n\nSon ancien profil ne revient pas : elle repart de zéro, comme au premier jour.`)) {
+      return;
+    }
+    setBusy(x.nom);
+    onError(null);
+    try {
+      await adminReautoriser(x.nom);
+      await charger();
+    } catch (err) {
+      onError(friendly(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  if (!rows || rows.length === 0) return null;
+
+  return html`<div class="card">
+    <button class="repli" type="button" onClick=${() => setOuvert(!ouvert)}
+            aria-expanded=${ouvert ? "true" : "false"}>
+      <h2>Personnes retirées du jeu</h2>
+      <span class="chip plain">${rows.length}</span>
+      <span class="grow"></span>
+      <span class="faint" style="font-size:1.3rem">${ouvert ? "▴" : "▾"}</span>
+    </button>
+    ${ouvert
+      ? html`<${Frag}>
+          <p class="tiny faint" style="margin:.5rem 0 .7rem">
+            Ces noms ne peuvent plus s'inscrire. Leur téléphone a perdu son profil.
+          </p>
+          ${rows.map(
+            (x) => html`<div key=${x.nom} class="row" style="gap:.6rem;align-items:center;margin-top:.4rem">
+              <div class="grow">
+                <strong>${x.first_name} ${x.last_name}</strong>
+                <div class="tiny faint">Retirée le ${dateTimeShort(x.retire_le)}</div>
+              </div>
+              <button class="btn sm quiet" disabled=${busy === x.nom}
+                      onClick=${() => rouvrir(x)}>
+                ${busy === x.nom ? html`<${Spinner} dark=${true} />` : null} Réautoriser
+              </button>
+            </div>`
+          )}
+        <//>`
+      : null}
+  </div>`;
+}
+
 function Joueurs({ onError }) {
   const [edit, setEdit] = useState(null);
   const [first, setFirst] = useState("");
   const [last, setLast] = useState("");
   const [busy, setBusy] = useState(null);
   const [recherche, setRecherche] = useState("");
+  const [recharger, setRecharger] = useState(0);
 
   const rows = useMemo(() => {
     const q = recherche.trim().toLowerCase();
@@ -428,13 +502,20 @@ function Joueurs({ onError }) {
   }
 
   async function supprimer(p) {
-    if (!confirm(`Supprimer définitivement ${p.first_name} ${p.last_name} ?\n\nSes ${p.defis_faits} défi(s), ses photos et ses points disparaissent. Les jauges se recalculent.`)) {
+    if (
+      !confirm(
+        `Supprimer définitivement ${p.first_name} ${p.last_name} ?\n\n` +
+          `Ses ${p.defis_faits} défi(s), ses photos, ses points, ses publications et ses commentaires disparaissent. Les jauges se recalculent.\n\n` +
+          `Son téléphone perd son profil dès la prochaine ouverture de l'application, et son nom ne pourra plus se réinscrire. Vous pourrez lui rouvrir la porte plus bas, dans Personnes retirées du jeu.`
+      )
+    ) {
       return;
     }
     setBusy(p.id);
     onError(null);
     try {
       await adminDeleteParticipant(p.id);
+      setRecharger((n) => n + 1);
     } catch (err) {
       onError(friendly(err));
     } finally {
@@ -499,6 +580,8 @@ function Joueurs({ onError }) {
                 </div>
               </div>`
         )}
+
+    <${Retires} onError=${onError} cle=${recharger} />
   </div>`;
 }
 

@@ -30,6 +30,8 @@ export const state = {
   loading: true,
   loadError: null,
   me: readMe(),
+  // Vrai le temps d'expliquer a quelqu'un que son profil a ete retire du jeu.
+  retire: false,
   gauges: [],
   collective: null,
   scores: [],
@@ -219,6 +221,59 @@ export function signOut() {
   setState({ me: null });
 }
 
+/**
+ * Un profil supprime par l'organisateur doit aussi disparaitre du telephone de
+ * la personne. Sans cela son appareil garde le profil qu'il a en memoire locale
+ * et continue de jouer avec un identifiant qui n'existe plus : ses validations
+ * partent en erreur sans qu'elle comprenne pourquoi, et elle se voit encore
+ * dans le jeu alors que personne d'autre ne la voit.
+ *
+ * On efface donc tout ce qui la rattache au jeu sur cet appareil, et on la
+ * ramene a l'ecran d'identification avec un mot d'explication.
+ */
+function profilRetire() {
+  writeMe(null);
+  try {
+    localStorage.removeItem("anniviers2056.seenSynergies");
+    localStorage.removeItem(LOCK_KEY);
+  } catch (err) {
+    /* stockage indisponible */
+  }
+  // Ce qui restait a envoyer portait un identifiant qui n'existe plus : la file
+  // d'attente echouerait a chaque tentative, indefiniment.
+  queue
+    .all()
+    .then((rows) => Promise.all((rows || []).map((r) => queue.remove(r.client_id))))
+    .then(() => refreshPending())
+    .catch(() => {});
+  // L'abonnement aux notifications de cet appareil est deja tombe en base, par
+  // cascade. On coupe aussi celui du navigateur, sinon une reinscription
+  // repartirait avec un abonnement que la base ne connait plus.
+  if (pushDisponible()) {
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((ab) => (ab ? ab.unsubscribe() : null))
+      .catch(() => {});
+  }
+  setState({
+    me: null,
+    retire: true,
+    posts: [],
+    notifications: [],
+    postsLoaded: false,
+    feed: [],
+    feedLoaded: false,
+    pushEtat: "possible",
+    localLockouts: [],
+    synergyQueue: []
+  });
+}
+
+/** L'ecran d'identification a montre le message, on ne le repete pas. */
+export function messageRetireVu() {
+  setState({ retire: false });
+}
+
 export async function chooseExisting(participant) {
   writeMe(participant);
   setState({ me: participant });
@@ -265,6 +320,13 @@ export async function refresh({ feed = false } = {}) {
     // Garde le profil local a jour si le prenom ou l'envie a change ailleurs.
     if (state.me) {
       const fresh = (data.scores || []).find((s) => s.id === state.me.id);
+      // La liste des scores part de la table des profils et n'omet personne,
+      // meme sans un seul defi valide. Ne pas s'y trouver ne veut donc dire
+      // qu'une chose : le profil a ete supprime par un organisateur.
+      if (!fresh && Array.isArray(data.scores)) {
+        profilRetire();
+        return;
+      }
       if (
         fresh &&
         (fresh.vibe !== state.me.vibe ||
@@ -979,6 +1041,24 @@ export async function adminDeleteParticipant(id) {
   }
   await refresh({ feed: true });
   setState({ toast: { kind: "success", text: "Profil supprimé" } });
+  return data;
+}
+
+/** La liste des personnes retirees du jeu. */
+export async function adminExclusions() {
+  const { data, error } = await sb.rpc("admin_exclusions", { p_pin: state.organizerPin });
+  if (error) throw new Error(friendly(error));
+  return data || [];
+}
+
+/** Rouvre l'inscription a quelqu'un retire par erreur. */
+export async function adminReautoriser(nom) {
+  const { error } = await sb.rpc("admin_reautoriser", {
+    p_pin: state.organizerPin,
+    p_nom: nom
+  });
+  if (error) throw new Error(friendly(error));
+  setState({ toast: { kind: "success", text: "Inscription rouverte" } });
 }
 
 /** Remet le code d'un joueur qui l'a oublie. */

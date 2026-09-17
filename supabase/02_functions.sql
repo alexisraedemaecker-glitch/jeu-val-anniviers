@@ -68,6 +68,16 @@ as $$
       or (p ~ '^[0-9a-zA-Z][0-9a-zA-Z/_.-]{0,200}$' and p not like '%..%');
 $$;
 
+-- Cle de nom, insensible a la casse et aux espaces, comme l'index unique des
+-- profils. Sert a reconnaitre un nom retire par l'organisateur.
+create or replace function public.nom_cle(p_first text, p_last text)
+returns text
+language sql
+immutable
+as $$
+  select lower(btrim(coalesce(p_first, ''))) || ' ' || lower(btrim(coalesce(p_last, '')));
+$$;
+
 -- Cree le profil ou retrouve celui qui existe deja, sans tenir compte de la
 -- casse ni des espaces autour. Remplace toute inscription par mot de passe.
 -- La signature a change avec l'ajout du portrait, on retire donc l'ancienne.
@@ -108,6 +118,9 @@ begin
   end if;
   if vb is not null and vb not in ('chill','culturel','culinaire','sportif') then
     vb := null;
+  end if;
+  if exists (select 1 from public.exclusions where nom = public.nom_cle(f, l)) then
+    raise exception 'Ce profil a été retiré du jeu par l''organisateur. Parlez lui si c''est une erreur.';
   end if;
 
   select * into v from public.participants
@@ -691,6 +704,12 @@ $$;
 
 -- Supprime un profil et tout ce qui en depend. Renvoie les photos devenues
 -- orphelines, que l'application retire ensuite par l'API de stockage.
+--
+-- Le nom part aussi dans la table des exclusions : sans cela la personne se
+-- reinscrirait du meme nom en trente secondes, et la suppression ne serait
+-- qu'un nettoyage d'affichage. Son telephone, lui, se voit retirer son profil
+-- au prochain echange avec la base, parce que l'application constate que le
+-- profil garde en memoire locale n'existe plus.
 create or replace function public.admin_delete_participant(p_pin text, p_id uuid)
 returns jsonb
 language plpgsql
@@ -700,6 +719,8 @@ as $$
 declare
   v_photos text[];
   v_portrait text;
+  v_first text;
+  v_last text;
 begin
   if not public.check_organizer(p_pin) then
     raise exception 'Code organisateur incorrect';
@@ -710,14 +731,57 @@ begin
           union all
           select photo_path from public.posts
            where author_id = p_id and photo_path is not null) t;
-  select coalesce(photo_path, '') into v_portrait from public.participants where id = p_id;
+  select first_name, last_name, coalesce(photo_path, '')
+    into v_first, v_last, v_portrait
+    from public.participants where id = p_id;
   delete from public.participants where id = p_id;
   if not found then
     raise exception 'Profil introuvable';
   end if;
+  insert into public.exclusions (nom, first_name, last_name)
+  values (public.nom_cle(v_first, v_last), v_first, v_last)
+  on conflict (nom) do update set retire_le = now();
   perform public.recompute_synergies();
   return jsonb_build_object('deleted', true, 'photos', to_jsonb(v_photos),
-                            'portrait', nullif(v_portrait, ''));
+                            'portrait', nullif(v_portrait, ''),
+                            'nom', v_first || ' ' || v_last);
+end;
+$$;
+
+-- La liste des personnes retirees, pour la vue organisateur.
+create or replace function public.admin_exclusions(p_pin text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v jsonb;
+begin
+  if not public.check_organizer(p_pin) then
+    raise exception 'Code organisateur incorrect';
+  end if;
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'nom', nom, 'first_name', first_name, 'last_name', last_name,
+           'retire_le', retire_le) order by retire_le desc), '[]'::jsonb)
+    into v from public.exclusions;
+  return v;
+end;
+$$;
+
+-- Rouvre la porte a quelqu'un retire par erreur. Son ancien profil ne revient
+-- pas, il se reinscrit comme au premier jour.
+create or replace function public.admin_reautoriser(p_pin text, p_nom text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.check_organizer(p_pin) then
+    raise exception 'Code organisateur incorrect';
+  end if;
+  delete from public.exclusions where nom = btrim(coalesce(p_nom, ''));
+  return found;
 end;
 $$;
 

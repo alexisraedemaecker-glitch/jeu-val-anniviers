@@ -23,6 +23,7 @@ alter table public.post_kudos        enable row level security;
 alter table public.post_comments     enable row level security;
 alter table public.comment_reactions enable row level security;
 alter table public.notifications     enable row level security;
+alter table public.exclusions        enable row level security;
 
 do $$
 declare t text;
@@ -45,6 +46,8 @@ $$;
 -- definer y accedent. Une empreinte de mot de passe ne sort jamais de la base.
 -- notifications : pas de policy non plus, elles ne se lisent que par
 -- feed_state(), qui ne renvoie que les siennes.
+-- exclusions : pas de policy non plus. La liste des personnes retirees du jeu
+-- ne regarde que l'organisateur, elle sort par admin_exclusions().
 
 -- ---------------------------------------------------------------- droits
 
@@ -78,7 +81,7 @@ begin
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
      where n.nspname = 'public'
        and p.proname in ('recompute_synergies','verifie_code','set_code','notifier',
-                         'push_a_envoyer','push_echec','declenche_push')
+                         'push_a_envoyer','push_echec','declenche_push','nom_cle')
   loop
     execute format('revoke all on function %s from public, anon, authenticated', f.signature);
   end loop;
@@ -142,6 +145,8 @@ grant execute on function public.admin_set_lockout_minutes(text, int)          t
 grant execute on function public.admin_reset_code(text, uuid, text)            to anon, authenticated;
 grant execute on function public.admin_set_ouverture(text, timestamptz)        to anon, authenticated;
 grant execute on function public.admin_set_activites(text, boolean)            to anon, authenticated;
+grant execute on function public.admin_exclusions(text)                        to anon, authenticated;
+grant execute on function public.admin_reautoriser(text, text)                 to anon, authenticated;
 
 -- -------------------------------------------------------------- stockage
 

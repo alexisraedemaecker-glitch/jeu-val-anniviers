@@ -505,6 +505,35 @@ st, d = rpc("admin_delete_participant", {"p_pin": PIN, "p_id": G})
 check("l'organisateur peut supprimer un profil", st == 200 and d.get("deleted"), str(d))
 check("le profil a bien disparu du classement", len(state()["scores"]) == avant_suppr - 1, str(len(state()["scores"])))
 
+# Une suppression doit tenir : sans blocage du nom, la personne se reinscrit en
+# trente secondes et la suppression n'aura ete qu'un nettoyage d'affichage.
+st, d = rpc("admin_exclusions", {"p_pin": PIN})
+noms = [x["nom"] for x in d] if isinstance(d, list) else []
+check("le nom supprimé est mis de côté", "zztest gamma" in noms, str(noms))
+st, d = call("/rest/v1/exclusions?select=*")
+check("le navigateur ne peut pas lire la liste des personnes retirées",
+      st >= 400 or d == [], f"{st} {str(d)[:80]}")
+st, d = rpc("nom_cle", {"p_first": "a", "p_last": "b"})
+check("la clé de nom n'est pas appelable depuis le navigateur", st >= 400, str(d))
+st, d = rpc("admin_exclusions", {"p_pin": "0000"})
+check("la liste des personnes retirées exige le code organisateur", st >= 400, str(d))
+st, d = rpc("ensure_participant", {"p_first": "  ZZTEST ", "p_last": "gamma", "p_code": CODE})
+check("un profil retiré ne peut plus se réinscrire, même en casse différente", st >= 400, str(d))
+st, d = rpc("admin_reautoriser", {"p_pin": "0000", "p_nom": "zztest gamma"})
+check("la réautorisation exige le code organisateur", st >= 400, str(d))
+st, d = rpc("admin_reautoriser", {"p_pin": PIN, "p_nom": "zztest gamma"})
+check("l'organisateur peut rouvrir l'inscription", st == 200 and d is True, str(d))
+st, d = rpc("ensure_participant", {"p_first": "Zztest", "p_last": "Gamma", "p_code": CODE})
+nouveau_g = d.get("id") if isinstance(d, dict) else None
+check("après réautorisation, la personne repart d'un profil neuf",
+      st == 200 and nouveau_g and nouveau_g != G, str(d))
+# On remet la base dans l'etat ou la suite du test l'attend.
+if nouveau_g:
+    rpc("admin_delete_participant", {"p_pin": PIN, "p_id": nouveau_g})
+    rpc("admin_reautoriser", {"p_pin": PIN, "p_nom": "zztest gamma"})
+check("la base est revenue comme avant ce bloc",
+      len(state()["scores"]) == avant_suppr - 1, str(len(state()["scores"])))
+
 print("\n=== 11. Reprises de quiz ===")
 cid = str(uuid.uuid4())
 st, d = rpc(
@@ -809,6 +838,10 @@ if "--keep" not in sys.argv:
         "delete from public.participants where lower(btrim(first_name)) = 'zztest';"
     )
     check("profils et soumissions de test supprimés", ok, str(res))
+    # Sans cela, les noms de test resteraient bloques a l'inscription et la
+    # prochaine execution ne pourrait plus creer ses profils.
+    ok, res = apply_sql.run("delete from public.exclusions where nom like 'zztest %';")
+    check("noms de test retirés de la liste des exclusions", ok, str(res))
     st_now = state()
     restants = [
         s["first_name"] + " " + s["last_name"]

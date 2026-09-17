@@ -7,7 +7,7 @@
 // s'ouvrir en grand, et le defilement s'arrete alors sur celle qu'on regarde.
 const { html, useState, useMemo, useEffect, useRef } = window.htmPreact;
 
-import { state, signIn, uploadPortrait, friendly } from "../store.js";
+import { state, signIn, uploadPortrait, friendly, messageRetireVu } from "../store.js";
 import { STYLES } from "../data/pillars.js";
 import { PALIERS_VALLEE } from "../data/vallee.js";
 import { HISTOIRE } from "../data/histoire.js";
@@ -344,6 +344,16 @@ export function Onboarding() {
     </div>
 
     ${histoire ? html`<${Histoire} onFermer=${() => setHistoire(false)} />` : null}
+
+    ${state.retire
+      ? html`<${Banner} kind="warn">
+          Votre profil a été retiré du jeu par l'organisateur, et cet appareil ne le garde plus.
+          Si c'est une erreur, parlez lui : il peut vous rouvrir l'inscription.
+          <div style="margin-top:.5rem">
+            <button class="btn sm quiet" type="button" onClick=${messageRetireVu}>J'ai compris</button>
+          </div>
+        <//>`
+      : null}
 
     ${error ? html`<${Banner} kind="bad">${error}<//>` : null}
     ${state.loadError
