@@ -365,6 +365,59 @@ input[type=file] { display: none; }
 
 /* ------------------------------------------------------------------- fil */
 
+/* En tête repliable, pour les notifications comme pour la liste des joueurs. */
+.notifs-tete, .repli {
+  display: flex; align-items: center; gap: .5rem; width: 100%;
+  background: none; border: 0; padding: 0; text-align: left;
+}
+.notifs-tete h2, .repli h2 { margin: 0; }
+.cloche { position: relative; font-size: 1.15rem; line-height: 1; }
+.cloche .pastille {
+  position: absolute; top: -6px; right: -9px;
+  background: var(--bad); color: #fff; border-radius: 999px;
+  font-size: .62rem; font-weight: 800; min-width: 16px; height: 16px;
+  display: grid; place-items: center; padding: 0 3px;
+}
+.cloche.neuve { animation: sonne 1.4s ease-in-out 2; transform-origin: 50% 0; }
+@keyframes sonne {
+  0%, 60%, 100% { transform: rotate(0); }
+  15% { transform: rotate(12deg); }
+  30% { transform: rotate(-10deg); }
+  45% { transform: rotate(6deg); }
+}
+@media (prefers-reduced-motion: reduce) { .cloche.neuve { animation: none; } }
+
+button.notif { width: 100%; text-align: left; cursor: pointer; }
+
+/* La publication qu'on vient d'atteindre depuis une notification. */
+.post.vise {
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow);
+}
+
+.donneurs {
+  display: flex; align-items: center; gap: .5rem; margin-top: .5rem;
+  padding: .45rem .6rem; border-radius: 11px; background: var(--warn-soft);
+}
+.donneurs .ic-fil { width: 22px; height: 22px; }
+
+/* Réactions sur un cri de marmotte. */
+.reactions { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; margin-top: .3rem; }
+.reaction {
+  display: inline-flex; align-items: center; gap: .2rem;
+  border: 1px solid var(--line); background: #fff; border-radius: 999px;
+  padding: .15rem .45rem; min-height: 30px; font-size: .95rem; line-height: 1;
+}
+.reaction.on { border-color: var(--warn); background: var(--warn-soft); }
+.reaction .ic-fil { width: 18px; height: 18px; }
+.reaction .nb { font-size: .72rem; font-weight: 700; color: var(--ink-soft); }
+.reaction.ajout { color: var(--ink-faint); font-weight: 700; padding: .15rem .5rem; }
+.choix-reaction {
+  display: flex; gap: .25rem; padding: .25rem;
+  border: 1px solid var(--line-strong); border-radius: 999px; background: var(--card);
+}
+.qui-reagit { width: 100%; }
+
 .post {
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow); padding: .8rem .9rem; margin-bottom: .7rem;

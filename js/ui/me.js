@@ -96,6 +96,9 @@ function Notifications() {
  */
 function LesJoueurs({ go }) {
   const [cherche, setCherche] = useState("");
+  // Replie par defaut : a vingt cinq joueurs, la liste ouverte repousserait
+  // tout le reste de l'ecran vers le bas.
+  const [ouvert, setOuvert] = useState(false);
 
   const gens = useMemo(() => {
     const q = cherche.trim().toLowerCase();
@@ -111,15 +114,20 @@ function LesJoueurs({ go }) {
   }, [state.scores, cherche]);
 
   return html`<div class="card">
-    <div class="card-head">
+    <button class="repli" onClick=${() => setOuvert(!ouvert)}
+            aria-expanded=${ouvert ? "true" : "false"}>
       <h2>Qui joue</h2>
       <span class="chip plain">${(state.scores || []).length}</span>
-    </div>
-    ${(state.scores || []).length > 8
+      <span class="grow"></span>
+      <span class="faint" style="font-size:1.3rem">${ouvert ? "▴" : "▾"}</span>
+    </button>
+    ${!ouvert ? null : (state.scores || []).length > 8
       ? html`<input type="search" placeholder="Chercher quelqu'un" value=${cherche}
                onInput=${(e) => setCherche(e.target.value)} style="margin-bottom:.5rem" />`
       : null}
-    ${gens.length === 0
+    ${!ouvert
+      ? null
+      : gens.length === 0
       ? html`<p class="small muted">Personne d'autre pour le moment.</p>`
       : html`<div class="rank">
           ${gens.map(

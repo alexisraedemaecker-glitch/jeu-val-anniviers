@@ -15,6 +15,7 @@ import {
   toggleKudo,
   deletePost,
   markNotificationsRead,
+  toggleCommentReaction,
   unreadCount,
   activerPush,
   rafraichirEtatPush,
@@ -22,7 +23,17 @@ import {
   friendly
 } from "../store.js";
 import { PILLAR_BY_ID } from "../data/pillars.js";
-import { Avatar, Banner, Empty, Frag, Spinner, PhotoZoom, dateTimeShort, pillarColor } from "./bits.js";
+import {
+  Avatar,
+  Banner,
+  ChoixPersonnes,
+  Empty,
+  Frag,
+  Spinner,
+  PhotoZoom,
+  dateTimeShort,
+  pillarColor
+} from "./bits.js";
 
 /** Corne de bouquetin, l'applaudissement de la vallée. */
 export function Corne({ pleine }) {
@@ -217,6 +228,12 @@ function SaisieMention({ valeur, setValeur, placeholder, multiligne, onEntree })
   </div>`;
 }
 
+/** Le nom d'une personne, à partir de son identifiant. */
+function nomDe(id) {
+  const p = (state.scores || []).find((s) => s.id === id);
+  return p ? `${p.first_name} ${p.last_name}` : "quelqu'un";
+}
+
 /** Affiche un texte en mettant en valeur les personnes nommées. */
 function Texte({ texte, classe }) {
   if (!texte) return null;
@@ -231,6 +248,63 @@ function Texte({ texte, classe }) {
   });
   if (i < texte.length) bouts.push(texte.slice(i));
   return html`<p class=${classe}>${bouts.length ? bouts : texte}</p>`;
+}
+
+// La corne, puis quelques emojis. Volontairement peu : un rang qui tient sur
+// une ligne de telephone, sans faire reflechir.
+const REACTIONS = ["corne", "👏", "😂", "❤️", "😮"];
+
+/** Les réactions posées sur un cri de marmotte, et de quoi en poser une. */
+function Reactions({ commentaire }) {
+  const [ouvert, setOuvert] = useState(false);
+  const liste = commentaire.reactions || [];
+
+  const groupes = REACTIONS.map((emoji) => {
+    const qui = liste.filter((r) => r.emoji === emoji).map((r) => r.participant_id);
+    return { emoji, qui, mien: state.me && qui.includes(state.me.id) };
+  }).filter((g) => g.qui.length);
+
+  async function poser(emoji) {
+    setOuvert(false);
+    try {
+      await toggleCommentReaction(commentaire.id, emoji);
+    } catch (err) {
+      console.warn(err);
+    }
+  }
+
+  const rendu = (emoji) =>
+    emoji === "corne" ? html`<${Corne} pleine=${true} />` : html`<span>${emoji}</span>`;
+
+  return html`<div class="reactions">
+    ${groupes.map(
+      (g) => html`<button key=${g.emoji} class=${"reaction" + (g.mien ? " on" : "")}
+        title=${g.qui.map(nomDe).join(", ")}
+        onClick=${() => poser(g.emoji)}>
+        ${rendu(g.emoji)}<span class="nb">${g.qui.length}</span>
+      </button>`
+    )}
+    ${state.me
+      ? html`<button class="reaction ajout" aria-label="Réagir"
+               onClick=${() => setOuvert(!ouvert)}>${ouvert ? "×" : "+"}</button>`
+      : null}
+    ${ouvert
+      ? html`<div class="choix-reaction">
+          ${REACTIONS.map(
+            (emoji) => html`<button key=${emoji} class="reaction" onClick=${() => poser(emoji)}>
+              ${rendu(emoji)}
+            </button>`
+          )}
+        </div>`
+      : null}
+    ${groupes.length
+      ? html`<span class="tiny faint qui-reagit">${groupes
+          .flatMap((g) => g.qui)
+          .filter((v, i, t) => t.indexOf(v) === i)
+          .map(nomDe)
+          .join(", ")}</span>`
+      : null}
+  </div>`;
 }
 
 function Commentaires({ post }) {
@@ -261,6 +335,7 @@ function Commentaires({ post }) {
         <div class="grow">
           <div class="tiny faint">${c.author_name} · ${heure(c.created_at)}</div>
           <${Texte} texte=${c.texte} classe="small com-texte" />
+          <${Reactions} commentaire=${c} />
         </div>
       </div>`
     )}
@@ -279,8 +354,9 @@ function Commentaires({ post }) {
   </div>`;
 }
 
-function Publication({ post, ouvrirPhoto, go }) {
-  const [ouvert, setOuvert] = useState(false);
+function Publication({ post, ouvrirPhoto, go, vise, commentairesOuverts }) {
+  const [ouvert, setOuvert] = useState(!!commentairesOuverts);
+  const [qui, setQui] = useState(false);
   const [busy, setBusy] = useState(false);
   const pil = post.pillar ? PILLAR_BY_ID[post.pillar] : null;
   const aCorne = state.me && (post.kudos_ids || []).includes(state.me.id);
@@ -311,7 +387,9 @@ function Publication({ post, ouvrirPhoto, go }) {
     }
   }
 
-  return html`<article class="post">
+  const donneurs = (post.kudos_ids || []).map(nomDe);
+
+  return html`<article class=${"post" + (vise ? " vise" : "")} id=${"post-" + post.id}>
     <header class="post-tete">
       <${Avatar} p=${auteur} onClick=${() => go && go("#/profil/" + post.author_id)} />
       <div class="grow">
@@ -353,6 +431,12 @@ function Publication({ post, ouvrirPhoto, go }) {
         <${Corne} pleine=${aCorne} />
         <span>${nbCornes || ""}</span>
       </button>
+      ${nbCornes
+        ? html`<button class="post-btn faible" onClick=${() => setQui(!qui)}
+                 aria-label="Voir qui a donné une corne">
+            ${qui ? "masquer" : "qui ?"}
+          </button>`
+        : null}
       <button class="post-btn" onClick=${() => setOuvert(!ouvert)} aria-label="Commenter">
         <${Marmotte} />
         <span>${post.nb_commentaires || ""}</span>
@@ -362,6 +446,13 @@ function Publication({ post, ouvrirPhoto, go }) {
         ? html`<button class="post-btn faible" onClick=${retirer}>Retirer</button>`
         : null}
     </footer>
+
+    ${qui && nbCornes
+      ? html`<div class="donneurs">
+          <${Corne} pleine=${true} />
+          <span class="small">${donneurs.join(", ")}</span>
+        </div>`
+      : null}
 
     ${ouvert || (post.commentaires || []).length ? html`<${Commentaires} post=${post} />` : null}
   </article>`;
@@ -434,7 +525,13 @@ function Composer() {
   </form>`;
 }
 
-function Notifications() {
+/**
+ * Ce qui vous concerne, replie derriere une cloche. Deroule, le fil reste a
+ * portee : avec cinquante notifications, une liste ouverte obligerait a
+ * defiler longtemps avant d'atteindre la premiere publication.
+ */
+function Notifications({ aller }) {
+  const [ouvert, setOuvert] = useState(false);
   const liste = state.notifications || [];
   const nb = unreadCount();
   if (!liste.length) return null;
@@ -443,23 +540,37 @@ function Notifications() {
     if (n.kind === "kudo") return `${n.actor_name} vous a donné une corne`;
     if (n.kind === "mention") return `${n.actor_name} vous a nommé`;
     if (n.kind === "commentaire") return `${n.actor_name} a commenté votre publication`;
+    if (n.kind === "defi") return `${n.actor_name} a validé un défi avec vous`;
+    if (n.kind === "reaction") return `${n.actor_name} a réagi à votre commentaire`;
     return `${n.actor_name} a répondu après vous`;
   };
 
-  return html`<div class="card">
-    <div class="card-head">
+  return html`<div class="card notifs-carte">
+    <button class="notifs-tete" onClick=${() => setOuvert(!ouvert)}
+            aria-expanded=${ouvert ? "true" : "false"}>
       <h2>Pour vous</h2>
-      ${nb ? html`<span class="chip warn">${nb} nouveau${nb > 1 ? "x" : ""}</span>` : null}
-    </div>
-    <div class="notifs">
-      ${liste.slice(0, 12).map(
-        (n) => html`<div key=${n.id} class=${"notif" + (n.read_at ? "" : " neuf")}>
-          <${Avatar} p=${{ first_name: (n.actor_name || "").split(" ")[0], last_name: "", photo_path: n.actor_photo }} taille="sm" />
-          <span class="grow small">${phrase(n)}</span>
-          <span class="tiny faint nowrap">${heure(n.created_at)}</span>
+      <span class=${"cloche" + (nb ? " neuve" : "")} aria-hidden="true">
+        🔔${nb ? html`<span class="pastille">${nb}</span>` : null}
+      </span>
+      <span class="grow"></span>
+      <span class="tiny faint">
+        ${nb ? `${nb} nouveau${nb > 1 ? "x" : ""}` : `${liste.length} en tout`}
+      </span>
+      <span class="faint" style="font-size:1.2rem">${ouvert ? "▴" : "▾"}</span>
+    </button>
+    ${ouvert
+      ? html`<div class="notifs">
+          ${liste.slice(0, 30).map(
+            (n) => html`<button key=${n.id} class=${"notif" + (n.read_at ? "" : " neuf")}
+              onClick=${() => { setOuvert(false); aller(n); }}>
+              <${Avatar} p=${{ first_name: (n.actor_name || "").split(" ")[0], last_name: "", photo_path: n.actor_photo }} taille="sm" />
+              <span class="grow small">${phrase(n)}</span>
+              <span class="tiny faint nowrap">${heure(n.created_at)}</span>
+              <span class="faint" style="font-size:1rem">›</span>
+            </button>`
+          )}
         </div>`
-      )}
-    </div>
+      : null}
   </div>`;
 }
 
@@ -523,6 +634,11 @@ function InviteNotifications() {
 export function Fil({ go }) {
   const [photo, setPhoto] = useState(null);
   const [filtre, setFiltre] = useState("tout");
+  const [joueurs, setJoueurs] = useState([]);
+  const [choixJoueur, setChoixJoueur] = useState(false);
+  // Publication visée par une notification : on y descend et on la souligne.
+  const [vise, setVise] = useState(null);
+  const [viseCommentaires, setViseCommentaires] = useState(false);
 
   useEffect(() => {
     refreshPosts();
@@ -531,8 +647,43 @@ export function Fil({ go }) {
     return () => clearTimeout(t);
   }, []);
 
+  // Une notification mène à sa publication, quel que soit le filtre en cours.
+  function aller(n) {
+    if (!n.post_id) return;
+    setFiltre("tout");
+    setJoueurs([]);
+    setVise(n.post_id);
+    setViseCommentaires(!!n.comment_id || n.kind === "commentaire" || n.kind === "reponse");
+    // La liste vient de changer de taille, et la publication peut n'être
+    // rendue qu'au tour suivant : on retente quelques fois plutôt que de viser
+    // un instant précis.
+    let essais = 0;
+    const viser = () => {
+      const el = document.getElementById("post-" + n.post_id);
+      if (el) {
+        const y = el.getBoundingClientRect().top + window.scrollY - 70;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+        return;
+      }
+      essais += 1;
+      if (essais < 12) setTimeout(viser, 120);
+    };
+    setTimeout(viser, 80);
+    // Le soulignement ne dure que le temps de retrouver la publication.
+    setTimeout(() => setVise((v) => (v === n.post_id ? null : v)), 4000);
+  }
+
   const posts = useMemo(() => {
-    const tous = state.posts || [];
+    let tous = state.posts || [];
+    if (joueurs.length) {
+      tous = tous.filter(
+        (p) =>
+          joueurs.includes(p.author_id) ||
+          (p.member_ids || []).some((id) => joueurs.includes(id)) ||
+          (p.mentions || []).some((id) => joueurs.includes(id)) ||
+          (p.commentaires || []).some((c) => joueurs.includes(c.author_id))
+      );
+    }
     if (filtre === "defis") return tous.filter((p) => p.genre === "defi");
     if (filtre === "messages") return tous.filter((p) => p.genre === "libre");
     if (filtre === "moi" && state.me) {
@@ -544,7 +695,7 @@ export function Fil({ go }) {
       );
     }
     return tous;
-  }, [state.posts, filtre, state.me && state.me.id]);
+  }, [state.posts, filtre, joueurs, state.me && state.me.id]);
 
   const photos = useMemo(
     () =>
@@ -561,7 +712,7 @@ export function Fil({ go }) {
 
   return html`<div class="stack">
     <${InviteNotifications} />
-    <${Notifications} />
+    <${Notifications} aller=${aller} />
     ${state.me ? html`<${Composer} />` : null}
 
     <div class="filters">
@@ -571,7 +722,26 @@ export function Fil({ go }) {
       ${state.me
         ? html`<button class=${"fbtn" + (filtre === "moi" ? " on" : "")} onClick=${() => setFiltre("moi")}>Où je suis</button>`
         : null}
+      <button class=${"fbtn" + (joueurs.length ? " on" : "")}
+              onClick=${() => setChoixJoueur(!choixJoueur)}>
+        ${joueurs.length ? `${joueurs.length} joueur${joueurs.length > 1 ? "s" : ""}` : "Par joueur"}
+      </button>
     </div>
+
+    ${choixJoueur
+      ? html`<div class="card">
+          <h3 style="margin-top:0">Filtrer par joueur</h3>
+          <${ChoixPersonnes} choisis=${joueurs} setChoisis=${setJoueurs}
+            gens=${state.scores || []} placeholder="Tapez @ puis un prénom"
+            note="On garde les publications où la personne apparaît, comme autrice, dans le groupe, nommée ou en commentaire." />
+          <div class="row" style="gap:.5rem;margin-top:.6rem">
+            <button class="btn sm grow" onClick=${() => setChoixJoueur(false)}>Voir le résultat</button>
+            ${joueurs.length
+              ? html`<button class="btn sm quiet" onClick=${() => setJoueurs([])}>Tout effacer</button>`
+              : null}
+          </div>
+        </div>`
+      : null}
 
     ${!state.postsLoaded && !posts.length
       ? html`<div class="card"><p class="muted small row"><${Spinner} dark=${true} /> Chargement du fil</p></div>`
@@ -580,6 +750,7 @@ export function Fil({ go }) {
             Rien pour le moment. Le premier défi validé ouvrira le fil.
           <//>`
         : posts.map((p) => html`<${Publication} key=${p.id} post=${p} go=${go}
+            vise=${vise === p.id} commentairesOuverts=${vise === p.id && viseCommentaires}
             ouvrirPhoto=${(x) => setPhoto(indexPhoto(x))} />`)}
 
     ${photo !== null && photos[photo]

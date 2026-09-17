@@ -566,6 +566,21 @@ st, d = rpc("feed_state", {"p_participant": N})
 check("nommé dans un commentaire aussi",
       any(n["kind"] == "mention" for n in (d.get("notifications") or [])), str([n["kind"] for n in (d.get("notifications") or [])]))
 
+st, d = rpc("toggle_comment_reaction", {"p_participant": G, "p_comment": COM, "p_emoji": "corne"})
+check("poser une réaction sur un commentaire", st == 200 and d.get("pose") is True, str(d))
+st, d = rpc("feed_state", {"p_participant": B})
+com = next((c for p in (d.get("posts") or []) for c in (p.get("commentaires") or []) if c["id"] == COM), None)
+check("la réaction voyage avec le commentaire",
+      com and len(com.get("reactions") or []) == 1 and com["reactions"][0]["emoji"] == "corne",
+      str(com)[:160])
+check("l'auteur du commentaire est prévenu",
+      any(n["kind"] == "reaction" for n in (d.get("notifications") or [])),
+      str([n["kind"] for n in (d.get("notifications") or [])]))
+st, d = rpc("toggle_comment_reaction", {"p_participant": G, "p_comment": COM, "p_emoji": "corne"})
+check("la retirer en appuyant à nouveau", st == 200 and d.get("pose") is False, str(d))
+st, d = rpc("toggle_comment_reaction", {"p_participant": G, "p_comment": COM, "p_emoji": "  "})
+check("une réaction vide est refusée", st >= 400, str(d)[:80])
+
 st, d = rpc("mark_notifications_read", {"p_participant": A})
 check("marquer ses notifications comme lues", st == 200 and d >= 1, str(d))
 st, d = rpc("feed_state", {"p_participant": A})

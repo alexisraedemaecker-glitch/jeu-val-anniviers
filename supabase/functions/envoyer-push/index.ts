@@ -173,6 +173,8 @@ function rediger(kind: string, acteur: string, defi: string | null) {
       return { titre: "Un commentaire", corps: `${acteur} a commenté votre publication` };
     case "reponse":
       return { titre: "Une réponse", corps: `${acteur} a répondu après vous` };
+    case "reaction":
+      return { titre: "Une réaction", corps: `${acteur} a réagi à votre commentaire` };
     case "defi":
       return {
         titre: "Défi validé avec vous",

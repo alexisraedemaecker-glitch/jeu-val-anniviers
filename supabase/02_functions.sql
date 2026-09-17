@@ -975,6 +975,39 @@ begin
 end;
 $$;
 
+-- Une reaction se pose et se retire. On ne previent l'auteur du commentaire
+-- qu'a la pose, et jamais de sa propre reaction.
+create or replace function public.toggle_comment_reaction(
+  p_participant uuid, p_comment uuid, p_emoji text
+) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v_com  public.post_comments;
+  v_pose boolean;
+  v_emoji text := left(btrim(coalesce(p_emoji, '')), 16);
+begin
+  if v_emoji = '' then
+    raise exception 'Réaction vide';
+  end if;
+  select * into v_com from public.post_comments where id = p_comment;
+  if not found then
+    raise exception 'Commentaire introuvable';
+  end if;
+  if exists (select 1 from public.comment_reactions
+              where comment_id = p_comment and participant_id = p_participant and emoji = v_emoji) then
+    delete from public.comment_reactions
+     where comment_id = p_comment and participant_id = p_participant and emoji = v_emoji;
+    v_pose := false;
+  else
+    insert into public.comment_reactions (comment_id, participant_id, emoji)
+    values (p_comment, p_participant, v_emoji);
+    v_pose := true;
+    perform public.notifier(array[v_com.author_id], 'reaction', v_com.post_id, p_comment, p_participant);
+  end if;
+  return jsonb_build_object('pose', v_pose, 'emoji', v_emoji);
+end;
+$$;
+
 create or replace function public.mark_notifications_read(p_participant uuid)
 returns int
 language plpgsql security definer set search_path = public as $$
@@ -1030,7 +1063,13 @@ language sql stable security definer set search_path = public as $$
                             'author_photo', a.photo_path,
                             'texte', c.texte,
                             'mentions', c.mentions,
-                            'created_at', c.created_at) order by c.created_at)
+                            'created_at', c.created_at,
+                            'reactions', coalesce((
+                              select jsonb_agg(jsonb_build_object(
+                                       'emoji', r.emoji,
+                                       'participant_id', r.participant_id))
+                                from public.comment_reactions r
+                               where r.comment_id = c.id), '[]'::jsonb)) order by c.created_at)
                      from public.post_comments c
                      join public.participants a on a.id = c.author_id
                     where c.post_id = v.id), '[]'::jsonb) as commentaires

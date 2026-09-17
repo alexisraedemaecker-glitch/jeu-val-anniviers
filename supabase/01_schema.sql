@@ -167,12 +167,24 @@ create table if not exists public.post_comments (
 );
 create index if not exists post_comments_post_idx on public.post_comments (post_id, created_at);
 
+-- Reactions sur un commentaire : la corne de bouquetin ou un emoji. La meme
+-- personne peut en poser plusieurs differentes sur le meme cri de marmotte.
+create table if not exists public.comment_reactions (
+  comment_id     uuid not null references public.post_comments(id) on delete cascade,
+  participant_id uuid not null references public.participants(id) on delete cascade,
+  emoji          text not null,
+  created_at     timestamptz not null default now(),
+  primary key (comment_id, participant_id, emoji)
+);
+create index if not exists comment_reactions_comment_idx
+  on public.comment_reactions (comment_id);
+
 -- Une ligne par personne a prevenir. On ne notifie jamais quelqu'un de sa
 -- propre action.
 create table if not exists public.notifications (
   id             uuid primary key default gen_random_uuid(),
   participant_id uuid not null references public.participants(id) on delete cascade,
-  kind           text not null check (kind in ('kudo','commentaire','mention','reponse','defi')),
+  kind           text not null check (kind in ('kudo','commentaire','mention','reponse','defi','reaction')),
   post_id        uuid references public.posts(id) on delete cascade,
   comment_id     uuid references public.post_comments(id) on delete cascade,
   actor_id       uuid references public.participants(id) on delete cascade,

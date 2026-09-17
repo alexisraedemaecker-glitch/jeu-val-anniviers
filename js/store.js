@@ -464,6 +464,34 @@ export async function toggleKudo(postId) {
   await refreshPosts();
 }
 
+/** Corne ou emoji sur un cri de marmotte. */
+export async function toggleCommentReaction(commentId, emoji) {
+  if (!state.me) throw new Error("Identifiez vous d'abord");
+  // Retour immediat, l'aller retour reseau suit.
+  const posts = state.posts.map((p) => ({
+    ...p,
+    commentaires: (p.commentaires || []).map((c) => {
+      if (c.id !== commentId) return c;
+      const liste = (c.reactions || []).slice();
+      const i = liste.findIndex((r) => r.emoji === emoji && r.participant_id === state.me.id);
+      if (i >= 0) liste.splice(i, 1);
+      else liste.push({ emoji, participant_id: state.me.id });
+      return { ...c, reactions: liste };
+    })
+  }));
+  setState({ posts });
+  const { error } = await sb.rpc("toggle_comment_reaction", {
+    p_participant: state.me.id,
+    p_comment: commentId,
+    p_emoji: emoji
+  });
+  if (error) {
+    await refreshPosts();
+    throw new Error(friendly(error));
+  }
+  await refreshPosts();
+}
+
 export async function markNotificationsRead() {
   if (!state.me || !unreadCount()) return;
   setState({ notifications: state.notifications.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() })) });

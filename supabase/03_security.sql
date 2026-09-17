@@ -21,6 +21,7 @@ alter table public.participant_secrets enable row level security;
 alter table public.posts             enable row level security;
 alter table public.post_kudos        enable row level security;
 alter table public.post_comments     enable row level security;
+alter table public.comment_reactions enable row level security;
 alter table public.notifications     enable row level security;
 
 do $$
@@ -28,7 +29,8 @@ declare t text;
 begin
   foreach t in array array['pillars','challenges','synergies','participants',
                            'submissions','submission_members','synergy_unlocks',
-                           'quiz_lockouts','posts','post_kudos','post_comments']
+                           'quiz_lockouts','posts','post_kudos','post_comments',
+                           'comment_reactions']
   loop
     execute format('drop policy if exists %I on public.%I', 'lecture_publique_' || t, t);
     execute format(
@@ -53,7 +55,8 @@ grant usage on schema public to anon, authenticated;
 grant select on
   public.pillars, public.challenges, public.synergies, public.participants,
   public.submissions, public.submission_members, public.synergy_unlocks,
-  public.quiz_lockouts, public.posts, public.post_kudos, public.post_comments
+  public.quiz_lockouts, public.posts, public.post_kudos, public.post_comments,
+  public.comment_reactions
 to anon, authenticated;
 
 grant select on
@@ -108,6 +111,7 @@ grant execute on function public.code_valide(text)                    to anon, a
 grant execute on function public.add_post(text, uuid, text, text, uuid[])       to anon, authenticated;
 grant execute on function public.add_comment(text, uuid, uuid, text, uuid[])    to anon, authenticated;
 grant execute on function public.toggle_kudo(uuid, uuid)                        to anon, authenticated;
+grant execute on function public.toggle_comment_reaction(uuid, uuid, text)      to anon, authenticated;
 grant execute on function public.mark_notifications_read(uuid)                  to anon, authenticated;
 grant execute on function public.delete_post(uuid, uuid, text)                  to anon, authenticated;
 grant execute on function public.feed_state(uuid)                               to anon, authenticated;
@@ -215,7 +219,7 @@ declare t text;
 begin
   foreach t in array array['submissions','submission_members','synergy_unlocks',
                            'participants','quiz_lockouts','posts','post_kudos',
-                           'post_comments','notifications']
+                           'post_comments','notifications','comment_reactions']
   loop
     if not exists (
       select 1 from pg_publication_tables

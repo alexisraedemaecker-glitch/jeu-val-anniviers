@@ -86,6 +86,19 @@ Changer de photo passe par `set_photo`. L'ancienne devient orpheline et
 `portrait_est_orphelin` autorise alors sa suppression depuis le navigateur,
 exactement comme pour les photos de défi.
 
+### Rendre chaque écran à blanc
+
+`tools/rendu.js` rend chaque écran dans un conteneur détaché et rapporte la
+première exception avec sa pile. À coller dans la console, sur l'application
+ouverte.
+
+Il répond à un défaut qui s'est produit deux fois : un composant qui casse à
+l'exécution ne laisse rien dans la console, Preact abandonne simplement le
+rendu et l'écran reste figé sur son état précédent. La première fois c'était un
+gabarit laissé ouvert, la seconde un appel à une fonction supprimée pendant une
+refonte. Aucun des contrôles de `check.py` ne pouvait les voir : ils sont
+corrects à la lecture, ils échouent à l'exécution.
+
 ## L'ouverture du jeu
 
 Le jeu s'ouvre à une heure précise, gardée en base par `ouverture_du_jeu` et
@@ -429,7 +442,7 @@ test, joue des défis, puis nettoie tout derrière lui.
 python3 tools/selftest.py
 ```
 
-Les 147 contrôles couvrent la création de profil et la déduplication des noms, le
+Les 152 contrôles couvrent la création de profil et la déduplication des noms, le
 rendement dégressif sur trois passages, le score personnel non dégressif, le non
 cumul d'un même défi par une même personne, l'idempotence après coupure réseau,
 le dépôt et la lecture des photos, le refus d'un chemin de photo malveillant, le
