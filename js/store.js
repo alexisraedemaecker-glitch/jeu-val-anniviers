@@ -6,6 +6,10 @@ import {
   SUPABASE_KEY,
   PHOTO_BUCKET,
   PORTRAIT_BUCKET,
+  VIDEO_BUCKET,
+  VIDEO_MAX_BYTES,
+  VIDEO_MAX_SECONDS,
+  VIDEO_QUOTA_BYTES,
   VAPID_PUBLIC_KEY,
   SYNC_INTERVAL_MS,
   POLL_INTERVAL_MS
@@ -52,6 +56,8 @@ export const state = {
   // de l'appareil : un telephone mal regle ne doit pas ouvrir le jeu en avance.
   ouverture: null,
   activitesOuvertes: false,
+  // Octets deja occupes par les videos, pour savoir quand arreter d'en prendre.
+  espaceVideo: 0,
   decalageServeur: 0,
   pending: [],
   syncing: false,
@@ -311,6 +317,7 @@ export async function refresh({ feed = false } = {}) {
       lockoutMinutes: (data.settings && data.settings.lockout_minutes) || 30,
       ouverture: (data.settings && data.settings.ouverture) || null,
       activitesOuvertes: !!(data.settings && data.settings.activites_ouvertes),
+      espaceVideo: Number((data.settings && data.settings.espace_video) || 0),
       decalageServeur: data.server_time ? new Date(data.server_time).getTime() - Date.now() : state.decalageServeur,
       loading: false,
       loadError: null,
@@ -576,6 +583,7 @@ export async function deletePost(postId) {
       console.warn("Photo non retirée", err);
     }
   }
+  await purgeVideos([data && data.video_path]);
   await refreshPosts();
   setState({ toast: { kind: "success", text: "Publication retirée" } });
 }
@@ -599,6 +607,80 @@ export function photoUrl(path) {
   if (!path) return null;
   const { data } = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path);
   return data ? data.publicUrl : null;
+}
+
+// ------------------------------------------------------------------ videos
+
+export function videoUrl(path) {
+  if (!path) return null;
+  const { data } = sb.storage.from(VIDEO_BUCKET).getPublicUrl(path);
+  return data ? data.publicUrl : null;
+}
+
+/** Reste t il de la place pour des videos. */
+export function videoPossible() {
+  return state.espaceVideo < VIDEO_QUOTA_BYTES;
+}
+
+export function tailleLisible(octets) {
+  const n = Number(octets) || 0;
+  if (n < 1024) return `${n} o`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} ko`;
+  if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} Mo`;
+  return `${(n / (1024 * 1024 * 1024)).toFixed(2)} Go`;
+}
+
+/**
+ * Duree d'une video, lue dans ses metadonnees sans la jouer. Renvoie null si le
+ * navigateur n'arrive pas a la lire, auquel cas on laisse passer : le poids du
+ * fichier reste de toute facon plafonne.
+ */
+function dureeVideo(file) {
+  return new Promise((resolve) => {
+    try {
+      const url = URL.createObjectURL(file);
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      const fini = (d) => {
+        URL.revokeObjectURL(url);
+        resolve(d);
+      };
+      v.onloadedmetadata = () => fini(Number.isFinite(v.duration) ? v.duration : null);
+      v.onerror = () => fini(null);
+      setTimeout(() => fini(null), 4000);
+      v.src = url;
+    } catch (err) {
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Verifie qu'une video est acceptable avant de la mettre dans la file. Le
+ * navigateur ne sait pas la recompresser de maniere fiable, surtout sur iPhone :
+ * on refuse donc clairement plutot que de faire echouer l'envoi plus tard, en
+ * pleine montagne, avec deux barres de reseau.
+ */
+export async function verifierVideo(file) {
+  if (!file) return null;
+  if (!/^video\//.test(file.type || "")) {
+    throw new Error("Ce fichier n'est pas une vidéo");
+  }
+  if (!videoPossible()) {
+    throw new Error("L'espace vidéo est plein pour aujourd'hui. La photo suffit");
+  }
+  if (file.size > VIDEO_MAX_BYTES) {
+    throw new Error(
+      `Vidéo trop lourde : ${tailleLisible(file.size)} pour ${tailleLisible(VIDEO_MAX_BYTES)} au maximum. Filmez plus court`
+    );
+  }
+  const duree = await dureeVideo(file);
+  if (duree !== null && duree > VIDEO_MAX_SECONDS + 1) {
+    throw new Error(
+      `Vidéo trop longue : ${Math.round(duree)} secondes pour ${VIDEO_MAX_SECONDS} au maximum`
+    );
+  }
+  return { file, duree };
 }
 
 // --------------------------------------------------------------- penalites
@@ -717,7 +799,15 @@ function uuid() {
  * envoyee. Si l'envoi echoue faute de reseau, elle reste en attente et repart
  * automatiquement plus tard. Le retour indique si c'est parti tout de suite.
  */
-export async function submit({ challengeId, memberIds, file, note, quizAttempts, quizRestarts }) {
+export async function submit({
+  challengeId,
+  memberIds,
+  file,
+  videoFile,
+  note,
+  quizAttempts,
+  quizRestarts
+}) {
   if (!state.me) throw new Error("Choisissez d'abord votre profil");
   const challenge = CHALLENGE_BY_ID[challengeId];
   if (!challenge) throw new Error("Défi inconnu");
@@ -732,6 +822,17 @@ export async function submit({ challengeId, memberIds, file, note, quizAttempts,
     photoName = `${clientId}.${ext}`;
   }
 
+  // La video part telle quelle : aucun navigateur ne sait la recompresser sans
+  // risque. Elle a deja ete verifiee, en poids comme en duree.
+  let video = null;
+  let videoName = null;
+  if (videoFile) {
+    video = videoFile;
+    const type = videoFile.type || "";
+    const ext = type.includes("quicktime") ? "mov" : type.includes("webm") ? "webm" : "mp4";
+    videoName = `${clientId}.${ext}`;
+  }
+
   const item = {
     client_id: clientId,
     challenge_id: challengeId,
@@ -743,6 +844,9 @@ export async function submit({ challengeId, memberIds, file, note, quizAttempts,
     photo,
     photo_name: photoName,
     photo_type: photo ? photo.type : null,
+    video,
+    video_name: videoName,
+    video_type: video ? video.type : null,
     created_at: new Date().toISOString(),
     attempts: 0,
     last_error: null
@@ -804,12 +908,44 @@ async function flushOne(item) {
       }
     }
 
+    // La video suit le meme chemin que la photo, dans son propre bucket. Si
+    // elle echoue alors que la photo est passee, on valide quand meme le defi :
+    // mieux vaut un defi compte sans sa video qu'un defi perdu.
+    let videoPath = null;
+    if (item.video && item.video_name) {
+      try {
+        const { error: vErr } = await sb.storage
+          .from(VIDEO_BUCKET)
+          .upload(item.video_name, item.video, {
+            contentType: item.video_type || "video/mp4",
+            cacheControl: "31536000",
+            upsert: false
+          });
+        if (vErr) {
+          const msg = String(vErr.message || vErr).toLowerCase();
+          const already =
+            msg.includes("already exists") ||
+            msg.includes("duplicate") ||
+            vErr.statusCode === "409" ||
+            vErr.status === 409;
+          if (!already) throw vErr;
+        }
+        videoPath = item.video_name;
+      } catch (err) {
+        console.warn("Vidéo non envoyée, le défi part sans elle", err);
+        setState({
+          toast: { kind: "info", text: "La vidéo n'est pas passée, le défi est validé sans elle" }
+        });
+      }
+    }
+
     const { data, error } = await sb.rpc("submit_challenge", {
       p_client_id: item.client_id,
       p_challenge_id: item.challenge_id,
       p_submitter: item.submitter_id,
       p_member_ids: item.member_ids,
       p_photo_path: path,
+      p_video_path: videoPath,
       p_note: item.note,
       p_quiz_attempts: item.quiz_attempts,
       p_quiz_restarts: item.quiz_restarts || 0
@@ -995,6 +1131,16 @@ async function purgePhotos(paths) {
   }
 }
 
+async function purgeVideos(paths) {
+  const liste = (paths || []).filter(Boolean);
+  if (!liste.length) return;
+  try {
+    await sb.storage.from(VIDEO_BUCKET).remove(liste);
+  } catch (err) {
+    console.warn("Vidéos non retirées du stockage", err);
+  }
+}
+
 export async function adminClearLockouts({ participantId, challengeId } = {}) {
   const { data, error } = await sb.rpc("admin_clear_lockouts", {
     p_pin: state.organizerPin,
@@ -1032,6 +1178,7 @@ export async function adminDeleteParticipant(id) {
   });
   if (error) throw new Error(friendly(error));
   await purgePhotos(data && data.photos);
+  await purgeVideos(data && data.videos);
   if (data && data.portrait) {
     try {
       await sb.storage.from(PORTRAIT_BUCKET).remove([data.portrait]);
@@ -1158,6 +1305,7 @@ export async function deleteSubmission(id) {
   // la supprimer en SQL, on passe par son API de stockage. Si cela echoue, la
   // photo reste dans le bucket sans plus apparaitre nulle part : sans gravite.
   await purgePhotos([data && data.photo_path]);
+  await purgeVideos([data && data.video_path]);
   await refresh({ feed: true });
   setState({ toast: { kind: "success", text: "Soumission supprimée" } });
 }

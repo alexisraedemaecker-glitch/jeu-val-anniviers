@@ -119,6 +119,8 @@ grant execute on function public.mark_notifications_read(uuid)                  
 grant execute on function public.delete_post(uuid, uuid, text)                  to anon, authenticated;
 grant execute on function public.feed_state(uuid)                               to anon, authenticated;
 grant execute on function public.photo_post_est_orpheline(text)                 to anon, authenticated;
+grant execute on function public.video_est_orpheline(text)                      to anon, authenticated;
+grant execute on function public.espace_video()                                 to anon, authenticated;
 grant execute on function public.set_photo(uuid, text)                to anon, authenticated;
 grant execute on function public.set_bio(uuid, text)                  to anon, authenticated;
 grant execute on function public.ouverture_du_jeu()                   to anon, authenticated;
@@ -126,7 +128,7 @@ grant execute on function public.activites_ouvertes()                 to anon, a
 grant execute on function public.portrait_est_orphelin(text)          to anon, authenticated;
 grant execute on function public.chemin_valide(text)                  to anon, authenticated;
 grant execute on function public.set_vibe(uuid, text)                 to anon, authenticated;
-grant execute on function public.submit_challenge(text, text, uuid, uuid[], text, text, int, int) to anon, authenticated;
+grant execute on function public.submit_challenge(text, text, uuid, uuid[], text, text, int, int, text) to anon, authenticated;
 grant execute on function public.check_organizer(text)                to anon, authenticated;
 grant execute on function public.delete_submission(uuid, text)        to anon, authenticated;
 grant execute on function public.game_state()                         to anon, authenticated;
@@ -165,6 +167,36 @@ on conflict (id) do update
   set public = true,
       file_size_limit = 2097152,
       allowed_mime_types = array['image/jpeg','image/png','image/webp'];
+
+-- Videos courtes. Le plafond de 12 Mo est pose ici, au niveau du stockage :
+-- meme un appareil dont le controle cote navigateur aurait ete contourne ne
+-- peut pas deposer plus gros. L'offre gratuite plafonne a un gigaoctet pour
+-- tout le stockage, et une video de telephone pese mille fois une photo
+-- compressee.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('videos', 'videos', true, 12582912,
+        array['video/mp4','video/quicktime','video/webm'])
+on conflict (id) do update
+  set public = true,
+      file_size_limit = 12582912,
+      allowed_mime_types = array['video/mp4','video/quicktime','video/webm'];
+
+drop policy if exists "videos lecture" on storage.objects;
+drop policy if exists "videos depot"   on storage.objects;
+drop policy if exists "videos menage"  on storage.objects;
+
+create policy "videos lecture" on storage.objects
+  for select to anon, authenticated
+  using (bucket_id = 'videos');
+
+create policy "videos depot" on storage.objects
+  for insert to anon, authenticated
+  with check (bucket_id = 'videos');
+
+-- Comme pour les photos : seul un fichier devenu orphelin peut etre retire.
+create policy "videos menage" on storage.objects
+  for delete to anon, authenticated
+  using (bucket_id = 'videos' and public.video_est_orpheline(name));
 
 drop policy if exists "profils lecture" on storage.objects;
 drop policy if exists "profils depot"   on storage.objects;

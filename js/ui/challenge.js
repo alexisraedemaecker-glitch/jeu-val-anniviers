@@ -15,6 +15,8 @@ import {
   myLockUntil,
   lockedUntil,
   myDoneChallenges,
+  verifierVideo,
+  videoPossible,
   friendly
 } from "../store.js";
 import {
@@ -77,7 +79,30 @@ function Form({ c, go }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  // Video facultative, sur les defis ou un son ou un mouvement vaut mieux
+  // qu'une image fixe.
+  const [video, setVideo] = useState(null);
+  const [nomVideo, setNomVideo] = useState("");
+  const [erreurVideo, setErreurVideo] = useState(null);
   const fileInput = useRef(null);
+  const videoInput = useRef(null);
+
+  // On verifie tout de suite, sur l'appareil : refuser ici est bien plus
+  // agreable que de laisser echouer l'envoi plus tard, sur un alpage.
+  async function choisirVideo(f) {
+    setErreurVideo(null);
+    if (!f) return;
+    try {
+      await verifierVideo(f);
+      setVideo(f);
+      setNomVideo(f.name || "vidéo");
+    } catch (err) {
+      setVideo(null);
+      setNomVideo("");
+      setErreurVideo(friendly(err));
+      if (videoInput.current) videoInput.current.value = "";
+    }
+  }
 
   const compte = useCountdown(myLockUntil(c.id));
   const alreadyDone = myDoneChallenges().includes(c.id);
@@ -178,6 +203,7 @@ function Form({ c, go }) {
         challengeId: c.id,
         memberIds: lockedGroup || members,
         file,
+        videoFile: video,
         note,
         quizAttempts: attempts,
         quizRestarts: restarts
@@ -341,6 +367,41 @@ function Form({ c, go }) {
         </div>`
       : null}
 
+    ${c.video_hint && videoPossible()
+      ? html`<div class="card">
+          <div class="card-head">
+            <h2 class="grow">La vidéo</h2>
+            <span class="chip plain">Facultatif</span>
+          </div>
+          <p class="small muted">${c.video_hint}</p>
+          <input ref=${videoInput} type="file" accept="video/*" capture="environment"
+                 style="display:none"
+                 onChange=${(e) => choisirVideo(e.target.files && e.target.files[0])} />
+          ${video
+            ? html`<div class="video-choisie">
+                <span class="big" aria-hidden="true">🎬</span>
+                <div class="grow">
+                  <strong>Vidéo prête</strong>
+                  <div class="tiny faint">${nomVideo}</div>
+                </div>
+                <button type="button" class="btn sm quiet" onClick=${() => {
+                  setVideo(null);
+                  setNomVideo("");
+                  if (videoInput.current) videoInput.current.value = "";
+                }}>Retirer</button>
+              </div>`
+            : html`<button type="button" class="photo-zone" style="width:100%"
+                     onClick=${() => videoInput.current && videoInput.current.click()}>
+                <span class="big">🎬</span>
+                <strong>Filmer quelques secondes</strong>
+                <div class="tiny" style="margin-top:.2rem">
+                  20 secondes au maximum. La photo reste le principal, la vidéo est un bonus
+                </div>
+              </button>`}
+          ${erreurVideo ? html`<p class="small" style="color:var(--bad);margin:.5rem 0 0">${erreurVideo}</p>` : null}
+        </div>`
+      : null}
+
     ${c.note_label
       ? html`<div class="card">
           <h2>Votre réponse</h2>
@@ -367,7 +428,7 @@ function Form({ c, go }) {
             ? html`<div>
                 <p class="small muted">
                   ${quiz.length} questions, aucune erreur permise. Une seule mauvaise réponse et le
-                  défi est raté pour tout le groupe, qui devra patienter ${state.lockoutMinutes}
+                  défi est raté pour tout le groupe, qui devra patienter ${state.lockoutMinutes}${" "}
                   minutes avant de pouvoir le reprendre.
                 </p>
                 <p class="small muted">
@@ -462,7 +523,7 @@ function Done({ c, result, go, memberCount, restarts }) {
       <h1 style="margin-top:.4rem">${sent ? "Défi validé" : "Enregistré sur votre téléphone"}</h1>
       ${sent
         ? html`<p class="muted">
-            ${c.points} points pour
+            ${c.points} points pour${" "}
             ${credites === 1 ? "vous" : `chacune des ${credites} personnes créditées`}.
             ${restarts === 0 ? " Quiz réussi sans la moindre erreur." : ""}
           </p>`
@@ -476,8 +537,8 @@ function Done({ c, result, go, memberCount, restarts }) {
       ? html`<${Banner} kind="warn">
           ${exclus.length === 1
             ? "Une personne du groupe était"
-            : `${exclus.length} personnes du groupe étaient`}
-          encore en attente sur ce défi après un ratage.
+            : `${exclus.length} personnes du groupe étaient`}${" "}
+          encore en attente sur ce défi après un ratage.${" "}
           ${exclus.length === 1 ? "Elle n'a pas reçu" : "Elles n'ont pas reçu"} les points.
         <//>`
       : null}

@@ -1,9 +1,9 @@
-// Catalogue complet des 48 defis. Source de verite partagee avec le seed SQL.
+// Catalogue complet des 52 defis. Source de verite partagee avec le seed SQL.
 // Le bloc ci dessous est du JSON strict pour pouvoir etre relu par le script de seed.
 // Regle de redaction : aucun tiret dans les textes affiches aux joueurs.
 export const CHALLENGES = /* json */ [
 
-  /* ============ PILIER 1. MONTAGNE ET GLACIERS (15) ============ */
+  /* ============ PILIER 1. MONTAGNE ET GLACIERS (17) ============ */
 
   {
     "id": "panorama-nomme",
@@ -438,6 +438,7 @@ export const CHALLENGES = /* json */ [
     "savoir": "En montant, tout change en même temps. La température baisse d'environ six degrés tous les mille mètres, l'air se raréfie, et la végétation s'arrête là où la saison de croissance devient trop courte.",
     "proof": "photo_quiz",
     "photo_hint": "Une photo du groupe au point le plus haut atteint.",
+    "video_hint": "Un tour d'horizon de dix secondes depuis le sommet, en nommant ce que vous voyez.",
     "note_label": "Le lieu atteint, l'altitude, et ce que vous y avez observé",
     "quiz": [
       {
@@ -553,6 +554,7 @@ export const CHALLENGES = /* json */ [
     "savoir": "L'Illgraben est l'un des torrents les plus actifs des Alpes. Son bassin descend du sommet de l'Illhorn, à 2717 mètres, jusqu'au Rhône, vers 605 mètres. Depuis l'an 2000, l'institut fédéral WSL y mesure les laves torrentielles avec des géophones posés sur deux kilomètres de lit. Il en dévale trois à cinq par an entre mai et octobre, d'un volume moyen de 25 000 mètres cubes, et jusqu'à 100 000 pour la plus grosse mesurée. Tout ce matériel a construit en bas le plus grand cône de déjection de Suisse, qui porte aujourd'hui la pinède du Bois de Finges.",
     "proof": "photo_quiz",
     "photo_hint": "Une photo du groupe du moment au point de vue, avec l'entaille de l'Illgraben derrière vous.",
+    "video_hint": "Quelques secondes du torrent, pour le bruit et le débit.",
     "note_label": "Ce que vous voyez des dernières coulées, et la couleur des roches",
     "quiz": [
       {
@@ -572,6 +574,83 @@ export const CHALLENGES = /* json */ [
         "options": ["Un barrage naturel qui a formé un lac", "Rien, tout part dans le Rhône", "Le plus grand cône de déjection de Suisse, qui porte le Bois de Finges", "Une moraine glaciaire"],
         "answer": 2,
         "why": "La pinède du Bois de Finges pousse sur ce cône, et le Rhône a été repoussé contre l'autre versant."
+      }
+    ]
+  },
+
+  {
+    "id": "anatomie-dun-glacier",
+    "pillar": "montagne",
+    "name": "Anatomie d'un glacier",
+    "style": "culturel",
+    "tier": "experience",
+    "points": 20,
+    "location_kind": "typee",
+    "location_detail": "Face au glacier de Moiry depuis le belvédère, ou face au glacier de Zinal depuis le fond de la vallée",
+    "branch": "les deux branches",
+    "duration": "45 minutes",
+    "brief": "Un glacier n'est pas un bloc de glace posé là, c'est une rivière lente qui se recharge en haut et fond en bas. Installez vous face à lui et retrouvez ses pièces. La neige blanche du haut, qui le nourrit. La glace grise et sale du bas, qui fond. La limite entre les deux, quelque part au milieu. Les fentes ouvertes là où la pente casse. Les bourrelets de cailloux sur les côtés, et la bande sombre au milieu de la langue si deux glaciers se sont rejoints. Cherchez aussi les puits où l'eau de fonte plonge dans la glace, et le lac gris qui se forme souvent devant le front.",
+    "savoir": "Un glacier vit d'un équilibre entre ce qui tombe en haut et ce qui fond en bas. La limite entre les deux, la ligne d'équilibre, monte d'année en année. Les glaciers suisses ont perdu 6 pourcent de leur volume pendant le seul été 2022, puis 4 pourcent l'année suivante, deux records d'affilée.",
+    "proof": "photo_quiz",
+    "photo_hint": "Une photo large du glacier, si possible du haut jusqu'au front, avec le groupe dans le cadre.",
+    "video_hint": "Un panoramique lent du haut du glacier jusqu'à son front, en nommant à voix haute ce que vous reconnaissez.",
+    "note_label": "Les pièces du glacier que vous avez su repérer",
+    "quiz": [
+      {
+        "q": "Que se passe t il au dessus de la ligne d'équilibre d'un glacier ?",
+        "options": ["La glace y fond le plus vite", "Il tombe plus de neige en hiver qu'il n'en fond en été, le glacier s'y recharge", "La glace y est immobile", "C'est la partie qui se détache en séracs"],
+        "answer": 1,
+        "why": "C'est la zone d'accumulation. En dessous, la zone d'ablation perd plus qu'elle ne reçoit. Quand cette ligne monte trop haut, le glacier maigrit."
+      },
+      {
+        "q": "Qu'est ce que la rimaye, tout en haut d'un glacier ?",
+        "options": ["Le nom local du front du glacier", "Une cascade de glace", "La fente qui sépare la glace en mouvement de la neige restée collée à la paroi", "Un pont de neige sur une crevasse"],
+        "answer": 2,
+        "why": "Le glacier s'éloigne lentement de la montagne et se déchire à son sommet. C'est souvent le passage le plus délicat d'une course."
+      },
+      {
+        "q": "D'où vient la bande sombre qui court au milieu de certaines langues glaciaires ?",
+        "options": ["D'une coulée de boue tombée d'un versant", "De la poussière du Sahara", "D'une veine de charbon prise dans la glace", "De deux glaciers qui se rejoignent et soudent leurs bourrelets de cailloux intérieurs"],
+        "answer": 3,
+        "why": "Deux moraines latérales qui se retrouvent au confluent continuent ensemble au milieu. C'est une moraine médiane, et elle signe une confluence."
+      }
+    ]
+  },
+
+  {
+    "id": "les-roches-de-la-couronne",
+    "pillar": "montagne",
+    "name": "Les roches de la Couronne",
+    "style": "culturel",
+    "tier": "experience",
+    "points": 20,
+    "location_kind": "typee",
+    "location_detail": "Partout où la roche affleure, et face à la Couronne Impériale depuis Zinal ou Sorebois",
+    "branch": "les deux branches",
+    "duration": "30 minutes",
+    "brief": "Ramassez une pierre, vraiment, et regardez la de près. Cherchez ses bandes claires et sombres, et les grains blancs en forme d'yeux qui trahissent un ancien granite. Puis levez les yeux vers les grandes parois du fond de la vallée, faites de cette même roche. Si vous montez vers Moiry, cherchez aussi les roches sombres à reflets verts qui apparaissent en chemin, elles n'ont rien à voir avec les précédentes.",
+    "savoir": "Les grandes parois du fond de la vallée sont taillées dans le gneiss d'Arolla, un granite vieux de trois cents millions d'années transformé par la construction des Alpes. Ce morceau de croûte n'est pas européen : il vient de la plaque adriatique, poussée par dessus le reste. Les roches vertes qu'on croise plus bas sont, elles, du plancher d'un océan disparu.",
+    "proof": "photo_quiz",
+    "photo_hint": "Une photo de la pierre dans votre main, assez près pour qu'on voie le grain.",
+    "note_label": "Ce que vous avez vu dans la pierre",
+    "quiz": [
+      {
+        "q": "La Dent Blanche, le Zinalrothorn et le Weisshorn sont bâtis dans la même roche. Laquelle ?",
+        "options": ["Un gneiss issu d'un ancien granite", "Un calcaire déposé par une mer chaude", "Une lave refroidie en surface", "Un grès de rivière"],
+        "answer": 0,
+        "why": "Le gneiss d'Arolla. Là où la roche a été peu déformée, on voit encore les gros cristaux blancs du granite d'origine."
+      },
+      {
+        "q": "D'où vient ce morceau de croûte qui forme aussi le Cervin ?",
+        "options": ["Du fond du lac Léman", "De la plaque adriatique, un promontoire de l'Afrique, poussé par dessus les roches européennes", "D'un volcan valaisan éteint", "Il s'est formé sur place, sans bouger"],
+        "answer": 1,
+        "why": "C'est le même empilement qu'au Cervin : une écaille venue du sud, posée sur des roches d'origine européenne et océanique."
+      },
+      {
+        "q": "Les roches sombres à reflets verts qu'on trouve vers Moiry sont les restes de quoi ?",
+        "options": ["D'anciennes coulées de boue", "De scories de la mine de cuivre", "Du plancher d'un océan disparu, écrasé entre les deux plaques", "D'un ancien glacier minéralisé"],
+        "answer": 2,
+        "why": "Ce sont des ophiolites, des morceaux de fond océanique de la Téthys. Entre elles et le gneiss du dessus, il y avait un océan entier."
       }
     ]
   },
@@ -900,7 +979,7 @@ export const CHALLENGES = /* json */ [
     ]
   },
 
-  /* ============ PILIER 3. VIE ALPINE (9) ============ */
+  /* ============ PILIER 3. VIE ALPINE (11) ============ */
 
   {
     "id": "les-cornes-qui-saffrontent",
@@ -1274,6 +1353,86 @@ export const CHALLENGES = /* json */ [
     ]
   },
 
+  {
+    "id": "la-desalpe-dayer",
+    "pillar": "vie-alpine",
+    "name": "La désalpe d'Ayer",
+    "style": "chill",
+    "tier": "experience",
+    "points": 20,
+    "location_kind": "precise",
+    "location_detail": "Ayer, entre l'alpage de Nava et la patinoire. Le cortège part à 11h00, les reines sont exposées dès 11h30",
+    "branch": "Val de Zinal",
+    "duration": "1 heure sur place",
+    "brief": "Ce samedi, les troupeaux redescendent de l'alpage de Nava et traversent Ayer jusqu'à la patinoire, cloches au cou et fleurs sur la tête. Allez y, laissez passer le cortège, et faites votre photo avec les vaches fleuries. Prenez le temps d'écouter : on entend le troupeau bien avant de le voir. Restez ensuite pour les fromages de la saison, et vers 14h30 pour le jet de la pierre de Nava.",
+    "savoir": "La désalpe clôt la saison d'alpage. Les bêtes redescendent quand l'herbe ne pousse plus en altitude et avant les premières neiges. Les fleurs et les grosses cloches ne sont pas un décor pour touristes : c'est la fête du retour, et le troupeau rentre en cortège comme il l'a toujours fait.",
+    "proof": "photo_quiz",
+    "photo_hint": "Une photo du groupe avec les vaches fleuries, pendant le cortège ou à la patinoire.",
+    "video_hint": "Quelques secondes de cortège, pour le son des cloches. C'est ce qui manquera le plus à la photo.",
+    "note_label": "Ce que vous avez remarqué pendant le cortège",
+    "alerte": "Restez à distance des bêtes et laissez toujours le passage libre au troupeau. Une vache d'alpage qui rentre est calme mais elle pèse six cents kilos, et les éleveurs travaillent pendant que vous regardez.",
+    "quiz": [
+      {
+        "q": "Qu'est ce qui décide traditionnellement du moment de la désalpe ?",
+        "options": ["Le calendrier des vacances scolaires", "L'herbe qui ne pousse plus en altitude et les premières neiges qui approchent", "La pleine lune de septembre", "La fin du marché aux fromages"],
+        "answer": 1,
+        "why": "On descend quand l'alpage n'a plus rien à donner. Le reste de la fête s'organise autour de cette contrainte, pas l'inverse."
+      },
+      {
+        "q": "De quel alpage descend le troupeau qui traverse Ayer ?",
+        "options": ["L'alpage de Tracuit", "L'alpage de Sorebois", "L'alpage de Nava", "L'alpage de Moiry"],
+        "answer": 2,
+        "why": "Nava, au dessus d'Ayer. La fête en porte le nom jusque dans son concours de force."
+      },
+      {
+        "q": "Que gagne le vainqueur du jet de la pierre de Nava ?",
+        "options": ["Un fromage", "Une cloche de bronze", "Le droit d'ouvrir le cortège l'année suivante", "Une place à l'alpage pour sa vache"],
+        "answer": 0,
+        "why": "Un fromage, évidemment. Dans une vallée où le fromage a longtemps servi de monnaie, c'est le prix qui a du sens."
+      }
+    ]
+  },
+
+  {
+    "id": "le-fromage-fondu-dehors",
+    "pillar": "vie-alpine",
+    "name": "Le fromage fondu dehors",
+    "style": "culinaire",
+    "tier": "experience",
+    "points": 20,
+    "location_kind": "libre",
+    "location_detail": "N'importe où dehors, avec un réchaud de camping et un endroit dégagé",
+    "branch": "les deux branches",
+    "duration": "45 minutes",
+    "brief": "Achetez un morceau de fromage de la vallée, puis improvisez de quoi le faire fondre dehors. Un petit poêlon sur un réchaud, une boîte de conserve propre, une poêle posée sur deux pierres, une pierre plate chauffée. Tout est permis tant que c'est sûr. Raclez, trempez, partagez, et jugez le résultat sans complaisance : la belle crème lisse ou la flaque d'huile.",
+    "savoir": "La Raclette du Valais AOP se fait au lait cru de vache, en cuves de cuivre, et vieillit au moins trois mois. Son nom vient du geste : on racle le fromage à mesure qu'il fond. Avant les fours et les appareils électriques, on le posait simplement face à la braise.",
+    "proof": "photo_quiz",
+    "photo_hint": "Une photo du montage improvisé en action, avec le fromage en train de fondre.",
+    "video_hint": "Dix secondes de fromage qui coule, et le nom de votre invention.",
+    "note_label": "Votre montage, et ce que ça a donné",
+    "alerte": "Pas de feu ouvert hors des places à feu aménagées, et jamais sur de l'herbe sèche ni sous des branches. Un réchaud de camping posé à plat sur de la pierre reste la solution sûre. Vérifiez qu'aucune interdiction de faire du feu n'est en cours, emportez de l'eau, et repartez avec tous vos déchets.",
+    "quiz": [
+      {
+        "q": "Avec quel lait la Raclette du Valais AOP doit elle être fabriquée ?",
+        "options": ["Du lait pasteurisé", "Du lait de brebis", "Du lait en poudre reconstitué", "Du lait cru de vache"],
+        "answer": 3,
+        "why": "Du lait cru, dans son canton d'origine, avec un affinage de trois mois au minimum."
+      },
+      {
+        "q": "D'où vient le mot raclette ?",
+        "options": ["Du geste de racler le fromage à mesure qu'il fond", "Du nom d'un alpage valaisan", "D'un mot de patois qui veut dire partager", "Du nom de l'inventeur de l'appareil électrique"],
+        "answer": 0,
+        "why": "Le plat s'appelait le fromage rôti. Le nom actuel décrit simplement le geste."
+      },
+      {
+        "q": "Pourquoi un fromage très vieux et très sec rend il de l'huile au lieu de filer ?",
+        "options": ["Parce qu'il contient plus de sel", "Parce qu'il a perdu son eau et que ses protéines ne retiennent plus le gras", "Parce qu'il a été fait en été", "Parce qu'il est resté au frigo"],
+        "answer": 1,
+        "why": "Un fromage à raclette garde ce qu'il faut d'eau et de souplesse. Trop sec, le réseau de protéines se resserre et laisse partir la matière grasse."
+      }
+    ]
+  },
+
   /* ============ PILIER 4. PATRIMOINE (7) ============ */
 
   {
@@ -1572,6 +1731,7 @@ export const CHALLENGES = /* json */ [
     "savoir": "Le patois valaisan appartient au franco provençal, une langue romane distincte du français. Il a presque disparu de l'usage quotidien en deux générations.",
     "proof": "photo_quiz",
     "photo_hint": "Une photo du groupe, ou de l'endroit où vous avez trouvé ces mots.",
+    "video_hint": "Si quelqu'un accepte, filmez le en train de dire le mot en patois. Une voix se garde mieux qu'une orthographe.",
     "note_label": "Les mots collectés et leur sens",
     "quiz": [
       {
@@ -1610,6 +1770,7 @@ export const CHALLENGES = /* json */ [
     "savoir": "L'essentiel de la vie quotidienne des villages de montagne ne se trouve dans aucune archive. Il se transmettait de bouche à oreille, et il se perd avec ceux qui le portent.",
     "proof": "photo_quiz",
     "photo_hint": "Une photo du groupe, avec la personne rencontrée si elle est d'accord, ou du lieu de l'histoire.",
+    "video_hint": "Avec l'accord de la personne, quelques secondes de son récit. Demandez lui toujours avant de filmer.",
     "note_label": "L'histoire que vous avez recueillie",
     "quiz": [
       {
@@ -1692,6 +1853,7 @@ export const CHALLENGES = /* json */ [
     "savoir": "Dans une économie de subsistance, un repas de fête se reconnaît à ce qui est rare. La viande, le sucre, le blanc de farine. Le reste, on en mangeait tous les jours.",
     "proof": "photo_quiz",
     "photo_hint": "Une photo du groupe, avec la personne ou le plat si possible.",
+    "video_hint": "Un tour de table de dix secondes, avec le plat au centre.",
     "note_label": "La recette ou le souvenir recueilli",
     "quiz": [
       {

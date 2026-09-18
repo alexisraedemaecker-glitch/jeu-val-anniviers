@@ -7,7 +7,7 @@
 //   - photos du stockage Supabase : le cache d'abord, elles ne changent jamais.
 //   - appels a la base : jamais de cache, les scores doivent etre justes.
 
-const CACHE = "anniviers2056-v19";
+const CACHE = "anniviers2056-v20";
 const NET_TIMEOUT = 4000;
 
 const SHELL = [
@@ -152,6 +152,12 @@ self.addEventListener("fetch", (event) => {
   } catch (err) {
     return;
   }
+
+  // Les videos ne passent jamais par ici. Un lecteur video demande des morceaux
+  // de fichier avec un entete Range, et un service worker qui repond le fichier
+  // entier depuis son cache casse la lecture sur iPhone. Le cache HTTP du
+  // navigateur s'en charge tres bien tout seul, les fichiers etant immuables.
+  if (url.pathname.includes("/storage/v1/object/public/videos/")) return;
 
   // Photos du stockage Supabase : immuables, donc le cache d'abord.
   if (url.pathname.includes("/storage/v1/object/public/")) {

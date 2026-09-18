@@ -68,6 +68,22 @@ as $$
       or (p ~ '^[0-9a-zA-Z][0-9a-zA-Z/_.-]{0,200}$' and p not like '%..%');
 $$;
 
+-- Place occupee par les videos, en octets. L'offre gratuite plafonne a un
+-- gigaoctet pour tout le stockage, et une video de telephone pese mille fois
+-- une photo compressee : sans garde fou, quelques dizaines de films suffiraient
+-- a tout remplir au milieu de la journee. L'application arrete d'accepter les
+-- videos avant d'en arriver la, et l'organisateur voit la jauge monter.
+create or replace function public.espace_video()
+returns bigint
+language sql
+stable
+security definer
+set search_path = public, storage
+as $$
+  select coalesce(sum((metadata->>'size')::bigint), 0)::bigint
+    from storage.objects where bucket_id = 'videos';
+$$;
+
 -- Cle de nom, insensible a la casse et aux espaces, comme l'index unique des
 -- profils. Sert a reconnaitre un nom retire par l'organisateur.
 create or replace function public.nom_cle(p_first text, p_last text)
@@ -224,6 +240,8 @@ $$;
 -- l'ancienne version pour eviter deux fonctions de meme nom.
 drop function if exists public.submit_challenge(text, text, uuid, uuid[], text, text, int);
 
+drop function if exists public.submit_challenge(text, text, uuid, uuid[], text, text, int, int);
+
 create or replace function public.submit_challenge(
   p_client_id     text,
   p_challenge_id  text,
@@ -232,7 +250,8 @@ create or replace function public.submit_challenge(
   p_photo_path    text default null,
   p_note          text default null,
   p_quiz_attempts int default 0,
-  p_quiz_restarts int default 0
+  p_quiz_restarts int default 0,
+  p_video_path    text default null
 )
 returns jsonb
 language plpgsql
@@ -248,6 +267,7 @@ declare
   v_gauge     numeric;
   v_index     int;
   v_path      text := nullif(btrim(coalesce(p_photo_path, '')), '');
+  v_video     text := nullif(btrim(coalesce(p_video_path, '')), '');
   v_bloque    timestamptz;
   v_exclus    jsonb;
 begin
@@ -312,14 +332,17 @@ begin
   if v_path is not null and v_path like '%..%' then
     raise exception 'Chemin de photo invalide';
   end if;
+  if not public.chemin_valide(v_video) then
+    raise exception 'Chemin de vidéo invalide';
+  end if;
 
   select coalesce(array_agg(participant_id::text || '|' || synergy_id), array[]::text[])
     into v_before
     from public.synergy_unlocks where participant_id = any (v_members);
 
   insert into public.submissions (client_id, challenge_id, submitter_id, photo_path,
-                                  note, quiz_attempts, quiz_restarts)
-  values (p_client_id, p_challenge_id, p_submitter, v_path,
+                                  video_path, note, quiz_attempts, quiz_restarts)
+  values (p_client_id, p_challenge_id, p_submitter, v_path, v_video,
           left(nullif(btrim(coalesce(p_note, '')), ''), 2000),
           greatest(0, least(99, coalesce(p_quiz_attempts, 0))),
           greatest(0, least(99, coalesce(p_quiz_restarts, 0))))
@@ -398,13 +421,14 @@ language plpgsql
 security definer
 set search_path = public
 as $$
-declare v_path text;
+declare v_path text; v_video text;
 begin
   if not public.check_organizer(p_pin) then
     raise exception 'Code organisateur incorrect';
   end if;
 
-  select photo_path into v_path from public.submissions where id = p_submission;
+  select photo_path, video_path into v_path, v_video
+    from public.submissions where id = p_submission;
   if not found then
     raise exception 'Soumission introuvable';
   end if;
@@ -415,7 +439,7 @@ begin
   -- Supabase interdit la suppression directe dans les tables de stockage, il
   -- faut passer par son API. On renvoie donc le chemin : la photo est desormais
   -- orpheline, et la policy "preuves menage" autorise a la retirer.
-  return jsonb_build_object('deleted', true, 'photo_path', v_path);
+  return jsonb_build_object('deleted', true, 'photo_path', v_path, 'video_path', v_video);
 end;
 $$;
 
@@ -632,7 +656,8 @@ as $$
     'settings',    jsonb_build_object(
                      'lockout_minutes', public.lockout_minutes(),
                      'ouverture',          public.ouverture_du_jeu(),
-                     'activites_ouvertes', public.activites_ouvertes()),
+                     'activites_ouvertes', public.activites_ouvertes(),
+                     'espace_video',       public.espace_video()),
     'server_time', now()
   );
 $$;
@@ -718,6 +743,7 @@ set search_path = public
 as $$
 declare
   v_photos text[];
+  v_videos text[];
   v_portrait text;
   v_first text;
   v_last text;
@@ -731,6 +757,12 @@ begin
           union all
           select photo_path from public.posts
            where author_id = p_id and photo_path is not null) t;
+  select coalesce(array_agg(video_path), array[]::text[]) into v_videos
+    from (select video_path from public.submissions
+           where submitter_id = p_id and video_path is not null
+          union all
+          select video_path from public.posts
+           where author_id = p_id and video_path is not null) t;
   select first_name, last_name, coalesce(photo_path, '')
     into v_first, v_last, v_portrait
     from public.participants where id = p_id;
@@ -743,6 +775,7 @@ begin
   on conflict (nom) do update set retire_le = now();
   perform public.recompute_synergies();
   return jsonb_build_object('deleted', true, 'photos', to_jsonb(v_photos),
+                            'videos', to_jsonb(v_videos),
                             'portrait', nullif(v_portrait, ''),
                             'nom', v_first || ' ' || v_last);
 end;
@@ -1184,6 +1217,15 @@ create or replace function public.photo_post_est_orpheline(p_name text) returns 
 language sql stable security definer set search_path = public as $$
   select not exists (select 1 from public.posts p where p.photo_path = p_name);
 $$;
+
+-- Meme garde pour les videos : on ne peut retirer du stockage qu'un fichier
+-- dont plus aucune soumission ni publication ne se sert.
+create or replace function public.video_est_orpheline(p_name text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select not exists (select 1 from public.submissions s where s.video_path = p_name)
+     and not exists (select 1 from public.posts p where p.video_path = p_name);
+$$;
+
 
 -- =====================================================================
 -- Notifications poussees

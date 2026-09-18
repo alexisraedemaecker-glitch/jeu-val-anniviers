@@ -48,7 +48,11 @@ def gabarits(src):
                 break
             j += 1
         out.append((d + 5, src[d + 5 : j]))
-        i = j + 1
+        # On repart juste apres l'ouverture, et non apres la fermeture : les
+        # gabarits imbriques dans une expression, qui sont la majorite du code,
+        # seraient sinon ignores. C'est ce trou qui laissait passer un
+        # "patienter 30minutes" pendant des semaines.
+        i = d + 5
 
 
 def morceaux(gab):
@@ -131,6 +135,8 @@ def main():
                     and not finit_espace
                 ):
                     hits.append((f, ligne, "après", contenu[:44], apres.strip()[:52]))
+
+    hits = sorted(set(hits), key=lambda h: (str(h[0]), h[1]))
 
     if not hits:
         print("Aucun espace avalé détecté dans les gabarits html.")

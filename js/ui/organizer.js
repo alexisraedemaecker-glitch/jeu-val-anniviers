@@ -25,10 +25,13 @@ import {
   adminSetOuverture,
   adminSetActivites,
   activitesOuvertes,
+  videoPossible,
+  tailleLisible,
   jeuOuvert,
   avantOuverture,
   friendly
 } from "../store.js";
+import { VIDEO_QUOTA_BYTES } from "../config.js";
 import { PILLARS, PILLAR_BY_ID, VICTORY } from "../data/pillars.js";
 import { CHALLENGES, CHALLENGE_BY_ID } from "../data/challenges.js";
 import { SYNERGIES } from "../data/synergies.js";
@@ -174,7 +177,7 @@ function Bord() {
         ? html`<${Banner} kind="warn">
             ${col.piliers_sous_plancher === 1
               ? "Un pilier est encore sous le plancher de 40 points."
-              : `${col.piliers_sous_plancher} piliers sont encore sous le plancher de 40 points.`}
+              : `${col.piliers_sous_plancher} piliers sont encore sous le plancher de 40 points.`}${" "}
             Sans eux l'objectif ne peut pas être validé, même en atteignant le seuil global.
           <//>`
         : null}
@@ -526,7 +529,7 @@ function Joueurs({ onError }) {
   return html`<div class="stack">
     ${doublons.length
       ? html`<${Banner} kind="warn">
-          Prénoms en double, peut être quelqu'un qui s'est inscrit deux fois :
+          Prénoms en double, peut être quelqu'un qui s'est inscrit deux fois :${" "}
           ${doublons.map((g) => g.map((p) => `${p.first_name} ${p.last_name}`).join(" et ")).join(", ")}.
         <//>`
       : null}
@@ -779,8 +782,28 @@ function Reglages({ onError }) {
   const ouvert = jeuOuvert();
   const reste = avantOuverture();
   const heures = Math.floor(reste / 3600000);
+  const partVideo = Math.min(100, Math.round((state.espaceVideo / VIDEO_QUOTA_BYTES) * 100));
 
   return html`<div class="stack">
+    <div class="card">
+      <div class="card-head">
+        <h2 class="grow">Place occupée par les vidéos</h2>
+        ${videoPossible()
+          ? html`<span class="chip ok">${partVideo} pourcent</span>`
+          : html`<span class="chip warn">Plein</span>`}
+      </div>
+      <div class="gauge-bar" role="progressbar" aria-valuenow=${partVideo} aria-valuemin="0"
+           aria-valuemax="100" aria-label="Place occupée par les vidéos">
+        <div class="gauge-fill" style=${{ width: partVideo + "%", background: partVideo > 80 ? "var(--bad)" : "var(--accent)" }}></div>
+      </div>
+      <p class="small muted" style="margin-top:.5rem">
+        ${tailleLisible(state.espaceVideo)} sur ${tailleLisible(VIDEO_QUOTA_BYTES)}. L'hébergement
+        gratuit offre un gigaoctet en tout, et une vidéo de téléphone pèse mille fois une photo.
+        Quand cette jauge est pleine, l'application cesse de proposer la vidéo et les photos
+        continuent comme si de rien n'était.
+      </p>
+    </div>
+
     <div class="card">
       <div class="card-head">
         <h2>Ouverture du jeu</h2>
@@ -871,7 +894,7 @@ function Reglages({ onError }) {
 
     ${fait
       ? html`<${Banner} kind="ok">
-          Remise à zéro faite. ${fait.joueurs_supprimes} joueur(s) et
+          Remise à zéro faite. ${fait.joueurs_supprimes} joueur(s) et${" "}
           ${fait.soumissions_supprimees} soumission(s) effacés.
         <//>`
       : null}

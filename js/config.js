@@ -16,6 +16,19 @@ export const VAPID_PUBLIC_KEY =
 
 export const PHOTO_BUCKET = "preuves";
 export const PORTRAIT_BUCKET = "profils";
+export const VIDEO_BUCKET = "videos";
+
+// Une video de telephone pese mille fois une photo compressee, et le navigateur
+// ne sait pas la recompresser de maniere fiable. On la prend donc telle quelle,
+// mais courte et legere : douze megaoctets et vingt secondes au maximum, ce qui
+// laisse passer une dizaine de secondes filmees par n'importe quel telephone.
+// Au dela, la photo suffit.
+export const VIDEO_MAX_BYTES = 12 * 1024 * 1024;
+export const VIDEO_MAX_SECONDS = 20;
+// Place totale au dela de laquelle l'application cesse d'accepter des videos,
+// pour ne jamais remplir le gigaoctet de l'offre gratuite. Les photos, elles,
+// passent toujours.
+export const VIDEO_QUOTA_BYTES = 550 * 1024 * 1024;
 
 // Un portrait s'affiche petit : inutile de faire monter une photo pleine taille.
 export const PORTRAIT_MAX_SIDE = 480;

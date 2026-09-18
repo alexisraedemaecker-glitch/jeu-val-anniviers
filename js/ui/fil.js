@@ -9,6 +9,7 @@ const { html, useState, useEffect, useMemo, useRef } = window.htmPreact;
 import {
   state,
   photoUrl,
+  videoUrl,
   refreshPosts,
   addPost,
   addComment,
@@ -424,6 +425,12 @@ function Publication({ post, ouvrirPhoto, go, vise, commentairesOuverts }) {
       ? html`<button class="post-photo" onClick=${() => ouvrirPhoto(post)}>
           <img src=${photoUrl(post.photo_path)} alt=${post.challenge_name || "Photo du week end"} loading="lazy" />
         </button>`
+      : null}
+
+    ${post.video_path
+      ? html`<video class="post-video" controls playsinline preload="none"
+               poster=${post.photo_path ? photoUrl(post.photo_path) : undefined}
+               src=${videoUrl(post.video_path)}></video>`
       : null}
 
     <footer class="post-actions">

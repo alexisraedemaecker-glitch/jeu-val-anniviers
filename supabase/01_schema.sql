@@ -148,6 +148,10 @@ create table if not exists public.posts (
   created_at    timestamptz not null default now()
 );
 create index if not exists posts_created_idx on public.posts (created_at desc);
+-- Une courte video peut accompagner la photo sur certains defis. Elle reste
+-- facultative : la photo seule a toujours suffi et suffit toujours.
+alter table public.submissions add column if not exists video_path text;
+alter table public.posts        add column if not exists video_path text;
 
 create table if not exists public.post_kudos (
   post_id        uuid not null references public.posts(id) on delete cascade,
@@ -385,6 +389,7 @@ select s.id,
        c.pillar,
        c.points,
        s.photo_path,
+       s.video_path,
        s.note,
        s.quiz_attempts,
        s.quiz_restarts,
@@ -425,6 +430,7 @@ select p.id,
        c.pillar,
        c.points,
        coalesce(p.photo_path, s.photo_path)  as photo_path,
+       coalesce(p.video_path, s.video_path)  as video_path,
        coalesce(nullif(btrim(coalesce(p.texte, '')), ''), s.note) as texte,
        p.mentions,
        coalesce(

@@ -1002,3 +1002,18 @@ button.avatar { cursor: zoom-in; }
   flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px;
   display: grid; place-items: center; font-size: 1.05rem; color: #fff;
 }
+
+/* Video d'un defi. Elle ne se telecharge qu'au moment ou on appuie sur lecture,
+   grace a preload none : sur l'offre gratuite, le trafic mensuel est la vraie
+   limite, bien avant la place occupee. */
+.post-video {
+  width: 100%; margin-top: .6rem; border-radius: var(--radius);
+  background: #0c1218; display: block; max-height: 70vh;
+}
+.video-choisie {
+  display: flex; align-items: center; gap: .7rem; margin-top: .6rem;
+  padding: .7rem; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+.video-choisie .big { font-size: 1.5rem; }
+.video-choisie .tiny { word-break: break-all; }
