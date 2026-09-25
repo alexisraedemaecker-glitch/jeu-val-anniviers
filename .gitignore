@@ -30,3 +30,8 @@ MEMO-JOUR-J.local.md
 
 # Outils locaux de l atelier
 .claude/
+
+# Photos personnelles du week end et album genere : lourds, et surtout le depot
+# est public par GitHub Pages. Rien de tout cela n'a a s'y trouver.
+/Photos/
+/album/
