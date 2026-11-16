@@ -7,7 +7,7 @@
 //   - photos du stockage Supabase : le cache d'abord, elles ne changent jamais.
 //   - appels a la base : jamais de cache, les scores doivent etre justes.
 
-const CACHE = "anniviers2056-v20";
+const CACHE = "anniviers2056-v21";
 const NET_TIMEOUT = 4000;
 
 const SHELL = [
@@ -152,6 +152,11 @@ self.addEventListener("fetch", (event) => {
   } catch (err) {
     return;
   }
+
+  // L'album souvenir vit a cote du jeu mais ne lui appartient pas : ses
+  // fichiers sont chiffres, volumineux, et n'ont rien a faire dans le cache de
+  // l'application. On laisse passer sans rien intercepter.
+  if (url.pathname.includes("/souvenir/")) return;
 
   // Les videos ne passent jamais par ici. Un lecteur video demande des morceaux
   // de fichier avec un entete Range, et un service worker qui repond le fichier

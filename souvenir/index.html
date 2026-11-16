@@ -1,0 +1,598 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anniviers 2056</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Caveat:wght@500;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Pinyon+Script&display=swap');
+:root{
+  --papier:#EDE4D4; --papier2:#E5DAC6; --encre:#2A2320; --doux:#7A6E60;
+  --bordeaux:#8C3B2E; --or:#C29A2E; --beurre:#F1E3A5; --bleu:#6C86A9;
+  --ombre:rgba(60,45,30,.22);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--papier);color:var(--encre);
+  font-family:'EB Garamond',Georgia,serif;font-size:18px;line-height:1.55;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(160,140,110,.05) 0 2px, transparent 2px),
+    radial-gradient(circle at 70% 60%, rgba(140,120,95,.045) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 45% 85%, rgba(170,150,120,.05) 0 2px, transparent 2px);
+  background-size:180px 180px, 130px 130px, 220px 220px;}
+img,video{max-width:100%;display:block}
+.plume{font-family:'Pinyon Script',cursive;font-weight:400;color:var(--or);
+  text-shadow:0 1px 0 rgba(255,250,235,.7), 0 3px 10px rgba(120,95,40,.18);}
+.anton{font-family:'Anton',Impact,sans-serif;text-transform:uppercase;letter-spacing:.06em;font-weight:400}
+.main{font-family:'Caveat',cursive;color:var(--bordeaux)}
+
+/* ----------------------------------------------------------- couverture */
+.couv{position:relative;min-height:100svh;display:grid;place-items:center;overflow:hidden;
+  padding:4rem 1rem;isolation:isolate}
+.couv-fond{position:absolute;inset:0;z-index:-2}
+.couv-fond img{width:100%;height:100%;object-fit:cover;filter:saturate(.75) contrast(1.05)}
+.couv-fond::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg, rgba(237,228,212,.72) 0%, rgba(237,228,212,.35) 35%, rgba(42,35,32,.55) 100%)}
+.couv-collage{position:absolute;inset:0;z-index:-1}
+.couv-collage img{position:absolute;border:7px solid #fffdf6;box-shadow:0 10px 30px var(--ombre);object-fit:cover}
+.couv-collage .c1{width:36vmin;height:24vmin;left:3%;top:8%;transform:rotate(-5deg)}
+.couv-collage .c2{width:26vmin;height:26vmin;right:4%;top:12%;transform:rotate(4deg)}
+.couv-collage .c3{width:24vmin;height:30vmin;left:8%;bottom:6%;transform:rotate(3deg)}
+.couv-collage .c4{width:34vmin;height:20vmin;right:5%;bottom:8%;transform:rotate(-3deg)}
+.couv-texte{text-align:center;position:relative;z-index:2;max-width:min(92vw,760px)}
+.couv-texte .sur{font-size:clamp(.9rem,2.4vw,1.5rem);color:#fffaf0;margin:0;
+  text-shadow:0 2px 12px rgba(30,25,20,.5)}
+.couv-texte h1{font-size:clamp(5rem,20vw,14rem);margin:-.06em 0 0;line-height:.9;color:var(--beurre);
+  text-shadow:0 2px 0 rgba(120,95,40,.35), 0 12px 40px rgba(20,16,12,.55)}
+.couv-texte .gros{font-size:clamp(1.6rem,6vw,4rem);margin:.1em 0 0;color:#fffaf0;
+  text-shadow:0 3px 18px rgba(20,16,12,.6)}
+.couv-texte .main{font-size:clamp(1.6rem,4.5vw,2.8rem);margin:.5rem 0 0;color:var(--beurre)}
+.couv-texte .date{font-variant:small-caps;letter-spacing:.14em;color:#fffaf0;opacity:.9;margin:.4rem 0 0}
+
+/* --------------------------------------------------------------- pages */
+.chap{max-width:1180px;margin:0 auto;padding:4.5rem 1.2rem 2rem}
+.titre{text-align:center;margin-bottom:2.2rem;position:relative}
+.titre h2{font-size:clamp(3rem,9vw,6rem);margin:0;line-height:.95}
+.titre p{margin:.2rem 0 0;font-size:clamp(.72rem,1.7vw,1rem);color:var(--bordeaux)}
+.titre::after{content:"";display:block;width:120px;height:2px;margin:1.1rem auto 0;
+  background:linear-gradient(90deg,transparent,var(--or),transparent)}
+.intro{max-width:62ch;margin:0 auto 2rem;text-align:center;color:var(--doux);font-size:1.05rem}
+
+/* --------------------------------------------------------------- photos */
+.grille{columns:3 300px;column-gap:1.4rem}
+.photo{break-inside:avoid;margin:0 0 1.8rem;background:#fffdf6;padding:.7rem .7rem .2rem;
+  box-shadow:0 6px 18px var(--ombre);transform:rotate(var(--r,0deg));position:relative;
+  transition:transform .25s ease, box-shadow .25s ease}
+.photo:hover{transform:rotate(0deg) scale(1.02);box-shadow:0 14px 34px rgba(60,45,30,.3);z-index:3}
+.photo .cadre{overflow:hidden;background:#e8e0d0}
+.photo img,.photo video{width:100%;height:auto;object-fit:cover}
+.photo figcaption{font-family:'Caveat',cursive;font-size:1.12rem;line-height:1.3;
+  padding:.45rem .2rem .6rem;color:var(--encre)}
+.photo figcaption b{font-weight:700}
+.photo figcaption i{color:var(--doux);font-style:italic}
+.photo figcaption span{display:block;font-size:.92rem;color:var(--bordeaux);opacity:.85}
+.photo.large{columns:unset}
+.photo::before{content:"";position:absolute;width:74px;height:22px;
+  background:linear-gradient(180deg, rgba(241,227,165,.75), rgba(226,208,140,.6));
+  box-shadow:0 1px 3px rgba(80,65,40,.18);opacity:.9}
+.photo.ru0::before{top:-11px;left:12%;transform:rotate(-4deg)}
+.photo.ru1::before{top:-11px;right:14%;transform:rotate(5deg)}
+.photo.ru2::before{top:-11px;left:44%;transform:rotate(-2deg)}
+.photo.ru3::before{top:-11px;right:8%;transform:rotate(7deg)}
+
+/* --------------------------------------------------------------- verdict */
+.carton{background:#fffdf6;border:1px solid rgba(140,120,90,.25);box-shadow:0 8px 26px var(--ombre);
+  padding:2rem 1.6rem;max-width:760px;margin:0 auto;text-align:center;position:relative}
+.carton::after{content:"";position:absolute;inset:6px;border:1px solid rgba(194,154,46,.35);pointer-events:none}
+.score{font-family:'Anton',sans-serif;font-size:clamp(4rem,14vw,9rem);line-height:.9;margin:0;color:var(--bordeaux)}
+.score small{font-size:.28em;color:var(--doux);letter-spacing:.05em}
+.gagne{font-size:clamp(1.8rem,5vw,3rem);margin:.2rem 0 1.4rem}
+.jauges{display:grid;gap:.55rem;max-width:520px;margin:0 auto 1.2rem;text-align:left}
+.jauge{display:grid;grid-template-columns:7.5rem 1fr 4.5rem;align-items:center;gap:.6rem;font-size:.95rem}
+.jauge .nom{font-variant:small-caps;letter-spacing:.06em;color:var(--doux)}
+.jauge .barre{height:12px;background:#e6dcc8;position:relative;overflow:hidden}
+.jauge .barre i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--or),#d8b755)}
+.jauge .val{text-align:right;font-weight:600}
+.jauge .val small{color:var(--doux)}
+.note{font-size:.92rem;color:var(--doux);max-width:56ch;margin:1rem auto 0}
+
+/* --------------------------------------------------------------- podium */
+.podium{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.6rem;align-items:start}
+.marche{background:#fffdf6;padding:1.6rem 1.2rem;box-shadow:0 8px 24px var(--ombre);text-align:center;
+  border-top:5px solid var(--or);position:relative}
+.marche .rang{font-size:4.5rem;line-height:.8;display:block}
+.marche h3{margin:.2rem 0 .7rem;font-size:1rem;color:var(--bordeaux)}
+.marche ul{list-style:none;padding:0;margin:0 0 .8rem;font-size:1.3rem;font-weight:600}
+.marche p{font-size:.92rem;color:var(--doux);margin:0}
+.marche.m1{border-top-color:var(--or);transform:rotate(-1deg)}
+.marche.m2{border-top-color:#b9b2a4;transform:rotate(.8deg)}
+.marche.m3{border-top-color:#b08a5e;transform:rotate(-.6deg)}
+.apres-podium{text-align:center;max-width:62ch;margin:1.8rem auto 0;color:var(--doux);font-size:.98rem}
+
+/* ----------------------------------------------------------------- quiz */
+.fiches{columns:2 340px;column-gap:1.4rem}
+.fiche{break-inside:avoid;background:#fffdf6;border:1px solid rgba(140,120,90,.22);
+  box-shadow:0 5px 16px rgba(60,45,30,.14);padding:1rem 1.1rem;margin:0 0 1.4rem}
+.fiche h4{margin:0 0 .6rem;font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:.05em;
+  font-size:.95rem;color:var(--bordeaux);display:flex;justify-content:space-between;gap:.6rem;align-items:baseline}
+.fiche h4 span{font-family:'EB Garamond',serif;text-transform:none;letter-spacing:0;
+  font-size:.8rem;color:var(--doux);white-space:nowrap}
+.quiz{list-style:none;padding:0;margin:0;counter-reset:q}
+.quiz li{margin:0 0 .9rem;padding-left:1.6rem;position:relative}
+.quiz li::before{counter-increment:q;content:counter(q);position:absolute;left:0;top:.1rem;
+  font-family:'Anton',sans-serif;font-size:.8rem;color:var(--or)}
+.quiz .q{margin:0;font-weight:600;font-size:.98rem}
+.quiz .r{margin:.15rem 0 0;color:var(--bordeaux);font-size:.98rem}
+.quiz .r::before{content:"→ "}
+.quiz .w{margin:.1rem 0 0;font-size:.86rem;color:var(--doux);font-style:italic}
+
+/* -------------------------------------------------------------- ratages */
+.deux{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.6rem;align-items:start}
+.carton.petit{max-width:none;text-align:left;padding:1.4rem 1.3rem}
+.carton.petit h3{margin:0 0 .8rem;font-size:.95rem;color:var(--bordeaux)}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th{text-align:left;font-variant:small-caps;letter-spacing:.06em;color:var(--doux);font-weight:400;
+  border-bottom:1px solid rgba(140,120,90,.3);padding:.2rem 0}
+td{padding:.28rem 0;border-bottom:1px dotted rgba(140,120,90,.25)}
+td.num,th:not(:first-child){text-align:right}
+.palmares{list-style:none;padding:0;margin:0;font-size:.98rem}
+.palmares li{display:flex;justify-content:space-between;padding:.22rem 0;
+  border-bottom:1px dotted rgba(140,120,90,.25)}
+.palmares span{font-family:'Anton',sans-serif;color:var(--bordeaux)}
+
+/* ------------------------------------------------------------ synergies */
+.syns{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.4rem}
+.syn{background:#fffdf6;padding:1.4rem 1.2rem;text-align:center;box-shadow:0 6px 18px var(--ombre);
+  border:1px solid rgba(194,154,46,.35)}
+.syn h3{font-size:2.1rem;margin:0}
+.syn .anton{font-size:.7rem;color:var(--bleu);margin:.1rem 0 .7rem}
+.syn p:last-child{margin:0;font-size:.95rem;color:var(--doux)}
+
+/* ------------------------------------------------------------------ fil */
+.mur{columns:3 320px;column-gap:1.4rem}
+.post{break-inside:avoid;background:#fffdf6;box-shadow:0 6px 18px var(--ombre);
+  padding:1rem 1.1rem;margin:0 0 1.5rem;transform:rotate(var(--r,0deg))}
+.post header{display:flex;justify-content:space-between;align-items:center;gap:.6rem;
+  border-bottom:1px dotted rgba(140,120,90,.35);padding-bottom:.35rem;margin-bottom:.5rem}
+.post header b{font-variant:small-caps;letter-spacing:.05em;font-size:1.05rem}
+.compteur{display:inline-flex;align-items:center;gap:.25rem;font-family:'Anton',sans-serif;
+  font-size:.9rem;color:var(--bordeaux)}
+.ic{width:19px;height:19px;display:inline-block}
+.post p{margin:0 0 .6rem;font-size:1.02rem}
+.post-photo{width:100%;margin:.2rem 0 .6rem;border:5px solid #fff;box-shadow:0 3px 10px rgba(60,45,30,.2)}
+.com{display:flex;gap:.45rem;align-items:flex-start;font-size:.92rem;color:var(--doux);
+  border-top:1px dotted rgba(140,120,90,.3);padding-top:.4rem;margin-top:.4rem}
+.com b{color:var(--encre)}
+.reacs{margin-left:.3rem}
+
+/* ------------------------------------------------------------- chiffres */
+.chiffres{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1.2rem;text-align:center}
+.chiffres div{background:#fffdf6;padding:1.1rem .6rem;box-shadow:0 5px 14px var(--ombre)}
+.chiffres b{display:block;font-size:2.4rem;color:var(--bordeaux);line-height:1}
+.chiffres span{font-size:.82rem;color:var(--doux);font-variant:small-caps;letter-spacing:.04em}
+.fin{text-align:center;font-size:clamp(1.8rem,5vw,3rem);margin:3rem 0 1rem}
+
+/* ------------------------------------------------------------ sommaire */
+.sommaire{position:sticky;top:0;z-index:40;background:rgba(237,228,212,.93);
+  backdrop-filter:blur(6px);border-bottom:1px solid rgba(140,120,90,.3)}
+.sommaire ul{list-style:none;display:flex;gap:.1rem;margin:0;padding:.45rem .6rem;
+  overflow-x:auto;justify-content:center;scrollbar-width:none}
+.sommaire ul::-webkit-scrollbar{display:none}
+.sommaire a{font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:.07em;
+  font-size:.62rem;color:var(--doux);text-decoration:none;white-space:nowrap;
+  padding:.35rem .55rem;border-radius:2px}
+.sommaire a:hover,.sommaire a.ici{color:var(--bordeaux);background:rgba(194,154,46,.16)}
+
+/* ------------------------------------------------------------- loupe */
+.loupe{position:fixed;inset:0;z-index:100;background:rgba(28,23,19,.94);
+  display:none;place-items:center;padding:1.2rem}
+.loupe.on{display:grid}
+.loupe img{max-width:96vw;max-height:84vh;object-fit:contain;
+  border:9px solid #fffdf6;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.loupe .leg{position:absolute;left:0;right:0;bottom:0;padding:1.4rem 1rem .9rem;
+  text-align:center;color:#fdf6e6;font-family:'Caveat',cursive;font-size:1.3rem;
+  background:linear-gradient(to top,rgba(20,16,12,.9),transparent)}
+.loupe .leg span{display:block;font-size:.95rem;color:var(--beurre);opacity:.9}
+.loupe button{position:absolute;background:rgba(255,253,246,.14);color:#fdf6e6;
+  border:0;font-size:1.6rem;width:46px;height:46px;border-radius:50%;cursor:pointer}
+.loupe .fermer{top:1rem;right:1rem;font-size:1.2rem}
+.loupe .prec{left:1rem;top:50%;transform:translateY(-50%)}
+.loupe .suiv{right:1rem;top:50%;transform:translateY(-50%)}
+.photo .cadre{cursor:zoom-in}
+@media (max-width:640px){ .sommaire ul{justify-content:flex-start} }
+
+@media (max-width:640px){
+  body{font-size:17px}
+  .grille,.mur,.fiches{columns:1}
+  .chap{padding:3rem .9rem 1.5rem}
+}
+@media print{ .photo:hover{transform:rotate(var(--r,0deg))} }
+
+
+/* ------------------------------------------------------- porte d'entrée */
+.porte{min-height:100svh;display:grid;place-items:center;padding:2rem 1.2rem}
+.porte .carton{max-width:460px;width:100%}
+.porte h1{font-family:'Pinyon Script',cursive;color:var(--or);font-size:clamp(3.5rem,14vw,6rem);
+  line-height:.9;margin:0 0 .2rem;
+  text-shadow:0 1px 0 rgba(255,250,235,.7), 0 3px 10px rgba(120,95,40,.18)}
+.porte .sous{font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:.09em;
+  font-size:.8rem;color:var(--bordeaux);margin:0 0 1.4rem}
+.porte p.mot{font-size:.97rem;color:var(--doux);margin:0 0 1.2rem}
+.porte form{display:grid;gap:.7rem}
+.porte input{font-family:'EB Garamond',serif;font-size:1.05rem;padding:.65rem .8rem;
+  border:1px solid rgba(140,120,90,.45);background:#fffdf6;color:var(--encre);width:100%;
+  border-radius:2px}
+.porte input:focus{outline:2px solid var(--or);outline-offset:1px}
+.porte button{font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:.08em;
+  font-size:.82rem;padding:.75rem 1rem;border:0;background:var(--bordeaux);color:#fdf6e6;
+  cursor:pointer;border-radius:2px}
+.porte button:disabled{opacity:.55;cursor:wait}
+.porte .raté{color:var(--bordeaux);font-size:.92rem;margin:.2rem 0 0;min-height:1.2em}
+.porte .pied{font-size:.82rem;color:var(--doux);margin:1.3rem 0 0;line-height:1.45}
+
+/* ------------------------------------------------- photos en chargement */
+.photo .cadre{position:relative;background:#e3dac8}
+.photo img[data-bin],.photo video[data-bin]{opacity:0}
+.photo img.venue,.photo video.venue{opacity:1;transition:opacity .45s ease}
+.cadre.attente::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,#e3dac8 30%,#efe7d8 50%,#e3dac8 70%);
+  background-size:220% 100%;animation:glisse 1.4s linear infinite}
+@keyframes glisse{to{background-position:-220% 0}}
+
+/* ----------------------------------------------------------- le paquet */
+.paquet{max-width:1180px;margin:0 auto;padding:0 1.2rem 4rem;text-align:center}
+.paquet .carton{max-width:620px;padding:1.6rem 1.3rem}
+.paquet h2{font-family:'Pinyon Script',cursive;color:var(--or);font-size:3rem;margin:0 0 .1rem}
+.paquet p{font-size:.95rem;color:var(--doux);margin:.2rem 0 1rem}
+.paquet button{font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:.08em;
+  font-size:.8rem;padding:.75rem 1.4rem;border:0;background:var(--bordeaux);color:#fdf6e6;
+  cursor:pointer;border-radius:2px}
+.paquet button:disabled{opacity:.6;cursor:wait}
+.paquet .avance{height:10px;background:#e6dcc8;margin:1rem 0 .4rem;overflow:hidden;display:none}
+.paquet .avance i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--or),#d8b755);
+  transition:width .2s linear}
+.paquet .etat{font-size:.86rem;color:var(--doux);min-height:1.2em}
+</style>
+
+<div class="porte" id="porte">
+  <div class="carton">
+    <h1>Anniviers</h1>
+    <p class="sous">2056 · Le souvenir du week end</p>
+    <p class="mot">
+      Les photos et les textes de cette page sont chiffrés. Le mot de passe les déchiffre
+      dans votre navigateur, il ne part nulle part.
+    </p>
+    <form id="formulaire">
+      <input id="mdp" type="password" autocomplete="current-password"
+             placeholder="Mot de passe" aria-label="Mot de passe" autofocus>
+      <button type="submit" id="entrer">Ouvrir l'album</button>
+    </form>
+    <p class="raté" id="raté" role="alert"></p>
+    <p class="pied">
+      Si vous ne l'avez pas, demandez le à Alexis.
+    </p>
+  </div>
+</div>
+
+<div id="album" hidden></div>
+
+<div class="paquet" id="paquet" hidden>
+  <div class="carton">
+    <h2>Tout emporter</h2>
+    <p id="paquet-mot">Les photos de cette page, en un seul fichier.</p>
+    <button id="telecharger">Télécharger le zip</button>
+    <div class="avance" id="avance"><i></i></div>
+    <p class="etat" id="etat"></p>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var SEL = "b4b49fcc77d903e309aeacbf2556bb8e";
+  var ITER = 250000;
+  var MANIFESTE = {"p001":{"t":"image/jpeg","z":"anniviers-p001.jpg"},"p002":{"t":"image/jpeg","z":"anniviers-p002.jpg"},"p003":{"t":"image/jpeg","z":"anniviers-p003.jpg"},"p004":{"t":"image/jpeg","z":"anniviers-p004.jpg"},"p005":{"t":"image/jpeg","z":"anniviers-p005.jpg"},"p006":{"t":"image/jpeg","z":"anniviers-p006.jpg"},"p007":{"t":"image/jpeg","z":"anniviers-p007.jpg"},"p008":{"t":"image/jpeg","z":"anniviers-p008.jpg"},"p009":{"t":"image/jpeg","z":"anniviers-p009.jpg"},"p010":{"t":"image/jpeg","z":"anniviers-p010.jpg"},"p011":{"t":"image/jpeg","z":"anniviers-p011.jpg"},"p012":{"t":"image/jpeg","z":"anniviers-p012.jpg"},"p013":{"t":"image/jpeg","z":"anniviers-p013.jpg"},"p014":{"t":"image/jpeg","z":"anniviers-p014.jpg"},"p015":{"t":"image/jpeg","z":"anniviers-p015.jpg"},"p016":{"t":"image/jpeg","z":"anniviers-p016.jpg"},"p017":{"t":"image/jpeg","z":"anniviers-p017.jpg"},"p018":{"t":"image/jpeg","z":"anniviers-p018.jpg"},"p019":{"t":"image/jpeg","z":"anniviers-p019.jpg"},"p020":{"t":"image/jpeg","z":"anniviers-p020.jpg"},"p021":{"t":"image/jpeg","z":"anniviers-p021.jpg"},"p022":{"t":"image/jpeg","z":"anniviers-p022.jpg"},"p023":{"t":"image/jpeg","z":"anniviers-p023.jpg"},"p024":{"t":"image/jpeg","z":"anniviers-p024.jpg"},"p025":{"t":"image/jpeg","z":"anniviers-p025.jpg"},"p026":{"t":"image/jpeg","z":"anniviers-p026.jpg"},"p027":{"t":"image/jpeg","z":"anniviers-p027.jpg"},"p028":{"t":"image/jpeg","z":"anniviers-p028.jpg"},"p029":{"t":"image/jpeg","z":"anniviers-p029.jpg"},"p030":{"t":"image/jpeg","z":"anniviers-p030.jpg"},"p031":{"t":"image/jpeg","z":"anniviers-p031.jpg"},"p032":{"t":"image/jpeg","z":"anniviers-p032.jpg"},"p033":{"t":"image/jpeg","z":"anniviers-p033.jpg"},"p034":{"t":"image/jpeg","z":"anniviers-p034.jpg"},"p035":{"t":"image/jpeg","z":"anniviers-p035.jpg"},"p036":{"t":"image/jpeg","z":"anniviers-p036.jpg"},"p037":{"t":"image/jpeg","z":"anniviers-p037.jpg"},"p038":{"t":"image/jpeg","z":"anniviers-p038.jpg"},"p039":{"t":"image/jpeg","z":"anniviers-p039.jpg"},"p040":{"t":"image/jpeg","z":"anniviers-p040.jpg"},"p041":{"t":"image/jpeg","z":"anniviers-p041.jpg"},"p042":{"t":"image/jpeg","z":"anniviers-p042.jpg"},"p043":{"t":"image/jpeg","z":"anniviers-p043.jpg"},"p044":{"t":"image/jpeg","z":"anniviers-p044.jpg"},"p045":{"t":"image/jpeg","z":"anniviers-p045.jpg"},"p046":{"t":"image/jpeg","z":"anniviers-p046.jpg"},"p047":{"t":"image/jpeg","z":"anniviers-p047.jpg"},"p048":{"t":"image/jpeg","z":"anniviers-p048.jpg"},"p049":{"t":"image/jpeg","z":"anniviers-p049.jpg"},"p050":{"t":"image/jpeg","z":"anniviers-p050.jpg"},"p051":{"t":"image/jpeg","z":"anniviers-p051.jpg"},"p052":{"t":"image/jpeg","z":"anniviers-p052.jpg"},"p053":{"t":"image/jpeg","z":"anniviers-p053.jpg"},"p054":{"t":"image/jpeg","z":"anniviers-p054.jpg"},"p055":{"t":"image/jpeg","z":"anniviers-p055.jpg"},"p056":{"t":"image/jpeg","z":"anniviers-p056.jpg"},"p057":{"t":"image/jpeg","z":"anniviers-p057.jpg"},"p058":{"t":"image/jpeg","z":"anniviers-p058.jpg"},"p059":{"t":"image/jpeg","z":"anniviers-p059.jpg"},"p060":{"t":"image/jpeg","z":"anniviers-p060.jpg"},"p061":{"t":"image/jpeg","z":"anniviers-p061.jpg"},"p062":{"t":"image/jpeg","z":"anniviers-p062.jpg"},"p063":{"t":"image/jpeg","z":"anniviers-p063.jpg"},"p064":{"t":"image/jpeg","z":"anniviers-p064.jpg"},"p065":{"t":"image/jpeg","z":"anniviers-p065.jpg"},"p066":{"t":"image/jpeg","z":"anniviers-p066.jpg"},"p067":{"t":"image/jpeg","z":"anniviers-p067.jpg"},"p068":{"t":"image/jpeg","z":"anniviers-p068.jpg"},"p069":{"t":"image/jpeg","z":"anniviers-p069.jpg"},"p070":{"t":"image/jpeg","z":"anniviers-p070.jpg"},"p071":{"t":"image/jpeg","z":"anniviers-p071.jpg"},"p072":{"t":"image/jpeg","z":"anniviers-p072.jpg"},"p073":{"t":"image/jpeg","z":"anniviers-p073.jpg"},"p074":{"t":"image/jpeg","z":"anniviers-p074.jpg"},"p075":{"t":"image/jpeg","z":"anniviers-p075.jpg"},"p076":{"t":"image/jpeg","z":"anniviers-p076.jpg"},"p077":{"t":"image/jpeg","z":"anniviers-p077.jpg"},"p078":{"t":"image/jpeg","z":"anniviers-p078.jpg"},"p079":{"t":"image/jpeg","z":"anniviers-p079.jpg"},"p080":{"t":"image/jpeg","z":"anniviers-p080.jpg"},"p081":{"t":"image/jpeg","z":"anniviers-p081.jpg"},"p082":{"t":"image/jpeg","z":"anniviers-p082.jpg"},"p083":{"t":"image/jpeg","z":"anniviers-p083.jpg"},"p084":{"t":"image/jpeg","z":"anniviers-p084.jpg"},"p085":{"t":"image/jpeg","z":"anniviers-p085.jpg"},"p086":{"t":"image/jpeg","z":"anniviers-p086.jpg"},"p087":{"t":"image/jpeg","z":"anniviers-p087.jpg"},"p088":{"t":"image/jpeg","z":"anniviers-p088.jpg"},"p089":{"t":"image/jpeg","z":"anniviers-p089.jpg"},"p090":{"t":"image/jpeg","z":"anniviers-p090.jpg"},"p091":{"t":"image/jpeg","z":"anniviers-p091.jpg"},"p092":{"t":"image/jpeg","z":"anniviers-p092.jpg"},"p093":{"t":"image/jpeg","z":"anniviers-p093.jpg"},"p094":{"t":"image/jpeg","z":"anniviers-p094.jpg"},"p095":{"t":"image/jpeg","z":"anniviers-p095.jpg"},"p096":{"t":"image/jpeg","z":"anniviers-p096.jpg"},"p097":{"t":"image/jpeg","z":"anniviers-p097.jpg"},"p098":{"t":"image/jpeg","z":"anniviers-p098.jpg"},"p099":{"t":"image/jpeg","z":"anniviers-p099.jpg"},"p100":{"t":"image/jpeg","z":"anniviers-p100.jpg"},"p101":{"t":"image/jpeg","z":"anniviers-p101.jpg"},"p102":{"t":"image/jpeg","z":"anniviers-p102.jpg"},"p103":{"t":"image/jpeg","z":"anniviers-p103.jpg"},"p104":{"t":"image/jpeg","z":"anniviers-p104.jpg"},"p105":{"t":"image/jpeg","z":"anniviers-p105.jpg"},"p106":{"t":"image/jpeg","z":"anniviers-p106.jpg"},"p107":{"t":"image/jpeg","z":"anniviers-p107.jpg"},"p108":{"t":"image/jpeg","z":"anniviers-p108.jpg"},"p109":{"t":"image/jpeg","z":"anniviers-p109.jpg"},"p110":{"t":"image/jpeg","z":"anniviers-p110.jpg"},"p111":{"t":"image/jpeg","z":"anniviers-p111.jpg"},"p112":{"t":"image/jpeg","z":"anniviers-p112.jpg"},"p113":{"t":"image/jpeg","z":"anniviers-p113.jpg"},"p114":{"t":"image/jpeg","z":"anniviers-p114.jpg"},"p115":{"t":"image/jpeg","z":"anniviers-p115.jpg"},"p116":{"t":"image/jpeg","z":"anniviers-p116.jpg"},"p117":{"t":"image/jpeg","z":"anniviers-p117.jpg"},"p118":{"t":"image/jpeg","z":"anniviers-p118.jpg"},"p119":{"t":"image/jpeg","z":"anniviers-p119.jpg"},"p120":{"t":"image/jpeg","z":"anniviers-p120.jpg"},"p121":{"t":"image/jpeg","z":"anniviers-p121.jpg"},"p122":{"t":"image/jpeg","z":"anniviers-p122.jpg"},"p123":{"t":"image/jpeg","z":"anniviers-p123.jpg"},"p124":{"t":"image/jpeg","z":"anniviers-p124.jpg"},"p125":{"t":"image/jpeg","z":"anniviers-p125.jpg"},"p126":{"t":"image/jpeg","z":"anniviers-p126.jpg"},"p127":{"t":"image/jpeg","z":"anniviers-p127.jpg"},"p128":{"t":"image/jpeg","z":"anniviers-p128.jpg"},"p129":{"t":"image/jpeg","z":"anniviers-p129.jpg"},"p130":{"t":"image/jpeg","z":"anniviers-p130.jpg"},"p131":{"t":"image/jpeg","z":"anniviers-p131.jpg"},"p132":{"t":"image/jpeg","z":"anniviers-p132.jpg"},"p133":{"t":"image/jpeg","z":"anniviers-p133.jpg"},"p134":{"t":"image/jpeg","z":"anniviers-p134.jpg"},"p135":{"t":"image/jpeg","z":"anniviers-p135.jpg"},"p136":{"t":"image/jpeg","z":"anniviers-p136.jpg"},"p137":{"t":"image/jpeg","z":"anniviers-p137.jpg"},"p138":{"t":"image/jpeg","z":"anniviers-p138.jpg"},"p139":{"t":"image/jpeg","z":"anniviers-p139.jpg"},"p140":{"t":"image/jpeg","z":"anniviers-p140.jpg"},"p141":{"t":"image/jpeg","z":"anniviers-p141.jpg"},"p142":{"t":"image/jpeg","z":"anniviers-p142.jpg"},"p143":{"t":"image/jpeg","z":"anniviers-p143.jpg"},"p144":{"t":"image/jpeg","z":"anniviers-p144.jpg"},"p145":{"t":"image/jpeg","z":"anniviers-p145.jpg"},"p146":{"t":"image/jpeg","z":"anniviers-p146.jpg"},"p147":{"t":"image/jpeg","z":"anniviers-p147.jpg"},"p148":{"t":"image/jpeg","z":"anniviers-p148.jpg"},"p149":{"t":"image/jpeg","z":"anniviers-p149.jpg"},"p150":{"t":"image/jpeg","z":"anniviers-p150.jpg"},"p151":{"t":"image/jpeg","z":"anniviers-p151.jpg"},"p153":{"t":"image/jpeg","z":"anniviers-p153.jpg"},"p154":{"t":"image/jpeg","z":"anniviers-p154.jpg"},"p157":{"t":"image/jpeg","z":"anniviers-p157.jpg"},"p158":{"t":"image/jpeg","z":"anniviers-p158.jpg"},"p159":{"t":"image/jpeg","z":"anniviers-p159.jpg"},"p160":{"t":"image/jpeg","z":"anniviers-p160.jpg"},"p161":{"t":"image/jpeg","z":"anniviers-p161.jpg"},"p162":{"t":"image/jpeg","z":"anniviers-p162.jpg"},"p163":{"t":"image/jpeg","z":"anniviers-p163.jpg"},"p164":{"t":"image/jpeg","z":"anniviers-p164.jpg"},"p165":{"t":"image/jpeg","z":"anniviers-p165.jpg"},"p166":{"t":"image/jpeg","z":"anniviers-p166.jpg"},"p167":{"t":"image/jpeg","z":"anniviers-p167.jpg"},"p168":{"t":"image/jpeg","z":"anniviers-p168.jpg"},"p169":{"t":"image/jpeg","z":"anniviers-p169.jpg"},"p170":{"t":"image/jpeg","z":"anniviers-p170.jpg"},"p171":{"t":"image/jpeg","z":"anniviers-p171.jpg"},"p172":{"t":"image/jpeg","z":"anniviers-p172.jpg"},"p173":{"t":"image/jpeg","z":"anniviers-p173.jpg"},"p175":{"t":"image/jpeg","z":"anniviers-p175.jpg"},"p176":{"t":"image/jpeg","z":"anniviers-p176.jpg"},"p178":{"t":"image/jpeg","z":"anniviers-p178.jpg"},"p179":{"t":"image/jpeg","z":"anniviers-p179.jpg"},"p180":{"t":"image/jpeg","z":"anniviers-p180.jpg"},"p181":{"t":"image/jpeg","z":"anniviers-p181.jpg"},"p182":{"t":"image/jpeg","z":"anniviers-p182.jpg"},"p183":{"t":"image/jpeg","z":"anniviers-p183.jpg"},"p184":{"t":"image/jpeg","z":"anniviers-p184.jpg"},"p185":{"t":"image/jpeg","z":"anniviers-p185.jpg"},"p186":{"t":"image/jpeg","z":"anniviers-p186.jpg"},"p187":{"t":"image/jpeg","z":"anniviers-p187.jpg"},"p188":{"t":"image/jpeg","z":"anniviers-p188.jpg"},"p189":{"t":"image/jpeg","z":"anniviers-p189.jpg"},"p190":{"t":"image/jpeg","z":"anniviers-p190.jpg"},"p191":{"t":"image/jpeg","z":"anniviers-p191.jpg"},"p192":{"t":"image/jpeg","z":"anniviers-p192.jpg"},"p193":{"t":"image/jpeg","z":"anniviers-p193.jpg"},"160ea92d-7b3d-4b35-b641-5c24dd4080fc":{"t":"video/mp4","z":"anniviers-video-sommet-et-souffle.mp4"},"e2ffeba7-91fc-4695-b50e-649e820cafa8":{"t":"video/mp4","z":"anniviers-video-desalpe-dayer.mp4"}};
+  var VERSION = "881cccf1";
+  var CLE_SESSION = "anniviers2056.souvenir";
+
+  var cle = null;
+  var urls = new Map();
+
+  function hexOctets(h) {
+    var u = new Uint8Array(h.length / 2);
+    for (var i = 0; i < u.length; i++) u[i] = parseInt(h.substr(i * 2, 2), 16);
+    return u;
+  }
+  function b64Octets(b) {
+    var s = atob(b), u = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+    return u;
+  }
+  function octetsB64(u) {
+    var s = "";
+    for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+    return btoa(s);
+  }
+
+  // La clé se dérive lentement, à dessein : deux cent cinquante mille tours
+  // rendent toute tentative d'essayer des mots de passe au hasard ridicule.
+  async function deriver(motDePasse) {
+    var base = await crypto.subtle.importKey(
+      "raw", new TextEncoder().encode(motDePasse), "PBKDF2", false, ["deriveBits"]);
+    var bits = await crypto.subtle.deriveBits(
+      { name: "PBKDF2", salt: hexOctets(SEL), iterations: ITER, hash: "SHA-256" }, base, 256);
+    return new Uint8Array(bits);
+  }
+  async function importer(brut) {
+    return crypto.subtle.importKey("raw", brut, "AES-GCM", false, ["decrypt"]);
+  }
+  async function dechiffrer(octets) {
+    var iv = octets.slice(0, 12);
+    var corps = octets.slice(12);
+    var clair = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, cle, corps);
+    return new Uint8Array(clair);
+  }
+  async function prendre(nom) {
+    // Pas de cache forcé : les fichiers changent à chaque publication, et un
+    // fichier gardé d'une version précédente ne se déchiffrerait pas avec la
+    // clé de celle ci. L'empreinte de version garantit qu'on parle bien de la
+    // même édition de l'album.
+    var r = await fetch("d/" + nom + ".bin?v=" + VERSION);
+    if (!r.ok) throw new Error("fichier absent : " + nom);
+    return dechiffrer(new Uint8Array(await r.arrayBuffer()));
+  }
+
+  // ------------------------------------------------------------- l'entrée
+  var porte = document.getElementById("porte");
+  var champ = document.getElementById("mdp");
+  var bouton = document.getElementById("entrer");
+  var rate = document.getElementById("raté");
+
+  document.getElementById("formulaire").addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    if (!champ.value) return;
+    bouton.disabled = true;
+    rate.textContent = "";
+    bouton.textContent = "Un instant";
+    try {
+      var brut = await deriver(champ.value);
+      cle = await importer(brut);
+      await prendre("verif");           // échoue si le mot de passe est faux
+      try { sessionStorage.setItem(CLE_SESSION, octetsB64(brut)); } catch (e) {}
+      await ouvrir();
+    } catch (e) {
+      cle = null;
+      rate.textContent = "Ce mot de passe ne convient pas.";
+      bouton.disabled = false;
+      bouton.textContent = "Ouvrir l'album";
+      champ.select();
+    }
+  });
+
+  async function ouvrir() {
+    var html = new TextDecoder().decode(await prendre("page"));
+    var album = document.getElementById("album");
+    album.innerHTML = html;
+    album.hidden = false;
+    porte.remove();
+    document.getElementById("paquet").hidden = false;
+    brancherPhotos();
+    brancherLoupe();
+    brancherSommaire();
+    window.scrollTo(0, 0);
+  }
+
+  // ------------------------------------------- les photos, à la demande
+  function urlDe(nom) {
+    if (urls.has(nom)) return urls.get(nom);
+    var p = prendre(nom).then(function (clair) {
+      var info = MANIFESTE[nom] || {};
+      return URL.createObjectURL(new Blob([clair], { type: info.t || "image/jpeg" }));
+    });
+    urls.set(nom, p);
+    return p;
+  }
+
+  function poser(el) {
+    var nom = el.getAttribute("data-bin");
+    if (!nom) return Promise.resolve();
+    el.removeAttribute("data-bin");
+    var cadre = el.closest(".cadre");
+    if (cadre) cadre.classList.add("attente");
+    return urlDe(nom).then(function (u) {
+      el.src = u;
+      el.classList.add("venue");
+      if (cadre) cadre.classList.remove("attente");
+      return u;
+    }).catch(function () {
+      if (cadre) cadre.classList.remove("attente");
+    });
+  }
+
+  function brancherPhotos() {
+    var cibles = document.querySelectorAll("#album [data-bin]");
+    if (!("IntersectionObserver" in window)) {
+      Array.prototype.forEach.call(cibles, poser);
+      return;
+    }
+    // La couverture ne doit pas attendre quoi que ce soit : ses images partent
+    // tout de suite, sans passer par le guetteur.
+    Array.prototype.slice.call(cibles, 0, 6).forEach(poser);
+    // Une bonne marge : la photo est prête avant d'entrer dans l'écran.
+    var guetteur = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        guetteur.unobserve(e.target);
+        poser(e.target);
+      });
+    }, { rootMargin: "800px 0px" });
+    Array.prototype.forEach.call(cibles, function (el) { guetteur.observe(el); });
+  }
+
+  // ------------------------------------------------------------ la loupe
+  function brancherLoupe() {
+    var figures = Array.prototype.slice.call(document.querySelectorAll("#album .photo"))
+      .filter(function (f) { return f.querySelector("img"); });
+    var boite = document.getElementById("loupe");
+    if (!boite) return;
+    var img = boite.querySelector("img");
+    var leg = boite.querySelector(".leg");
+    var i = 0;
+
+    function montre(n) {
+      if (!figures.length) return;
+      i = (n + figures.length) % figures.length;
+      var f = figures[i];
+      var dedans = f.querySelector("img");
+      var nom = dedans.getAttribute("data-bin");
+      var pret = nom ? poser(dedans).then(function () { return dedans.src; })
+                     : Promise.resolve(dedans.src);
+      img.removeAttribute("src");
+      boite.classList.add("on");
+      document.body.style.overflow = "hidden";
+      var c = f.querySelector("figcaption");
+      leg.innerHTML = c ? c.innerHTML : "";
+      var rang = i;
+      pret.then(function (u) { if (rang === i && u) img.src = u; });
+    }
+    function ferme() {
+      boite.classList.remove("on");
+      document.body.style.overflow = "";
+      img.removeAttribute("src");
+    }
+    figures.forEach(function (f, n) {
+      var z = f.querySelector(".cadre");
+      if (!z) return;
+      z.addEventListener("click", function (ev) {
+        if (ev.target.tagName === "VIDEO") return;
+        montre(n);
+      });
+    });
+    boite.querySelector(".fermer").addEventListener("click", ferme);
+    boite.querySelector(".prec").addEventListener("click", function (e) { e.stopPropagation(); montre(i - 1); });
+    boite.querySelector(".suiv").addEventListener("click", function (e) { e.stopPropagation(); montre(i + 1); });
+    boite.addEventListener("click", function (e) { if (e.target === boite || e.target === leg) ferme(); });
+    document.addEventListener("keydown", function (e) {
+      if (!boite.classList.contains("on")) return;
+      if (e.key === "Escape") ferme();
+      if (e.key === "ArrowLeft") montre(i - 1);
+      if (e.key === "ArrowRight") montre(i + 1);
+    });
+  }
+
+  function brancherSommaire() {
+    var liens = Array.prototype.slice.call(document.querySelectorAll(".sommaire a"));
+    var cibles = liens.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+    function suit() {
+      var y = window.scrollY + 120, actif = 0;
+      cibles.forEach(function (c, n) { if (c && c.offsetTop <= y) actif = n; });
+      liens.forEach(function (a, n) { a.classList.toggle("ici", n === actif); });
+    }
+    window.addEventListener("scroll", function () { window.requestAnimationFrame(suit); }, { passive: true });
+    suit();
+  }
+
+  // --------------------------------------------------------------- le zip
+  var TABLE = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(u8) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < u8.length; i++) c = TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  // Archive sans compression : des photos déjà compressées ne gagneraient
+  // rien à l'être une seconde fois, et cela évite toute dépendance.
+  function archiver(entrees) {
+    var enc = new TextEncoder();
+    var morceaux = [], annuaire = [], decalage = 0;
+    entrees.forEach(function (e) {
+      var nom = enc.encode(e.nom), crc = crc32(e.donnees), taille = e.donnees.length;
+      var en = new DataView(new ArrayBuffer(30));
+      en.setUint32(0, 0x04034b50, true); en.setUint16(4, 20, true);
+      en.setUint16(6, 0x0800, true); en.setUint16(8, 0, true);
+      en.setUint16(10, 0, true); en.setUint16(12, 0, true);
+      en.setUint32(14, crc, true); en.setUint32(18, taille, true);
+      en.setUint32(22, taille, true); en.setUint16(26, nom.length, true);
+      en.setUint16(28, 0, true);
+      morceaux.push(new Uint8Array(en.buffer), nom, e.donnees);
+
+      var ce = new DataView(new ArrayBuffer(46));
+      ce.setUint32(0, 0x02014b50, true); ce.setUint16(4, 20, true);
+      ce.setUint16(6, 20, true); ce.setUint16(8, 0x0800, true);
+      ce.setUint16(10, 0, true); ce.setUint16(12, 0, true);
+      ce.setUint16(14, 0, true); ce.setUint32(16, crc, true);
+      ce.setUint32(20, taille, true); ce.setUint32(24, taille, true);
+      ce.setUint16(28, nom.length, true); ce.setUint16(30, 0, true);
+      ce.setUint16(32, 0, true); ce.setUint16(34, 0, true);
+      ce.setUint16(36, 0, true); ce.setUint32(38, 0, true);
+      ce.setUint32(42, decalage, true);
+      annuaire.push(new Uint8Array(ce.buffer), nom);
+      decalage += 30 + nom.length + taille;
+    });
+    var tailleAnnuaire = annuaire.reduce(function (s, m) { return s + m.length; }, 0);
+    var fin = new DataView(new ArrayBuffer(22));
+    fin.setUint32(0, 0x06054b50, true); fin.setUint16(4, 0, true);
+    fin.setUint16(6, 0, true); fin.setUint16(8, entrees.length, true);
+    fin.setUint16(10, entrees.length, true); fin.setUint32(12, tailleAnnuaire, true);
+    fin.setUint32(16, decalage, true); fin.setUint16(20, 0, true);
+    return new Blob(morceaux.concat(annuaire, [new Uint8Array(fin.buffer)]),
+                    { type: "application/zip" });
+  }
+
+  var btnZip = document.getElementById("telecharger");
+  var avance = document.getElementById("avance");
+  var barre = avance.querySelector("i");
+  var etat = document.getElementById("etat");
+  var noms = Object.keys(MANIFESTE);
+  document.getElementById("paquet-mot").textContent =
+    noms.length + " fichiers, les photos et les deux vidéos de la journée.";
+
+  btnZip.addEventListener("click", async function () {
+    btnZip.disabled = true;
+    avance.style.display = "block";
+    var entrees = [];
+    try {
+      for (var i = 0; i < noms.length; i++) {
+        etat.textContent = "Préparation " + (i + 1) + " sur " + noms.length;
+        barre.style.width = Math.round(100 * i / noms.length) + "%";
+        entrees.push({ nom: MANIFESTE[noms[i]].z, donnees: await prendre(noms[i]) });
+      }
+      barre.style.width = "100%";
+      etat.textContent = "Assemblage du zip";
+      var blob = archiver(entrees);
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "anniviers-2056-photos.zip";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 60000);
+      etat.textContent = "C'est parti, " + (blob.size / 1024 / 1024).toFixed(0) + " Mo.";
+    } catch (e) {
+      etat.textContent = "Le zip n'a pas pu se faire. Réessayez.";
+    } finally {
+      btnZip.disabled = false;
+      avance.style.display = "none";
+    }
+  });
+
+  // ------------------------------------------ on se souvient de la session
+  (async function () {
+    var garde = null;
+    try { garde = sessionStorage.getItem(CLE_SESSION); } catch (e) {}
+    if (!garde) return;
+    try {
+      cle = await importer(b64Octets(garde));
+      await prendre("verif");
+      await ouvrir();
+    } catch (e) {
+      cle = null;
+      try { sessionStorage.removeItem(CLE_SESSION); } catch (e2) {}
+    }
+  })();
+})();
+</script>

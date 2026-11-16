@@ -1,0 +1,396 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anniviers 2056</title>
+<style>__STYLE__
+
+/* ------------------------------------------------------- porte d'entrée */
+.porte{min-height:100svh;display:grid;place-items:center;padding:2rem 1.2rem}
+.porte .carton{max-width:460px;width:100%}
+.porte h1{font-family:'Pinyon Script',cursive;color:var(--or);font-size:clamp(3.5rem,14vw,6rem);
+  line-height:.9;margin:0 0 .2rem;
+  text-shadow:0 1px 0 rgba(255,250,235,.7), 0 3px 10px rgba(120,95,40,.18)}
+.porte .sous{font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:.09em;
+  font-size:.8rem;color:var(--bordeaux);margin:0 0 1.4rem}
+.porte p.mot{font-size:.97rem;color:var(--doux);margin:0 0 1.2rem}
+.porte form{display:grid;gap:.7rem}
+.porte input{font-family:'EB Garamond',serif;font-size:1.05rem;padding:.65rem .8rem;
+  border:1px solid rgba(140,120,90,.45);background:#fffdf6;color:var(--encre);width:100%;
+  border-radius:2px}
+.porte input:focus{outline:2px solid var(--or);outline-offset:1px}
+.porte button{font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:.08em;
+  font-size:.82rem;padding:.75rem 1rem;border:0;background:var(--bordeaux);color:#fdf6e6;
+  cursor:pointer;border-radius:2px}
+.porte button:disabled{opacity:.55;cursor:wait}
+.porte .raté{color:var(--bordeaux);font-size:.92rem;margin:.2rem 0 0;min-height:1.2em}
+.porte .pied{font-size:.82rem;color:var(--doux);margin:1.3rem 0 0;line-height:1.45}
+
+/* ------------------------------------------------- photos en chargement */
+.photo .cadre{position:relative;background:#e3dac8}
+.photo img[data-bin],.photo video[data-bin]{opacity:0}
+.photo img.venue,.photo video.venue{opacity:1;transition:opacity .45s ease}
+.cadre.attente::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(100deg,#e3dac8 30%,#efe7d8 50%,#e3dac8 70%);
+  background-size:220% 100%;animation:glisse 1.4s linear infinite}
+@keyframes glisse{to{background-position:-220% 0}}
+
+/* ----------------------------------------------------------- le paquet */
+.paquet{max-width:1180px;margin:0 auto;padding:0 1.2rem 4rem;text-align:center}
+.paquet .carton{max-width:620px;padding:1.6rem 1.3rem}
+.paquet h2{font-family:'Pinyon Script',cursive;color:var(--or);font-size:3rem;margin:0 0 .1rem}
+.paquet p{font-size:.95rem;color:var(--doux);margin:.2rem 0 1rem}
+.paquet button{font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:.08em;
+  font-size:.8rem;padding:.75rem 1.4rem;border:0;background:var(--bordeaux);color:#fdf6e6;
+  cursor:pointer;border-radius:2px}
+.paquet button:disabled{opacity:.6;cursor:wait}
+.paquet .avance{height:10px;background:#e6dcc8;margin:1rem 0 .4rem;overflow:hidden;display:none}
+.paquet .avance i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--or),#d8b755);
+  transition:width .2s linear}
+.paquet .etat{font-size:.86rem;color:var(--doux);min-height:1.2em}
+</style>
+
+<div class="porte" id="porte">
+  <div class="carton">
+    <h1>Anniviers</h1>
+    <p class="sous">2056 · Le souvenir du week end</p>
+    <p class="mot">
+      Les photos et les textes de cette page sont chiffrés. Le mot de passe les déchiffre
+      dans votre navigateur, il ne part nulle part.
+    </p>
+    <form id="formulaire">
+      <input id="mdp" type="password" autocomplete="current-password"
+             placeholder="Mot de passe" aria-label="Mot de passe" autofocus>
+      <button type="submit" id="entrer">Ouvrir l'album</button>
+    </form>
+    <p class="raté" id="raté" role="alert"></p>
+    <p class="pied">
+      Si vous ne l'avez pas, demandez le à Alexis.
+    </p>
+  </div>
+</div>
+
+<div id="album" hidden></div>
+
+<div class="paquet" id="paquet" hidden>
+  <div class="carton">
+    <h2>Tout emporter</h2>
+    <p id="paquet-mot">Les photos de cette page, en un seul fichier.</p>
+    <button id="telecharger">Télécharger le zip</button>
+    <div class="avance" id="avance"><i></i></div>
+    <p class="etat" id="etat"></p>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var SEL = "__SEL__";
+  var ITER = __ITER__;
+  var MANIFESTE = __MANIFESTE__;
+  var VERSION = "__VERSION__";
+  var CLE_SESSION = "anniviers2056.souvenir";
+
+  var cle = null;
+  var urls = new Map();
+
+  function hexOctets(h) {
+    var u = new Uint8Array(h.length / 2);
+    for (var i = 0; i < u.length; i++) u[i] = parseInt(h.substr(i * 2, 2), 16);
+    return u;
+  }
+  function b64Octets(b) {
+    var s = atob(b), u = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+    return u;
+  }
+  function octetsB64(u) {
+    var s = "";
+    for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+    return btoa(s);
+  }
+
+  // La clé se dérive lentement, à dessein : deux cent cinquante mille tours
+  // rendent toute tentative d'essayer des mots de passe au hasard ridicule.
+  async function deriver(motDePasse) {
+    var base = await crypto.subtle.importKey(
+      "raw", new TextEncoder().encode(motDePasse), "PBKDF2", false, ["deriveBits"]);
+    var bits = await crypto.subtle.deriveBits(
+      { name: "PBKDF2", salt: hexOctets(SEL), iterations: ITER, hash: "SHA-256" }, base, 256);
+    return new Uint8Array(bits);
+  }
+  async function importer(brut) {
+    return crypto.subtle.importKey("raw", brut, "AES-GCM", false, ["decrypt"]);
+  }
+  async function dechiffrer(octets) {
+    var iv = octets.slice(0, 12);
+    var corps = octets.slice(12);
+    var clair = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, cle, corps);
+    return new Uint8Array(clair);
+  }
+  async function prendre(nom) {
+    // Pas de cache forcé : les fichiers changent à chaque publication, et un
+    // fichier gardé d'une version précédente ne se déchiffrerait pas avec la
+    // clé de celle ci. L'empreinte de version garantit qu'on parle bien de la
+    // même édition de l'album.
+    var r = await fetch("d/" + nom + ".bin?v=" + VERSION);
+    if (!r.ok) throw new Error("fichier absent : " + nom);
+    return dechiffrer(new Uint8Array(await r.arrayBuffer()));
+  }
+
+  // ------------------------------------------------------------- l'entrée
+  var porte = document.getElementById("porte");
+  var champ = document.getElementById("mdp");
+  var bouton = document.getElementById("entrer");
+  var rate = document.getElementById("raté");
+
+  document.getElementById("formulaire").addEventListener("submit", async function (ev) {
+    ev.preventDefault();
+    if (!champ.value) return;
+    bouton.disabled = true;
+    rate.textContent = "";
+    bouton.textContent = "Un instant";
+    try {
+      var brut = await deriver(champ.value);
+      cle = await importer(brut);
+      await prendre("verif");           // échoue si le mot de passe est faux
+      try { sessionStorage.setItem(CLE_SESSION, octetsB64(brut)); } catch (e) {}
+      await ouvrir();
+    } catch (e) {
+      cle = null;
+      rate.textContent = "Ce mot de passe ne convient pas.";
+      bouton.disabled = false;
+      bouton.textContent = "Ouvrir l'album";
+      champ.select();
+    }
+  });
+
+  async function ouvrir() {
+    var html = new TextDecoder().decode(await prendre("page"));
+    var album = document.getElementById("album");
+    album.innerHTML = html;
+    album.hidden = false;
+    porte.remove();
+    document.getElementById("paquet").hidden = false;
+    brancherPhotos();
+    brancherLoupe();
+    brancherSommaire();
+    window.scrollTo(0, 0);
+  }
+
+  // ------------------------------------------- les photos, à la demande
+  function urlDe(nom) {
+    if (urls.has(nom)) return urls.get(nom);
+    var p = prendre(nom).then(function (clair) {
+      var info = MANIFESTE[nom] || {};
+      return URL.createObjectURL(new Blob([clair], { type: info.t || "image/jpeg" }));
+    });
+    urls.set(nom, p);
+    return p;
+  }
+
+  function poser(el) {
+    var nom = el.getAttribute("data-bin");
+    if (!nom) return Promise.resolve();
+    el.removeAttribute("data-bin");
+    var cadre = el.closest(".cadre");
+    if (cadre) cadre.classList.add("attente");
+    return urlDe(nom).then(function (u) {
+      el.src = u;
+      el.classList.add("venue");
+      if (cadre) cadre.classList.remove("attente");
+      return u;
+    }).catch(function () {
+      if (cadre) cadre.classList.remove("attente");
+    });
+  }
+
+  function brancherPhotos() {
+    var cibles = document.querySelectorAll("#album [data-bin]");
+    if (!("IntersectionObserver" in window)) {
+      Array.prototype.forEach.call(cibles, poser);
+      return;
+    }
+    // La couverture ne doit pas attendre quoi que ce soit : ses images partent
+    // tout de suite, sans passer par le guetteur.
+    Array.prototype.slice.call(cibles, 0, 6).forEach(poser);
+    // Une bonne marge : la photo est prête avant d'entrer dans l'écran.
+    var guetteur = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        guetteur.unobserve(e.target);
+        poser(e.target);
+      });
+    }, { rootMargin: "800px 0px" });
+    Array.prototype.forEach.call(cibles, function (el) { guetteur.observe(el); });
+  }
+
+  // ------------------------------------------------------------ la loupe
+  function brancherLoupe() {
+    var figures = Array.prototype.slice.call(document.querySelectorAll("#album .photo"))
+      .filter(function (f) { return f.querySelector("img"); });
+    var boite = document.getElementById("loupe");
+    if (!boite) return;
+    var img = boite.querySelector("img");
+    var leg = boite.querySelector(".leg");
+    var i = 0;
+
+    function montre(n) {
+      if (!figures.length) return;
+      i = (n + figures.length) % figures.length;
+      var f = figures[i];
+      var dedans = f.querySelector("img");
+      var nom = dedans.getAttribute("data-bin");
+      var pret = nom ? poser(dedans).then(function () { return dedans.src; })
+                     : Promise.resolve(dedans.src);
+      img.removeAttribute("src");
+      boite.classList.add("on");
+      document.body.style.overflow = "hidden";
+      var c = f.querySelector("figcaption");
+      leg.innerHTML = c ? c.innerHTML : "";
+      var rang = i;
+      pret.then(function (u) { if (rang === i && u) img.src = u; });
+    }
+    function ferme() {
+      boite.classList.remove("on");
+      document.body.style.overflow = "";
+      img.removeAttribute("src");
+    }
+    figures.forEach(function (f, n) {
+      var z = f.querySelector(".cadre");
+      if (!z) return;
+      z.addEventListener("click", function (ev) {
+        if (ev.target.tagName === "VIDEO") return;
+        montre(n);
+      });
+    });
+    boite.querySelector(".fermer").addEventListener("click", ferme);
+    boite.querySelector(".prec").addEventListener("click", function (e) { e.stopPropagation(); montre(i - 1); });
+    boite.querySelector(".suiv").addEventListener("click", function (e) { e.stopPropagation(); montre(i + 1); });
+    boite.addEventListener("click", function (e) { if (e.target === boite || e.target === leg) ferme(); });
+    document.addEventListener("keydown", function (e) {
+      if (!boite.classList.contains("on")) return;
+      if (e.key === "Escape") ferme();
+      if (e.key === "ArrowLeft") montre(i - 1);
+      if (e.key === "ArrowRight") montre(i + 1);
+    });
+  }
+
+  function brancherSommaire() {
+    var liens = Array.prototype.slice.call(document.querySelectorAll(".sommaire a"));
+    var cibles = liens.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+    function suit() {
+      var y = window.scrollY + 120, actif = 0;
+      cibles.forEach(function (c, n) { if (c && c.offsetTop <= y) actif = n; });
+      liens.forEach(function (a, n) { a.classList.toggle("ici", n === actif); });
+    }
+    window.addEventListener("scroll", function () { window.requestAnimationFrame(suit); }, { passive: true });
+    suit();
+  }
+
+  // --------------------------------------------------------------- le zip
+  var TABLE = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(u8) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < u8.length; i++) c = TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  // Archive sans compression : des photos déjà compressées ne gagneraient
+  // rien à l'être une seconde fois, et cela évite toute dépendance.
+  function archiver(entrees) {
+    var enc = new TextEncoder();
+    var morceaux = [], annuaire = [], decalage = 0;
+    entrees.forEach(function (e) {
+      var nom = enc.encode(e.nom), crc = crc32(e.donnees), taille = e.donnees.length;
+      var en = new DataView(new ArrayBuffer(30));
+      en.setUint32(0, 0x04034b50, true); en.setUint16(4, 20, true);
+      en.setUint16(6, 0x0800, true); en.setUint16(8, 0, true);
+      en.setUint16(10, 0, true); en.setUint16(12, 0, true);
+      en.setUint32(14, crc, true); en.setUint32(18, taille, true);
+      en.setUint32(22, taille, true); en.setUint16(26, nom.length, true);
+      en.setUint16(28, 0, true);
+      morceaux.push(new Uint8Array(en.buffer), nom, e.donnees);
+
+      var ce = new DataView(new ArrayBuffer(46));
+      ce.setUint32(0, 0x02014b50, true); ce.setUint16(4, 20, true);
+      ce.setUint16(6, 20, true); ce.setUint16(8, 0x0800, true);
+      ce.setUint16(10, 0, true); ce.setUint16(12, 0, true);
+      ce.setUint16(14, 0, true); ce.setUint32(16, crc, true);
+      ce.setUint32(20, taille, true); ce.setUint32(24, taille, true);
+      ce.setUint16(28, nom.length, true); ce.setUint16(30, 0, true);
+      ce.setUint16(32, 0, true); ce.setUint16(34, 0, true);
+      ce.setUint16(36, 0, true); ce.setUint32(38, 0, true);
+      ce.setUint32(42, decalage, true);
+      annuaire.push(new Uint8Array(ce.buffer), nom);
+      decalage += 30 + nom.length + taille;
+    });
+    var tailleAnnuaire = annuaire.reduce(function (s, m) { return s + m.length; }, 0);
+    var fin = new DataView(new ArrayBuffer(22));
+    fin.setUint32(0, 0x06054b50, true); fin.setUint16(4, 0, true);
+    fin.setUint16(6, 0, true); fin.setUint16(8, entrees.length, true);
+    fin.setUint16(10, entrees.length, true); fin.setUint32(12, tailleAnnuaire, true);
+    fin.setUint32(16, decalage, true); fin.setUint16(20, 0, true);
+    return new Blob(morceaux.concat(annuaire, [new Uint8Array(fin.buffer)]),
+                    { type: "application/zip" });
+  }
+
+  var btnZip = document.getElementById("telecharger");
+  var avance = document.getElementById("avance");
+  var barre = avance.querySelector("i");
+  var etat = document.getElementById("etat");
+  var noms = Object.keys(MANIFESTE);
+  document.getElementById("paquet-mot").textContent =
+    noms.length + " fichiers, les photos et les deux vidéos de la journée.";
+
+  btnZip.addEventListener("click", async function () {
+    btnZip.disabled = true;
+    avance.style.display = "block";
+    var entrees = [];
+    try {
+      for (var i = 0; i < noms.length; i++) {
+        etat.textContent = "Préparation " + (i + 1) + " sur " + noms.length;
+        barre.style.width = Math.round(100 * i / noms.length) + "%";
+        entrees.push({ nom: MANIFESTE[noms[i]].z, donnees: await prendre(noms[i]) });
+      }
+      barre.style.width = "100%";
+      etat.textContent = "Assemblage du zip";
+      var blob = archiver(entrees);
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "anniviers-2056-photos.zip";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 60000);
+      etat.textContent = "C'est parti, " + (blob.size / 1024 / 1024).toFixed(0) + " Mo.";
+    } catch (e) {
+      etat.textContent = "Le zip n'a pas pu se faire. Réessayez.";
+    } finally {
+      btnZip.disabled = false;
+      avance.style.display = "none";
+    }
+  });
+
+  // ------------------------------------------ on se souvient de la session
+  (async function () {
+    var garde = null;
+    try { garde = sessionStorage.getItem(CLE_SESSION); } catch (e) {}
+    if (!garde) return;
+    try {
+      cle = await importer(b64Octets(garde));
+      await prendre("verif");
+      await ouvrir();
+    } catch (e) {
+      cle = null;
+      try { sessionStorage.removeItem(CLE_SESSION); } catch (e2) {}
+    }
+  })();
+})();
+</script>
